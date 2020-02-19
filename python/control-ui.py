@@ -2,12 +2,12 @@
 
 #import pathlib
 #import time
-#import signal to handle key kill
+#import signal # to handle key kill
 import logging
 import systemd.journal
 #import logging.handlers
 import gi
-#import os
+import os
 #os.environ["DEBUSSY"] = "1"
 
 #gi.require_version('WebKit2', '4.0')
@@ -25,7 +25,6 @@ lg = logging.getLogger('control-ui')
 lg.setLevel(logging.DEBUG)
 sysL = systemd.journal.JournalHandler(SYSLOG_IDENTIFIER=lg.name)
 ch = logging.StreamHandler()
-#ch.setLevel(logging.DEBUG)
 logFormat = logging.Formatter(('%(asctime)s|%(name)s|%(levelname)s|'
                                '%(message)s'))
 uiLogFormat = logging.Formatter(('%(asctime)s|%(levelname)s|%(message)s'))
