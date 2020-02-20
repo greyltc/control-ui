@@ -37,6 +37,12 @@ lg.addHandler(sysL)
 #Webkit.WebView()
 
 
+
+
+
+builder = Gtk.Builder()
+builder.add_from_file("ui.glade")
+
 class Handler:
     def on_mainWindow_destroy(self, *args):
         lg.debug("Destroying")
@@ -45,12 +51,112 @@ class Handler:
     def on_runCodeButton_clicked(self, button):
         lg.debug("Hello World!")
 
+    def on_iv_devs_icon_release(self, icon, a, b):
+        lg.debug("devs icon released")
+        dd = builder.get_object("devDialog")
+        dd.show_all()
 
-builder = Gtk.Builder()
-builder.add_from_file("ui.glade")
+
 builder.connect_signals(Handler())
 logTB = builder.get_object("tbLog")
 ltv = builder.get_object("ltv")
+tv = builder.get_object("tv")
+devTV = builder.get_object("devTV")
+
+numSubstrates = 20
+numPix = 6
+
+# make the store
+store = Gtk.TreeStore(str, bool, str, bool, str, int)
+for i in range(numSubstrates):
+    # the iter piter is returned when appending the author
+    store.append(None, [f"{i+1}", False, "", True, "Missing substrate label", 5])
+
+
+tv.set_model(store)
+# the cellrenderer for the column - text
+renderText = Gtk.CellRendererText()
+# the column is created
+numbers = Gtk.TreeViewColumn("Substrate", renderText, text=0, editable=1)
+# and it is appended to the treeview
+tv.append_column(numbers)
+labels = Gtk.TreeViewColumn("Label", renderText, text=2, editable=3, placeholder_text=4, ypad=5)
+tv.append_column(labels)
+
+
+books = [["Tolstoy, Leo", ["War and Peace", True], ["Anna Karenina", False]],
+         ["Shakespeare, William", ["Hamlet", False],
+             ["Macbeth", True], ["Othello", False]],
+         ["Tolkien, J.R.R.", ["The Lord of the Rings", False]]]
+
+# the data are stored in the model
+# create a treestore with two columns
+devStore = Gtk.TreeStore(str, bool)
+# fill in the model
+for i in range(len(books)):
+    # the iter piter is returned when appending the author in the first column
+    # and False in the second
+    piter = devStore.append(None, [books[i][0], False])
+    # append the books and the associated boolean value as children of
+    # the author
+    j = 1
+    while j < len(books[i]):
+        devStore.append(piter, books[i][j])
+        j += 1
+devTV.set_model(devStore)
+renderer_books = Gtk.CellRendererText()
+# the first column is created
+column_books = Gtk.TreeViewColumn("Books", renderer_books, text=0)
+# and it is appended to the treeview
+devTV.append_column(column_books)
+
+# the cellrenderer for the second column - boolean rendered as a toggle
+renderer_in_out = Gtk.CellRendererToggle()
+# the second column is created
+column_in_out = Gtk.TreeViewColumn("Out?", renderer_in_out, active=1)
+# and it is appended to the treeview
+devTV.append_column(column_in_out)
+
+# callback function for the signal emitted by the cellrenderertoggle
+def on_toggled(widget, path):
+    # the boolean value of the selected row
+    current_value = devStore[path][1]
+    # change the boolean value of the selected row in the model
+    devStore[path][1] = not current_value
+    # new current value!
+    current_value = not current_value
+    # if length of the path is 1 (that is, if we are selecting an author)
+    if len(path) == 1:
+        # get the iter associated with the path
+        piter = devStore.get_iter(path)
+        # get the iter associated with its first child
+        citer = devStore.iter_children(piter)
+        # while there are children, change the state of their boolean value
+        # to the value of the author
+        while citer is not None:
+            devStore[citer][1] = current_value
+            citer = devStore.iter_next(citer)
+    # if the length of the path is not 1 (that is, if we are selecting a
+    # book)
+    elif len(path) != 1:
+        # get the first child of the parent of the book (the first book of
+        # the author)
+        citer = devStore.get_iter(path)
+        piter = devStore.iter_parent(citer)
+        citer = devStore.iter_children(piter)
+        # check if all the children are selected
+        all_selected = True
+        while citer is not None:
+            if devStore[citer][1] == False:
+                all_selected = False
+                break
+            citer = devStore.iter_next(citer)
+        # if they do, the author as well is selected; otherwise it is not
+        devStore[piter][1] = all_selected
+
+
+# connect the cellrenderertoggle with a callback function
+renderer_in_out.connect("toggled", on_toggled)
 
 
 def myWrite(buf):
