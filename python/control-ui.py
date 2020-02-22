@@ -8,6 +8,7 @@ import systemd.journal
 #import logging.handlers
 import gi
 import sys
+import time
 #import os
 #os.environ["DEBUSSY"] = "1"
 
@@ -49,15 +50,15 @@ d = 6
 # create a treestore with two columns
 devStore = Gtk.TreeStore(str, bool)
 # fill in the model
-for i in range(len(books)):
+for i in range(s):
     # the iter piter is returned when appending the author in the first column
     # and False in the second
-    piter = devStore.append(None, [books[i][0], False])
+    piter = devStore.append(None, [f"Substrate {i+1}", True])
     # append the books and the associated boolean value as children of
     # the author
     j = 1
-    while j < len(books[i]):
-        devStore.append(piter, books[i][j])
+    while j <= d:
+        devStore.append(piter, [f"Device {j}", True])
         j += 1
 
 
@@ -66,7 +67,7 @@ for i in range(len(books)):
 
 renderer_books = Gtk.CellRendererText()
 # the first column is created
-column_books = Gtk.TreeViewColumn("Books", renderer_books, text=0)
+column_books = Gtk.TreeViewColumn("Substrate/Device", renderer_books, text=0)
 # and it is appended to the treeview
 
 
@@ -75,7 +76,7 @@ column_books = Gtk.TreeViewColumn("Books", renderer_books, text=0)
 # the cellrenderer for the second column - boolean rendered as a toggle
 renderer_in_out = Gtk.CellRendererToggle()
 # the second column is created
-column_in_out = Gtk.TreeViewColumn("Out?", renderer_in_out, active=1)
+column_in_out = Gtk.TreeViewColumn("Enabled for Measurement?", renderer_in_out, active=1)
 # and it is appended to the treeview
 
 
@@ -84,6 +85,7 @@ column_in_out = Gtk.TreeViewColumn("Out?", renderer_in_out, active=1)
 
 # callback function for the signal emitted by the cellrenderertoggle
 def on_toggled(widget, path):
+    path_split = path.split(':')
     # the boolean value of the selected row
     current_value = devStore[path][1]
     # change the boolean value of the selected row in the model
@@ -91,7 +93,7 @@ def on_toggled(widget, path):
     # new current value!
     current_value = not current_value
     # if length of the path is 1 (that is, if we are selecting an author)
-    if len(path) == 1:
+    if len(path_split) == 1:
         # get the iter associated with the path
         piter = devStore.get_iter(path)
         # get the iter associated with its first child
@@ -103,7 +105,7 @@ def on_toggled(widget, path):
             citer = devStore.iter_next(citer)
     # if the length of the path is not 1 (that is, if we are selecting a
     # book)
-    elif len(path) != 1:
+    elif len(path_split) != 1:
         # get the first child of the parent of the book (the first book of
         # the author)
         citer = devStore.get_iter(path)
@@ -112,7 +114,7 @@ def on_toggled(widget, path):
         # check if all the children are selected
         all_selected = True
         while citer is not None:
-            if devStore[citer][1] == False:
+            if devStore[citer][1] is False:
                 all_selected = False
                 break
             citer = devStore.iter_next(citer)
@@ -167,9 +169,23 @@ class App(Gtk.Application):
         labels = Gtk.TreeViewColumn("Label", renderText, text=2, editable=3, placeholder_text=4, ypad=5)
         self.labelTree.append_column(labels)
 
-
-
+        self.tick()
+        self.ticker = self.timeout_id = GLib.timeout_add_seconds(1, self.tick, None)
         self.b.connect_signals(self)  # maps all ui callbacks to functions here
+
+    def tick(self, user_data=None):
+        #lg.debug("tick")
+        rns = self.b.get_object("run_name_suffix")
+        now = int(time.time())
+        rns.set_text(str(now))
+        self.update_run_name()
+        return True
+
+    def update_run_name(self, user_data=None):
+        rnp = self.b.get_object("run_name_prefix")
+        rn = self.b.get_object("run_name")
+        rns = self.b.get_object("run_name_suffix")
+        rn.set_text(rnp.get_text()+rns.get_text())
 
     def do_activate(self):
         lg.debug("Activating app")
