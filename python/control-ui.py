@@ -80,13 +80,16 @@ class App(Gtk.Application):
 
     def setup_picker_tree(self):
         deviceTree = self.b.get_object("devTV")
-        devStore = Gtk.TreeStore(str, bool)
+        devStore = Gtk.TreeStore(str, bool, bool)
+        checked = True
+        inconsistent = False
         # fill in the model
+        # TODO: work in substrate label here
         for i in range(self.numSubstrates):
-            piter = devStore.append(None, [f"Substrate {i+1}", True])
+            piter = devStore.append(None, [f"Substrate {i+1}", checked, inconsistent])
             j = 1
             while j <= self.numPix:
-                devStore.append(piter, [f"Device {j}", True])
+                devStore.append(piter, [f"Device {j}", checked, inconsistent])
                 j += 1
 
         deviceTree.set_model(devStore)
@@ -98,7 +101,7 @@ class App(Gtk.Application):
         # the cellrenderer for the second column - boolean rendered as a toggle
         renderCheck = Gtk.CellRendererToggle()
         # the second column is created
-        colCheck = Gtk.TreeViewColumn("Measure?", renderCheck, active=1)
+        colCheck = Gtk.TreeViewColumn("Measure?", renderCheck, active=1, inconsistent=2)
         deviceTree.append_column(colCheck)
 
         # connect the cellrenderertoggle with a callback function
@@ -106,7 +109,7 @@ class App(Gtk.Application):
 
         return (deviceTree, devStore)
 
-    # callback function for select/deselect device
+    # callback function for select/deselect device/substrate
     def dev_toggle(self, widget, path):
         path_split = path.split(':')
         # the boolean value of the selected row
@@ -115,35 +118,41 @@ class App(Gtk.Application):
         self.dev_store[path][1] = not current_value
         # new current value!
         current_value = not current_value
-        # if length of the path is 1 (that is, if we are selecting an author)
+        # if length of the path is 1 (that is, if we are selecting a substrate)
         if len(path_split) == 1:
             # get the iter associated with the path
             piter = self.dev_store.get_iter(path)
+            self.dev_store[piter][2] = False
             # get the iter associated with its first child
             citer = self.dev_store.iter_children(piter)
             # while there are children, change the state of their boolean value
-            # to the value of the author
+            # to the value of the substrate
             while citer is not None:
                 self.dev_store[citer][1] = current_value
                 citer = self.dev_store.iter_next(citer)
         # if the length of the path is not 1 (that is, if we are selecting a
-        # book)
+        # device)
         elif len(path_split) != 1:
-            # get the first child of the parent of the book (the first book of
-            # the author)
+            # get the first child of the parent of the substrate (device 1)
             citer = self.dev_store.get_iter(path)
             piter = self.dev_store.iter_parent(citer)
             citer = self.dev_store.iter_children(piter)
             # check if all the children are selected
-            all_selected = True
             num_selected = 0
             while citer is not None:
-                if self.dev_store[citer][1] is False:
-                    all_selected = False
-                    break
+                if self.dev_store[citer][1] is True:
+                    num_selected = num_selected + 1
                 citer = self.dev_store.iter_next(citer)
-            # if they do, the author as well is selected; otherwise it is not
-            self.dev_store[piter][1] = all_selected
+            # if they do, the device as well is selected; otherwise it is not
+            if num_selected == self.numPix:
+                self.dev_store[piter][2] = False
+                self.dev_store[piter][1] = True
+            elif num_selected == 0:
+                self.dev_store[piter][2] = False
+                self.dev_store[piter][1] = False
+            else:
+                self.dev_store[piter][2] = True
+
 
     def setup_label_tree(self):
         labelTree = self.b.get_object("labelTree")
