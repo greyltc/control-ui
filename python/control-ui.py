@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#import pathlib
+import pathlib
 #import time
 #import signal # to handle key kill
 import logging
@@ -15,7 +15,7 @@ import time
 #gi.require_version('WebKit2', '4.0')
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import GLib, Gio, Gtk
+from gi.repository import GLib, Gio, Gtk, Gdk
 #Gdk.set_allowed_backends('broadway')
 #from gi.repository.WebKit2 import WebView, Settings
 #gi.require_version('WebKit2', '4.0')
@@ -61,8 +61,6 @@ for i in range(s):
         devStore.append(piter, [f"Device {j}", True])
         j += 1
 
-
-#devTV.set_model(devStore)
 
 
 renderer_books = Gtk.CellRendererText()
@@ -137,6 +135,14 @@ class App(Gtk.Application):
         self.b = None
         self.numPix = 6
         self.numSubstrates = 20
+        galde_ui_xml_file_name = "ui.glade"
+        gui_file = pathlib.Path(galde_ui_xml_file_name)
+        if gui_file.is_file():
+            self.galde_ui_xml_file = str(gui_file)
+        elif ("python"/gui_file).is_file():  # for debugging
+            self.galde_ui_xml_file = str("python"/gui_file)
+        else:
+            raise(ValueError("Can't find glade file!"))
 
         self.add_main_option("test", ord("t"), GLib.OptionFlags.NONE,
                              GLib.OptionArg.NONE, "Command line test", None)
@@ -146,7 +152,7 @@ class App(Gtk.Application):
         Gtk.Application.do_startup(self)
 
         self.b = Gtk.Builder()
-        self.b.add_from_file("ui.glade")
+        self.b.add_from_file(self.galde_ui_xml_file)
 
         self.labelTree = self.b.get_object("labelTree")
         self.deviceTree = self.b.get_object("devTV")
@@ -154,24 +160,60 @@ class App(Gtk.Application):
         self.deviceTree.append_column(column_books)
         self.deviceTree.append_column(column_in_out)
 
-        self.labelStore = Gtk.TreeStore(str, bool, str, bool, str, int)
+        self.labelStore = Gtk.ListStore(str, str, str, int)
+        y_pad = 0
+        label = ""
+        ph_text = "Missing substrate label"
         for i in range(self.numSubstrates):
             # the iter piter is returned when appending the author
-            self.labelStore.append(None, [f"{i+1}", False, "", True, "Missing substrate label", 0])
-
+            designator = f"{i+1}"
+            self.labelStore.append([designator, label, ph_text, y_pad])
         self.labelTree.set_model(self.labelStore)
-        # the cellrenderer for the column - text
+
+        # the uneditable substrate designator col
         renderText = Gtk.CellRendererText()
-        # the column is created
-        numbers = Gtk.TreeViewColumn("Substrate", renderText, text=0, editable=1)
-        # and it is appended to the treeview
+        numbers = Gtk.TreeViewColumn("Substrate", renderText, text=0, ypad=3)
         self.labelTree.append_column(numbers)
-        labels = Gtk.TreeViewColumn("Label", renderText, text=2, editable=3, placeholder_text=4, ypad=5)
+
+        # the editable substrate label col
+        renderEdit = Gtk.CellRendererText()
+        renderEdit.set_property("editable", True)
+        labels = Gtk.TreeViewColumn("Label", renderEdit, text=1, placeholder_text=2, ypad=3)
         self.labelTree.append_column(labels)
+        renderEdit.connect("edited", self.store_substrate_label)
+
+        self.labelTree.connect("key-release-event", self.handle_label_key)
 
         self.tick()
         self.ticker = self.timeout_id = GLib.timeout_add_seconds(1, self.tick, None)
         self.b.connect_signals(self)  # maps all ui callbacks to functions here
+
+    def handle_label_key(self, tv, event):
+        keyname = Gdk.keyval_name(event.keyval)
+        if keyname == 'Return':
+            path, col = self.labelTree.get_cursor()
+            path.next()
+            self.labelTree.set_cursor_on_cell(path, focus_column=col, focus_cell=None, start_editing=True)
+
+    def store_substrate_label(self, widget, path, text):
+        self.labelStore[path][1] = text
+
+    # handle the auto iv toggle
+    def on_autoiv_toggled(self, button, user_data=None):
+        siblings = button.get_parent().get_children()
+        siblings.remove(button)
+        ali = siblings[0]
+
+        if button.get_active():
+            sensitivity = False
+        else:
+            sensitivity = True
+
+        ali.set_sensitive = sensitivity
+        for child in ali.get_children():
+            child.set_sensitive(sensitivity)
+            for grandchild in child.get_children():
+                grandchild.set_sensitive(sensitivity)
 
     def tick(self, user_data=None):
         #lg.debug("tick")
