@@ -9,13 +9,15 @@ import systemd.journal
 import gi
 import sys
 import time
-#import os
+import math
+import humanize
+import datetime as dt
 #os.environ["DEBUSSY"] = "1"
 
 #gi.require_version('WebKit2', '4.0')
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import GLib, Gio, Gtk, Gdk
+from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 #Gdk.set_allowed_backends('broadway')
 #from gi.repository.WebKit2 import WebView, Settings
 #gi.require_version('WebKit2', '4.0')
@@ -49,7 +51,8 @@ class App(Gtk.Application):
         self.main_win = None
         self.b = None
         self.numPix = 6
-        self.numSubstrates = 20
+        self.numSubstrates = 8
+        self.approx_seconds_per_iv = 50
         galde_ui_xml_file_name = "ui.glade"
         gui_file = pathlib.Path(galde_ui_xml_file_name)
         if gui_file.is_file():
@@ -68,9 +71,29 @@ class App(Gtk.Application):
 
         self.b = Gtk.Builder()
         self.b.add_from_file(self.galde_ui_xml_file)
-  
+
         self.dev_tree, self.dev_store = self.setup_picker_tree()
         self.label_tree, self.label_store = self.setup_label_tree()
+
+        max_devices = self.numPix*self.numSubstrates
+        address_string_length = math.ceil(max_devices/4)
+        selection_box_length = 4 + address_string_length + 3
+        default_on = '0x'+'F'*address_string_length
+        default_off = '0x'+'0'*address_string_length
+        self.iv_dev_box = self.b.get_object('iv_devs')
+        self.eqe_dev_box = self.b.get_object('eqe_devs')
+        self.def_fmt_str = f"0{address_string_length}X"
+
+        fontdesc = Pango.FontDescription("monospace")
+
+        self.iv_dev_box.modify_font(fontdesc)
+        self.iv_dev_box.set_text(default_on)
+        self.last_valid_devs = default_on
+        self.iv_dev_box.set_width_chars(selection_box_length)
+        self.iv_dev_box.set_icon_from_icon_name(0, 'emblem-default')
+        self.eqe_dev_box.modify_font(fontdesc)
+        self.eqe_dev_box.set_text(default_off)
+        self.eqe_dev_box.set_width_chars(selection_box_length)
 
         self.po = self.b.get_object('iv_pop')
         self.po.set_position(Gtk.PositionType.BOTTOM)
@@ -106,6 +129,8 @@ class App(Gtk.Application):
 
         # connect the cellrenderertoggle with a callback function
         renderCheck.connect("toggled", self.dev_toggle)
+
+        deviceTree.connect("key-release-event", self.handle_dev_key)
 
         return (deviceTree, devStore)
 
@@ -153,6 +178,67 @@ class App(Gtk.Application):
             else:
                 self.dev_store[piter][2] = True
 
+        # iterate through everything and build up the result
+        siter = self.dev_store.get_iter('0')  # substrate iterator
+        selection_bitmask = 0
+        bit_location = 0
+        while siter is not None:
+            diter = self.dev_store.iter_children(siter)  # device iterator
+            while diter is not None:
+                if self.dev_store[diter][1] is True:
+                    selection_bitmask = selection_bitmask + (1 << bit_location)
+                bit_location = bit_location + 1
+                diter = self.dev_store.iter_next(diter)  # advance to the next device
+            siter = self.dev_store.iter_next(siter)  # advance to the next substrate
+
+        self.iv_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
+
+    def on_iv_devs_changed(self, editable, user_data=None):
+        valid = False
+        text_is = editable.get_text()
+        if len(text_is) == len(f"0x{0:{self.def_fmt_str}}"):
+            try:
+                is_upper = text_is.upper()
+                if is_upper[0:2] == '0X':
+                    num_part = is_upper[2::]
+                    valid_chars = '0123456789ABCDEF'
+                    filtered = filter(lambda ch: ch in valid_chars, num_part)
+                    num_part = ''.join(filtered)
+                    selection_bitmask = int(num_part, 16)
+                    should_be = f"0x{selection_bitmask:{self.def_fmt_str}}"
+                    if text_is == should_be:
+                        valid = True
+            except:
+                pass
+
+        if valid is True:
+            self.last_valid_devs = text_is
+            self.iv_dev_box.set_icon_from_icon_name(0, 'emblem-default')
+            self.iv_measure_note(selection_bitmask)
+        else:
+            self.iv_dev_box.set_icon_from_icon_name(0, 'dialog-error')
+
+    def on_iv_devs_focus_out_event(self, event, user_data=None):
+        if self.iv_dev_box.get_icon_name(0) != 'emblem-default':
+            self.iv_dev_box.set_text(self.last_valid_devs)
+        else:
+            self.iv_dev_box.set_text(self.last_valid_devs)
+
+    def on_iv_devs_activate(self, entry, user_data=None):
+        text_is = entry.get_text()
+        try:
+            selection_bitmask = int(text_is, 16)
+            should_be = f"0x{selection_bitmask:{self.def_fmt_str}}"
+            entry.set_text(should_be)
+        except:
+            entry.set_text(self.last_valid_devs)
+
+
+    def iv_measure_note(self, selection_bitmask):
+        num_selected = sum([c == '1' for c in bin(selection_bitmask)])
+        lg.info(f"{num_selected} devices selected for I-V measurement")
+        duration_string = humanize.naturaldelta(dt.timedelta(seconds=self.approx_seconds_per_iv*num_selected))
+        lg.info(f"Which might take {duration_string} to measure")
 
     def setup_label_tree(self):
         labelTree = self.b.get_object("labelTree")
@@ -189,6 +275,18 @@ class App(Gtk.Application):
             path.next()
             self.label_tree.set_cursor_on_cell(path, focus_column=col, focus_cell=None, start_editing=True)
 
+    def handle_dev_key(self, tv, event):
+        keyname = Gdk.keyval_name(event.keyval)
+        if keyname in ['Right', 'Left']:
+            path, col = self.dev_tree.get_cursor()
+            if self.dev_tree.row_expanded(path) is True:
+                self.dev_tree.collapse_row(path)
+            else:
+                self.dev_tree.expand_row(path, False)
+
+            #path.next()
+            #self.label_tree.set_cursor_on_cell(path, focus_column=col, focus_cell=None, start_editing=True)
+
     def store_substrate_label(self, widget, path, text):
         self.label_store[path][1] = text
 
@@ -210,7 +308,7 @@ class App(Gtk.Application):
                 grandchild.set_sensitive(sensitivity)
 
     def tick(self, user_data=None):
-        #lg.debug("tick")
+        # lg.debug("tick")
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))
@@ -232,10 +330,16 @@ class App(Gtk.Application):
             # when the last one is closed the application shuts down
             self.logTB = self.b.get_object("tbLog")  # log text buffer
             self.ltv = self.b.get_object("ltv")  # log text view
+            #self.ltv_sw = self.ltv.get_parent()
 
             def myWrite(buf):
                 self.logTB.insert(self.logTB.get_end_iter(), str(buf))
-                self.ltv.scroll_to_iter(self.logTB.get_end_iter(), 0, False, 0, 0)
+                self.ltv.scroll_to_mark(self.logTB.get_insert(), 0.0, True, 0.5, 0.5)
+                #adj = self.ltv_sw.get_vadjustment()
+                #adj.set_value(adj.get_upper() - adj.get_page_size()+10)
+                #thisiter = self.logTB.get_end_iter()
+                #thisiter.forward_line()
+                #self.ltv.scroll_to_iter(thisiter, 0, False, 0, 0)
 
             def myFlush():
                 pass
@@ -281,11 +385,44 @@ class App(Gtk.Application):
     def on_runCodeButton_clicked(self, button):
         lg.debug("Hello World!")
 
-    def on_iv_devs_icon_release(self, icon, a, b):
-        sw = self.dev_tree.get_parent() # scroll window
+    def on_iv_devs_icon_release(self, icon, b, user_data=None):
+        sw = self.dev_tree.get_parent()  # scroll window
         sw.set_min_content_height((self.numSubstrates+1)*25)
+        if self.iv_dev_box.get_icon_name(0) != 'emblem-default':
+            self.iv_dev_box.set_text(self.last_valid_devs)
+        text_is = self.iv_dev_box.get_text()
+        selection_bitmask = int(text_is, 16)
+
+        bin_mask = bin(selection_bitmask)[2::]
+        bin_mask_rev = bin_mask[::-1]
+
+        # iterate through everything and build up the result
+        siter = self.dev_store.get_iter('0')  # substrate iterator
+        bit_location = 0
+        while siter is not None:
+            num_enabled = 0  # keeps track of number of enabled devices on this substrate
+            diter = self.dev_store.iter_children(siter)  # device iterator
+            while diter is not None:
+                if (bit_location + 1 <= len(bin_mask_rev)) and (bin_mask_rev[bit_location] == '1'):
+                    self.dev_store[diter][1] = True
+                    num_enabled = num_enabled + 1
+                else:
+                    self.dev_store[diter][1] = False
+                bit_location = bit_location + 1
+                diter = self.dev_store.iter_next(diter)  # advance to the next device
+            if num_enabled == 0:
+                self.dev_store[siter][1] = False  # set substrate off
+            elif num_enabled == self.numPix:
+                self.dev_store[siter][1] = True  # set substrate on
+            else:
+                self.dev_store[siter][2] = True  # set substrate inconsistant
+            siter = self.dev_store.iter_next(siter)  # advance to the next substrate
+            
+        
+
         self.po.show_all()
         #lg.debug(sw.get_allocated_height())
+        return True
 
 
 if __name__ == "__main__":

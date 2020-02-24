@@ -12,135 +12,6 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkDialog" id="devDialog">
-    <property name="can_focus">False</property>
-    <property name="type">popup</property>
-    <property name="destroy_with_parent">True</property>
-    <property name="type_hint">dialog</property>
-    <child>
-      <placeholder/>
-    </child>
-    <child internal-child="vbox">
-      <object class="GtkBox">
-        <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox">
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkSpinner">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="active">True</property>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkDialog" id="devDialog2">
-    <property name="width_request">-1</property>
-    <property name="height_request">-1</property>
-    <property name="can_focus">False</property>
-    <property name="hexpand">True</property>
-    <property name="vexpand">True</property>
-    <property name="title" translatable="yes">Select Devices for I-V Measurement</property>
-    <property name="default_width">-1</property>
-    <property name="default_height">750</property>
-    <property name="type_hint">dialog</property>
-    <property name="has_resize_grip">True</property>
-    <child>
-      <placeholder/>
-    </child>
-    <child internal-child="vbox">
-      <object class="GtkBox">
-        <property name="width_request">-1</property>
-        <property name="height_request">-1</property>
-        <property name="can_focus">False</property>
-        <property name="hexpand">True</property>
-        <property name="vexpand">True</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox">
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-            <child>
-              <object class="GtkButton">
-                <property name="label" translatable="yes">Cancel</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton">
-                <property name="label" translatable="yes">Ok</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkScrolledWindow">
-            <property name="width_request">-1</property>
-            <property name="height_request">-1</property>
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">True</property>
-            <property name="shadow_type">in</property>
-            <property name="propagate_natural_width">True</property>
-            <property name="propagate_natural_height">True</property>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
   <object class="GtkAdjustment" id="firstEnd">
     <property name="lower">-10</property>
     <property name="upper">10</property>
@@ -317,6 +188,9 @@
             <property name="position">4</property>
           </packing>
         </child>
+        <style>
+          <class name="suggested-action"/>
+        </style>
       </object>
     </child>
     <child>
@@ -620,11 +494,20 @@
                                   <object class="GtkEntry" id="iv_devs">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="text">0xFFFF</property>
+                                    <property name="tooltip_text" translatable="yes">Hex bitmask indicating which devices to measure</property>
+                                    <property name="activates_default">True</property>
+                                    <property name="width_chars">32</property>
                                     <property name="secondary_icon_stock">gtk-execute</property>
+                                    <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose I-V devices</property>
                                     <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose I-V devices</property>
+                                    <signal name="activate" handler="on_iv_devs_activate" swapped="no"/>
+                                    <signal name="changed" handler="on_iv_devs_changed" swapped="no"/>
+                                    <signal name="focus-out-event" handler="on_iv_devs_focus_out_event" swapped="no"/>
                                     <signal name="icon-release" handler="on_iv_devs_icon_release" swapped="no"/>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                    </style>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -1086,7 +969,7 @@
                                 <property name="row_spacing">5</property>
                                 <property name="column_spacing">5</property>
                                 <child>
-                                  <object class="GtkEntry" id="eqe_devs1">
+                                  <object class="GtkEntry" id="eqe_devs">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text">0xFFFF</property>
@@ -1095,6 +978,9 @@
                                     <property name="primary_icon_sensitive">False</property>
                                     <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose EQE devices</property>
                                     <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose EQE devices</property>
+                                    <style>
+                                      <class name=".monospace"/>
+                                    </style>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
