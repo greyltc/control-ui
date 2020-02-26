@@ -51,8 +51,11 @@ class App(Gtk.Application):
         self.main_win = None
         self.b = None
         self.numPix = 6
-        self.numSubstrates = 8
         self.approx_seconds_per_iv = 50
+        self.substrate_designators = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        #self.substrate_designators = ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5', 'C1', 'C2', 'C3', 'C4', 'C5', 'D1', 'D2', 'D3', 'D4', 'D5']
+        self.numSubstrates = len(self.substrate_designators)
+
         galde_ui_xml_file_name = "ui.glade"
         gui_file = pathlib.Path(galde_ui_xml_file_name)
         if gui_file.is_file():
@@ -72,8 +75,8 @@ class App(Gtk.Application):
         self.b = Gtk.Builder()
         self.b.add_from_file(self.galde_ui_xml_file)
 
-        self.dev_tree, self.dev_store = self.setup_picker_tree()
         self.label_tree, self.label_store = self.setup_label_tree()
+        self.dev_tree, self.dev_store = self.setup_picker_tree()
 
         max_devices = self.numPix*self.numSubstrates
         address_string_length = math.ceil(max_devices/4)
@@ -84,6 +87,7 @@ class App(Gtk.Application):
         self.eqe_dev_box = self.b.get_object('eqe_devs')
         self.def_fmt_str = f"0{address_string_length}X"
 
+        # TODO: do this in a non-obsolete way (probably w/ css)
         fontdesc = Pango.FontDescription("monospace")
 
         self.iv_dev_box.modify_font(fontdesc)
@@ -107,9 +111,12 @@ class App(Gtk.Application):
         checked = True
         inconsistent = False
         # fill in the model
-        # TODO: work in substrate label here
         for i in range(self.numSubstrates):
-            piter = devStore.append(None, [f"Substrate {i+1}", checked, inconsistent])
+            if self.label_store[i][0] == '':
+                label = self.label_store[i][1]
+            else:
+                label = self.label_store[i][0]
+            piter = devStore.append(None, [label, checked, inconsistent])
             j = 1
             while j <= self.numPix:
                 devStore.append(piter, [f"Device {j}", checked, inconsistent])
@@ -224,6 +231,7 @@ class App(Gtk.Application):
         else:
             self.iv_dev_box.set_text(self.last_valid_devs)
 
+    # device bitmask string reformatter
     def on_iv_devs_activate(self, entry, user_data=None):
         text_is = entry.get_text()
         try:
@@ -233,7 +241,7 @@ class App(Gtk.Application):
         except:
             entry.set_text(self.last_valid_devs)
 
-
+    # log message printer for device selection change
     def iv_measure_note(self, selection_bitmask):
         num_selected = sum([c == '1' for c in bin(selection_bitmask)])
         lg.info(f"{num_selected} devices selected for I-V measurement")
@@ -242,25 +250,24 @@ class App(Gtk.Application):
 
     def setup_label_tree(self):
         labelTree = self.b.get_object("labelTree")
-        labelStore = Gtk.ListStore(str, str, str, int)
+        labelStore = Gtk.ListStore(str, str, int)
         y_pad = 0
         label = ""
-        ph_text = "Missing substrate label"
         for i in range(self.numSubstrates):
             # the iter piter is returned when appending the author
-            designator = f"{i+1}"
-            labelStore.append([designator, label, ph_text, y_pad])
+            #designator = self.substrate_designators[i]
+            labelStore.append([label, self.substrate_designators[i], y_pad])
         labelTree.set_model(labelStore)
 
         # the uneditable substrate designator col
-        renderText = Gtk.CellRendererText()
-        numbers = Gtk.TreeViewColumn("Substrate", renderText, text=0, ypad=3)
-        labelTree.append_column(numbers)
+        #renderText = Gtk.CellRendererText()
+        #numbers = Gtk.TreeViewColumn("Substrate", renderText, text=0, ypad=3)
+        #labelTree.append_column(numbers)
 
         # the editable substrate label col
         renderEdit = Gtk.CellRendererText()
         renderEdit.set_property("editable", True)
-        labels = Gtk.TreeViewColumn("Label", renderEdit, text=1, placeholder_text=2, ypad=3)
+        labels = Gtk.TreeViewColumn("Substrate Label", renderEdit, text=0, placeholder_text=1, ypad=2)
         labelTree.append_column(labels)
 
         renderEdit.connect("edited", self.store_substrate_label)
@@ -268,6 +275,7 @@ class App(Gtk.Application):
 
         return (labelTree, labelStore)
 
+    # handles keystroke in the label creation tree
     def handle_label_key(self, tv, event):
         keyname = Gdk.keyval_name(event.keyval)
         if keyname in ['Return', 'Enter']:
@@ -275,6 +283,7 @@ class App(Gtk.Application):
             path.next()
             self.label_tree.set_cursor_on_cell(path, focus_column=col, focus_cell=None, start_editing=True)
 
+    # handles keystroke in the device selection tree
     def handle_dev_key(self, tv, event):
         keyname = Gdk.keyval_name(event.keyval)
         if keyname in ['Right', 'Left']:
@@ -284,11 +293,12 @@ class App(Gtk.Application):
             else:
                 self.dev_tree.expand_row(path, False)
 
-            #path.next()
-            #self.label_tree.set_cursor_on_cell(path, focus_column=col, focus_cell=None, start_editing=True)
-
     def store_substrate_label(self, widget, path, text):
-        self.label_store[path][1] = text
+        self.label_store[path][0] = text
+        if text == '':
+            self.dev_store[path][0] = self.label_store[path][1]
+        else:
+            self.dev_store[path][0] = self.label_store[path][0]
 
     # handle the auto iv toggle
     def on_autoiv_toggled(self, button, user_data=None):
@@ -307,6 +317,7 @@ class App(Gtk.Application):
             for grandchild in child.get_children():
                 grandchild.set_sensitive(sensitivity)
 
+    # runs once per second
     def tick(self, user_data=None):
         # lg.debug("tick")
         rns = self.b.get_object("run_name_suffix")
@@ -330,16 +341,10 @@ class App(Gtk.Application):
             # when the last one is closed the application shuts down
             self.logTB = self.b.get_object("tbLog")  # log text buffer
             self.ltv = self.b.get_object("ltv")  # log text view
-            #self.ltv_sw = self.ltv.get_parent()
 
             def myWrite(buf):
                 self.logTB.insert(self.logTB.get_end_iter(), str(buf))
                 self.ltv.scroll_to_mark(self.logTB.get_insert(), 0.0, True, 0.5, 0.5)
-                #adj = self.ltv_sw.get_vadjustment()
-                #adj.set_value(adj.get_upper() - adj.get_page_size()+10)
-                #thisiter = self.logTB.get_end_iter()
-                #thisiter.forward_line()
-                #self.ltv.scroll_to_iter(thisiter, 0, False, 0, 0)
 
             def myFlush():
                 pass
