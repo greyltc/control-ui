@@ -15,8 +15,9 @@ control system user interface
    reboot
    vagrant ssh
    sudo pacman -Syu virtualbox-guest-utils # choose y (to replace the nox version)
-   sudo pacman -Syu xf86-video-vmware cinnamon git bash-completion vim gdm # accept all defaults
+   sudo pacman -Syu xf86-video-vmware mate git bash-completion vim gdm # accept all defaults
    sudo systemctl enable gdm
+   sudo rm /usr/share/xsessions/gnome*
    mkdir git
    cd git
    git clone https://github.com/greyltc/control-ui.git
@@ -25,4 +26,4 @@ control system user interface
    sudo reboot
    ```
 1. A virtual box window should have appeared a few commands ago. Login with user/pass: vagrant/vagrant
-1. Use the graphical file explorer to navigate to git/control-ui in the vagrant user's home folder and double click on the run_local.sh script
+1. Navigate to git/control-ui in the vagrant user's home folder and double click on the run_local.sh script
