@@ -10,3 +10,5 @@ control system user interface
 cd vgrant
 vagrant up
 ```
+1. Login with user/pass: root/vagrant
+1. Run `pacman -Syyu gnome` and accept all the defaults
