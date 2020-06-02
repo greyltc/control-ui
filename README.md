@@ -13,19 +13,17 @@ control system user interface
    sudo pacman -Syu reflector
    sudo reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
    sudo pacman -Syyuu
-   sudo pacman -Syu  virtualbox-guest-utils # choose y (to replace the nox version)
-   sudo reboot
-   sudo pacman -Syyu xf86-video-vmware # choose y (to replace the nox version)
-   bash-completion
-   
-   ```
-1. A virtual box window should appear. Login with user/pass: vagrant/vagrant
-1. Now in the virtual machine's terminal run:
-   ```bash
-   sudo pacman -Syyu virtualbox-guest-utils # choose y (to replace the nox version)
-   sudo reboot
-   # virtual machine reboots ... login again as the vagrant user
-   sudo pacman -Syyu gnome git bash-completion vim # accept all defaults
+   reboot
+   vagrant ssh
+   sudo pacman -Syu virtualbox-guest-utils # choose y (to replace the nox version)
+   sudo pacman -Syu xf86-video-vmware mate git bash-completion vim gdm # accept all defaults
    sudo systemctl enable gdm
+   mkdir git
+   cd git
+   git clone git@github.com:greyltc/control-ui.git
+   cd control-ui
+   ./get_deps.sh
    sudo reboot
    ```
+1. A virtual box window should have appeared a few commands ago. Login with user/pass: vagrant/vagrant
+1. fsd
