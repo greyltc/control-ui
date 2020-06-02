@@ -10,7 +10,6 @@ control system user interface
    cd vgrant
    vagrant up # ignore the virtual box terminal window that pops up here
    vagrant ssh
-   sudo pacman -Syu reflector
    sudo reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
    sudo pacman -Syyuu
    reboot
