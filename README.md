@@ -8,7 +8,7 @@ control system user interface
 1. Run the following commands:
    ```bash
    cd vgrant
-   vagrant up # ignore the virtual box terminal window that pops up here
+   vagrant up # ignore the virtual box terminal window that pops up here for now
    vagrant ssh
    sudo reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
    sudo pacman -Syyuu
