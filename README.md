@@ -11,7 +11,7 @@ control system user interface
    vagrant up
    ```
 1. A virtual box window should appear. Login with user/pass: vagrant/vagrant
-1. Now in the virtual machine run:
+1. Now in the virtual machine's terminal run:
    ```bash
    sudo pacman -Syyu virtualbox-guest-utils # choose y (to replace the nox version)
    sudo reboot
