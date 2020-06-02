@@ -25,4 +25,4 @@ control system user interface
    sudo reboot
    ```
 1. A virtual box window should have appeared a few commands ago. Login with user/pass: vagrant/vagrant
-1. fsd
+1. Use the graphical file explorer to navigate to git/control-ui in the vagrant user's home folder and double click on the run_local.sh script
