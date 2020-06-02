@@ -10,10 +10,13 @@ control system user interface
    cd vgrant
    vagrant up # ignore the virtual box terminal window that pops up here
    vagrant ssh
-   sudo pacman -Syuu
-   sudo pacman -Syu
-   sudo pacman -Syyu bash-completion virtualbox-guest-utils # choose y (to replace the nox version)
+   sudo pacman -Syu reflector
+   sudo reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
+   sudo pacman -Syyuu
+   sudo pacman -Syu  virtualbox-guest-utils # choose y (to replace the nox version)
+   sudo reboot
    sudo pacman -Syyu xf86-video-vmware # choose y (to replace the nox version)
+   bash-completion
    
    ```
 1. A virtual box window should appear. Login with user/pass: vagrant/vagrant
