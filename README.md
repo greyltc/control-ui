@@ -15,8 +15,8 @@ control system user interface
    reboot
    vagrant ssh
    sudo pacman -Syu virtualbox-guest-utils # choose y (to replace the nox version)
-   sudo pacman -Syu xf86-video-vmware lxde-gtk3 git bash-completion vim lxdm # accept all defaults
-   sudo systemctl enable lxdm
+   sudo pacman -Syu xf86-video-vmware cinnamon git bash-completion vim gdm # accept all defaults
+   sudo systemctl enable gdm
    mkdir git
    cd git
    git clone https://github.com/greyltc/control-ui.git
