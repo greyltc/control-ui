@@ -8,7 +8,13 @@ control system user interface
 1. Run the following commands:
    ```bash
    cd vgrant
-   vagrant up
+   vagrant up # ignore the virtual box terminal window that pops up here
+   vagrant ssh
+   sudo pacman -Syuu
+   sudo pacman -Syu
+   sudo pacman -Syyu bash-completion virtualbox-guest-utils # choose y (to replace the nox version)
+   sudo pacman -Syyu xf86-video-vmware # choose y (to replace the nox version)
+   
    ```
 1. A virtual box window should appear. Login with user/pass: vagrant/vagrant
 1. Now in the virtual machine's terminal run:
