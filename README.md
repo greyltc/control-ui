@@ -6,10 +6,17 @@ control system user interface
 1. Install [Virtual Box](https://www.virtualbox.org/wiki/Downloads)
 1. Clone this repo and open a command terminal in its top folder
 1. Run the following commands:
-   ```
+   ```bash
    cd vgrant
    vagrant up
    ```
-1. A virtual box window should appear. Login with user/pass: root/vagrant
-1. Run `pacman -Sy archlinux-keyring && pacman -Syyu` and accept all the defaults
-1. Run `pacman -Syyu gnome` and accept all the defaults
+1. A virtual box window should appear. Login with user/pass: vagrant/vagrant
+1. Now in the virtual machine run:
+   ```bash
+   sudo pacman -Syyu virtualbox-guest-utils # choose y (to replace the nox version)
+   sudo reboot
+   # virtual machine reboots ... login again as the vagrant user
+   sudo pacman -Syyu gnome git # accept all defaults
+   sudo systemct enable gdm
+   sudo reboot
+   ```
