@@ -17,6 +17,6 @@ control system user interface
    sudo reboot
    # virtual machine reboots ... login again as the vagrant user
    sudo pacman -Syyu gnome git # accept all defaults
-   sudo systemct enable gdm
+   sudo systemctl enable gdm
    sudo reboot
    ```
