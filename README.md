@@ -16,7 +16,7 @@ control system user interface
    sudo pacman -Syyu virtualbox-guest-utils # choose y (to replace the nox version)
    sudo reboot
    # virtual machine reboots ... login again as the vagrant user
-   sudo pacman -Syyu gnome git # accept all defaults
+   sudo pacman -Syyu gnome git bash-completion vim # accept all defaults
    sudo systemctl enable gdm
    sudo reboot
    ```
