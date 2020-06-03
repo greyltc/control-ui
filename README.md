@@ -27,4 +27,4 @@ control system user interface
    ```
 1. A virtual box window should have appeared a few commands ago. Login with user/pass: vagrant/vagrant
 1. Navigate to git/control-ui in the vagrant user's home folder and double click on the run_local.sh script
-1. Use The System --> Shut Down menu to turn off the virtual machine and `vagrant up` to start it again
+1. Use The System --> Shut Down menu to turn off the virtual machine and `vagrant up` (must be run from the vgrant folder in this repo) to start it again
