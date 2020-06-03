@@ -17,7 +17,7 @@ control system user interface
    sudo pacman -Syu virtualbox-guest-utils # choose y (to replace the nox version)
    sudo pacman -Syu xf86-video-vmware mate git bash-completion vim gdm termite gedit # accept all defaults
    sudo systemctl enable gdm
-   sudo echo -e "[User]\nXSession=mate\nSystemAccount=false" > /var/lib/AccountsService/users/vagrant
+   sudo bash -c 'echo -e "[User]\nXSession=mate\nSystemAccount=false" > /var/lib/AccountsService/users/vagrant'
    mkdir git
    cd git
    git clone https://github.com/greyltc/control-ui.git
