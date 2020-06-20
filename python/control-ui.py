@@ -48,7 +48,16 @@ lg.addHandler(sysL)
 
 
 class App(Gtk.Application):
-    def __init__(self, MQTTHOST="172.0.0.1", config_file="config.ini", *args, **kwargs):
+    def __init__(self, MQTTHOST="172.0.0.1", config=None, *args, **kwargs):
+        """Constructor.
+
+        Parameters
+        ----------
+        MQTTHOST : str
+            MQTT broker IP address or hostname.
+        config : config parser object
+            Config parser object created from config file.
+        """
         super().__init__(
             *args,
             application_id="net.christoforo.control-ui",
@@ -82,11 +91,13 @@ class App(Gtk.Application):
         )
 
         # connect to mqtt broker
+        self.MQTTHOST = MQTTHOST
         self.mqttc = mqtt.Client()
-        self.mqttc.connect(MQTTHOST)
+        self.mqttc.connect(self.MQTTHOST)
         self.mqttc.loop_start()
 
-        self.config_file = config_file
+        # config parser object
+        self.config = config
 
     def do_startup(self):
         lg.debug("Starting up app")
@@ -459,13 +470,52 @@ class App(Gtk.Application):
 
     def start_run(self):
         """Send run info to experiment orchestrator via MQTT."""
-        # load info from config file
-        config = configparser.ConfigParser()
-        config.read(self.config_file)
-
-        save_folder = pathlib.Path(config["paths"]["save_folder"])
-        run_name = self.b.get_object("run_name")
+        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        run_name = self.b.get_object("run_name").get_text()
         destination = str(save_folder.joinpath(run_name))
+
+        iv_pixel_address = self.b.get_object("iv_devs").get_text()
+        eqe_pixel_address = self.b.get_object("eqe_devs").get_text()
+        steadystate_v = 0
+        steadystate_i = 0
+        v_t = float(self.b.get_object("vocdwell").get_text())
+        i_t = float(self.b.get_object("iscdwell").get_text())
+        mppt_t = float(self.b.get_object("mpptTime").get_text())
+        mppt_params =
+        layout_index =
+        light_recipe = 
+        light_address = self.config["wavelabs"]["address"]
+        motion_address = self.config["motion"]["address"]
+        scan_points = float(self.b.get_object("sweepSteps").get_text())
+        scan_nplc = float(self.b.get_object("nplc").get_text())
+        steadystate_nplc = scan_nplc
+        scan_step_delay = float(self.b.get_object("sweepDelay").get_text())
+        sm_terminator = self.config["smu"]["terminator"]
+        sm_baud = int(self.config["smu"]["baud"])
+        sm_address = self.config["smu"]["address"]
+        pcb_address = motion_address
+        ignore_diodes = True
+        lia_address = self.config["lia"]["address"]
+        mono_address = self.config["monochromator"]["address"]
+        psu_address = self.config["psu"]["address"]
+        psu_is = [
+            float(self.b.get_object("gblc").get_text()),
+            float(self.b.get_object("rblc").get_text()),
+            0
+        ]
+        eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
+        eqe_ref_meas_path =
+        eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
+        eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
+        eqe_start_wl = float(self.b.get_object("nmStart").get_text())
+        eqe_end_wl = float(self.b.get_object("nmStop").get_text())
+        eqe_step = float(self.b.get_object("nmStep").get_text())
+        eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
+        eqe_integration_time = self.b.get_object("eqe_int").get_text()
+        eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
+        eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
+        eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
+        eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
 
         # make settings dict
         settings = {
@@ -473,13 +523,68 @@ class App(Gtk.Application):
             "operator": "",
             "run_description": "",
             "experimental_parameter": "",
+            "iv_pixel_address": iv_pixel_address,
+            "eqe_pixel_address": eqe_pixel_address,
+            "mqtt_host": self.MQTTHOST,
+            "steadystate_v": steadystate_v,
+            "steadystate_i": steadystate_i,
+            "v_t": v_t,
+            "i_t": i_t,
+            "mppt_t": mppt_t,
+            "mppt_params": mppt_params,
+            "light_address": light_address,
+            "light_recipe": light_recipe,
+            "scan_points": scan_points,
+            "scan_nplc": scan_nplc,
+            "steadystate_nplc": steadystate_nplc,
+            "scan_step_delay": scan_step_delay,
+            "sm_terminator": sm_terminator,
+            "sm_baud": sm_baud,
+            "sm_address": sm_address,
+            "pcb_address": pcb_address,
+            "ignore_diodes": ignore_diodes,
+            "lia_address": lia_address,
+            "mono_address": mono_address,
+            "psu_address": psu_address,
+            "psu_is": psu_is,
+            "eqe_smu_v": eqe_smu_v,
+            "eqe_ref_meas_path": eqe_ref_meas_path,
+            "eqe_ref_cal_path": eqe_ref_cal_path,
+            "eqe_ref_spec_path": eqe_ref_spec_path,
+            "eqe_start_wl": eqe_start_wl,
+            "eqe_end_wl": eqe_end_wl,
+            "eqe_num_wls": eqe_num_wls,
+            "eqe_integration_time": eqe_integration_time,
+            "eqe_grating_change_wls": eqe_grating_change_wls,
+            "eqe_grating_change_wls": eqe_filter_change_wls,
         }
+
+        # add optional parameters if required
+        if self.b.get_object("autoiv").get_text() == "False":
+            scan_start_override_1 = float(self.b.get_object("firstStart").get_text())
+            scan_end_override_1 = float(self.b.get_object("firstEnd").get_text())
+            scan_start_override_2 = float(self.b.get_object("secondStart").get_text())
+            scan_end_override_2 = float(self.b.get_object("secondEnd").get_text())
+            settings["scan_start_override_1"] = scan_start_override_1
+            settings["scan_end_override_1"] = scan_end_override_1
+            settings["scan_start_override_2"] = scan_start_override_2
+            settings["scan_end_override_2"] = scan_end_override_2
 
         # send settings dict over mqtt
         payload = json.dumps(settings)
         self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
 
+    def calibrate_eqe(self):
+        """Measure EQE calibration photodiode."""
+        pass
+
 
 if __name__ == "__main__":
+    # load info from config file
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+
+    MQTTHOST = config["network"]["MQTTHOST"]
+
     app = App()
-    app.run(sys.argv)
+    app.run(MQTTHOST, config, sys.argv)
