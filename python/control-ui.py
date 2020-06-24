@@ -537,8 +537,9 @@ class App(Gtk.Application):
             "i_t": i_t,
             "mppt_t": mppt_t,
             "mppt_params": mppt_params,
-            "light_address": light_address,
             "light_recipe": light_recipe,
+            "light_address": light_address,
+            "motion_address" : motion_address,
             "scan_points": scan_points,
             "scan_nplc": scan_nplc,
             "steadystate_nplc": steadystate_nplc,
@@ -551,6 +552,7 @@ class App(Gtk.Application):
             "lia_address": lia_address,
             "mono_address": mono_address,
             "psu_address": psu_address,
+            "psu_vs": psu_vs,
             "psu_is": psu_is,
             "eqe_smu_v": eqe_smu_v,
             "eqe_ref_meas_path": eqe_ref_meas_path,
@@ -581,7 +583,92 @@ class App(Gtk.Application):
 
     def calibrate_eqe(self):
         """Measure EQE calibration photodiode."""
-        pass
+        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        run_name = self.b.get_object("run_name").get_text()
+        destination = str(save_folder.joinpath(run_name))
+
+        # Arbitrary dummy bitmask containing a single pixel.
+        eqe_pixel_address = "0x000000000001"
+
+        motion_address = self.config["motion"]["address"]
+        sm_terminator = self.config["smu"]["terminator"]
+        sm_baud = int(self.config["smu"]["baud"])
+        sm_address = self.config["smu"]["address"]
+        pcb_address = motion_address
+        ignore_diodes = True
+        lia_address = self.config["lia"]["address"]
+        mono_address = self.config["monochromator"]["address"]
+        psu_address = self.config["psu"]["address"]
+        psu_vs = [
+            float(self.config["psu"]["ch1_voltage"]),
+            float(self.config["psu"]["ch2_voltage"]),
+            float(self.config["psu"]["ch3_voltage"])
+        ]
+        psu_is = [
+            float(self.b.get_object("gblc").get_text()),
+            float(self.b.get_object("rblc").get_text()),
+            0
+        ]
+        eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
+        eqe_ref_meas_path =
+        eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
+        eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
+        eqe_start_wl = float(self.b.get_object("nmStart").get_text())
+        eqe_end_wl = float(self.b.get_object("nmStop").get_text())
+        eqe_step = float(self.b.get_object("nmStep").get_text())
+        eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
+        eqe_integration_time = self.b.get_object("eqe_int").get_text()
+        eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
+        eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
+        eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
+        eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
+
+        settings = {
+            "destination": destination,
+            "operator": "",
+            "run_description": "",
+            "experimental_parameter": "",
+            "mqtt_host": self.MQTTHOST,
+            "eqe_pixel_address": eqe_pixel_address,
+            "calibrate_eqe": True,
+            "position_override": self.config["stage"]["photodiode_offset"],
+            "motion_address": motion_address,
+            "sm_terminator": sm_terminator,
+            "sm_baud": sm_baud,
+            "sm_address": sm_address,
+            "pcb_address": pcb_address,
+            "ignore_diodes": ignore_diodes,
+            "lia_address": lia_address,
+            "mono_address": mono_address,
+            "psu_address": psu_address,
+            "psu_vs": psu_vs,
+            "psu_is": psu_is,
+            "eqe_smu_v": eqe_smu_v,
+            "eqe_ref_meas_path": eqe_ref_meas_path,
+            "eqe_ref_cal_path": eqe_ref_cal_path,
+            "eqe_ref_spec_path": eqe_ref_spec_path,
+            "eqe_start_wl": eqe_start_wl,
+            "eqe_end_wl": eqe_end_wl,
+            "eqe_num_wls": eqe_num_wls,
+            "eqe_integration_time": eqe_integration_time,
+            "eqe_grating_change_wls": eqe_grating_change_wls,
+            "eqe_grating_change_wls": eqe_filter_change_wls,
+        }
+
+        # send settings dict over mqtt
+        payload = json.dumps(settings)
+        self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
+
+    def calibrate_psu(self):
+        """Measure psu calibration photodiode."""
+        settings = {
+            "calibrate_psu": True,
+            "calibrate_psu_ch": float(self.b.get_object("psu_cal_ch").get_text()),
+        }
+
+        # send settings dict over mqtt
+        payload = json.dumps(settings)
+        self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
 
 
 if __name__ == "__main__":
