@@ -498,6 +498,11 @@ class App(Gtk.Application):
         lia_address = self.config["lia"]["address"]
         mono_address = self.config["monochromator"]["address"]
         psu_address = self.config["psu"]["address"]
+        psu_vs = [
+            float(self.config["psu"]["ch1_voltage"]),
+            float(self.config["psu"]["ch2_voltage"]),
+            float(self.config["psu"]["ch3_voltage"])
+        ]
         psu_is = [
             float(self.b.get_object("gblc").get_text()),
             float(self.b.get_object("rblc").get_text()),
