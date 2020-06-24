@@ -661,7 +661,32 @@ class App(Gtk.Application):
 
     def calibrate_psu(self):
         """Measure psu calibration photodiode."""
+        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        run_name = self.b.get_object("run_name").get_text()
+        destination = str(save_folder.joinpath(run_name))
+
+        motion_address = self.config["motion"]["address"]
+        sm_terminator = self.config["smu"]["terminator"]
+        sm_baud = int(self.config["smu"]["baud"])
+        sm_address = self.config["smu"]["address"]
+        pcb_address = motion_address
+        ignore_diodes = True
+        psu_address = self.config["psu"]["address"]
+
         settings = {
+            "destination": destination,
+            "operator": "",
+            "run_description": "",
+            "experimental_parameter": "",
+            "mqtt_host": self.MQTTHOST,
+            "position_override": self.config["stage"]["photodiode_offset"],
+            "motion_address": motion_address,
+            "sm_terminator": sm_terminator,
+            "sm_baud": sm_baud,
+            "sm_address": sm_address,
+            "pcb_address": pcb_address,
+            "ignore_diodes": ignore_diodes,
+            "psu_address": psu_address,
             "calibrate_psu": True,
             "calibrate_psu_ch": float(self.b.get_object("psu_cal_ch").get_text()),
         }
