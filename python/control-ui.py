@@ -790,7 +790,6 @@ class App(Gtk.Application):
         for name in layout_names:
             layouts_str += f"""
             [{name}]
-            pixels={self.config[name]["pixels"]}
             positions={self.config[name]["positions"]}
             areas={self.config[name]["areas"]}
             """
