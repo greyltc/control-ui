@@ -48,7 +48,36 @@ lg.addHandler(sysL)
 
 
 class App(Gtk.Application):
-    def __init__(self, MQTTHOST="172.0.0.1", config=None, *args, **kwargs):
+    # list of all widget id srings
+    ids = [
+        "eqe_in",
+        "eqe_int",
+        "eqedevbias",
+        "firstEnd",
+        "firstStart",
+        "gblc",
+        "image1",
+        "iscdwell",
+        "mpptTime",
+        "nmStart",
+        "nmStep",
+        "nmStop",
+        "nmStop1",
+        "nmWidth",
+        "nplc",
+        "rblc",
+        "secondEnd",
+        "secondStart",
+        "sweepDelay",
+        "sweepSteps",
+        "vocdwell",
+        "run_name_prefix",
+        "iv_devs",
+        "autoiv",
+        "eqe_devs",
+    ]
+
+    def __init__(self, config=None, *args, **kwargs):
         """Constructor.
 
         Parameters
@@ -64,13 +93,19 @@ class App(Gtk.Application):
             flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
             **kwargs,
         )
+
+        # config parser object
+        self.config = config
+
+        # get dimentions of substrate array to generate designators
+        number_list = [int(x) for x in self.congig["substrates"]["number"].split(",")]
+        self.substrate_designators = self._generate_substrate_designators(number_list)
+        self.numSubstrates = len(self.substrate_designators)
+
         self.main_win = None
         self.b = None
         self.numPix = 6
         self.approx_seconds_per_iv = 50
-        self.substrate_designators = ["A", "B", "C", "D", "E", "F", "G", "H"]
-        # self.substrate_designators = ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5', 'C1', 'C2', 'C3', 'C4', 'C5', 'D1', 'D2', 'D3', 'D4', 'D5']
-        self.numSubstrates = len(self.substrate_designators)
 
         galde_ui_xml_file_name = "ui.glade"
         gui_file = pathlib.Path(galde_ui_xml_file_name)
@@ -91,13 +126,32 @@ class App(Gtk.Application):
         )
 
         # connect to mqtt broker
-        self.MQTTHOST = MQTTHOST
+        self.MQTTHOST = self.config["network"]["MQTTHOST"]
         self.mqttc = mqtt.Client()
         self.mqttc.connect(self.MQTTHOST)
         self.mqttc.loop_start()
 
-        # config parser object
-        self.config = config
+    def _generate_substrate_designators(self, number_list):
+        """Generate a list of substrate designators.
+
+        Parameters
+        ----------
+        number_list : list
+            List of numbers of substrates along each available axis. Length must be
+            1 or 2.
+        """
+        rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[:number_list[0]]
+
+        try:
+            cs = range(number_list[1])
+        except IndexError:
+            # if number of columns not given, must be 1
+            cs = range(1)
+
+        subdes = [f"{m}{n + 1}" for m in rs for n in cs]
+
+        return subdes
+
 
     def do_startup(self):
         lg.debug("Starting up app")
@@ -468,6 +522,35 @@ class App(Gtk.Application):
         # lg.debug(sw.get_allocated_height())
         return True
 
+    def save(self, path):
+        """Save current state of widget entries to a file.
+
+        Parameters
+        ----------
+        path : path or str
+            Save path.
+        """
+        data = {}
+        for id_str in ids:
+            data[id_str] = self.b.get_object(id_str).get_text()
+
+        with open(path, "w") as f:
+            json.dump(data, f)
+
+    def open(self, path):
+        """Populate widget entries from data saved in a file.
+
+        Parameters
+        ----------
+        path : path or str
+            Path to open.
+        """
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        for key, value in data:
+            self.b.get_object(key).set_text(value)
+
     def start_run(self):
         """Send run info to experiment orchestrator via MQTT."""
         save_folder = pathlib.Path(self.config["paths"]["save_folder"])
@@ -695,13 +778,30 @@ class App(Gtk.Application):
         payload = json.dumps(settings)
         self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
 
+    def _get_layouts_str(self):
+        """Read and format layouts from config file.
+
+        This function strips the comments from layout sections of the config file so
+        they can be sent more efficiently over MQTT.
+        """
+        layout_names = self.config["substrates"]["layout_names"].split(",")
+
+        layouts_str = f""
+        for name in layout_names:
+            layouts_str += f"""
+            [{name}]
+            pixels={self.config[name]["pixels"]}
+            positions={self.config[name]["positions"]}
+            areas={self.config[name]["areas"]}
+            """
+
+        return layouts_str
+
 
 if __name__ == "__main__":
     # load info from config file
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
     config.read("config.ini")
 
-    MQTTHOST = config["network"]["MQTTHOST"]
-
     app = App()
-    app.run(MQTTHOST, config, sys.argv)
+    app.run(config, sys.argv)
