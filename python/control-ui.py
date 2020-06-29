@@ -56,7 +56,6 @@ class App(Gtk.Application):
         "firstEnd",
         "firstStart",
         "gblc",
-        "image1",
         "iscdwell",
         "mpptTime",
         "nmStart",
