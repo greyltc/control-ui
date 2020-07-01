@@ -76,7 +76,12 @@ class App(Gtk.Application):
         "eqe_devs",
     ]
 
-    def __init__(self, config=None, *args, **kwargs):
+    config = configparser.ConfigParser(
+        interpolation=configparser.ExtendedInterpolation()
+    )
+    config.read("config.ini")
+
+    def __init__(self, *args, **kwargs):
         """Constructor.
 
         Parameters
@@ -92,9 +97,6 @@ class App(Gtk.Application):
             flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
             **kwargs,
         )
-
-        # config parser object
-        self.config = config
 
         # get dimentions of substrate array to generate designators
         number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
@@ -796,11 +798,5 @@ class App(Gtk.Application):
 
 
 if __name__ == "__main__":
-    # load info from config file
-    config = configparser.ConfigParser(
-        interpolation=configparser.ExtendedInterpolation()
-    )
-    config.read("config.ini")
-
     app = App()
-    app.run(config, sys.argv)
+    app.run(sys.argv)
