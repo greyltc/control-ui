@@ -97,7 +97,7 @@ class App(Gtk.Application):
         self.config = config
 
         # get dimentions of substrate array to generate designators
-        number_list = [int(x) for x in self.congig["substrates"]["number"].split(",")]
+        number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
         self.substrate_designators = self._generate_substrate_designators(number_list)
         self.numSubstrates = len(self.substrate_designators)
 
@@ -139,7 +139,7 @@ class App(Gtk.Application):
             List of numbers of substrates along each available axis. Length must be
             1 or 2.
         """
-        rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[:number_list[0]]
+        rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[0]]
 
         try:
             cs = range(number_list[1])
@@ -150,7 +150,6 @@ class App(Gtk.Application):
         subdes = [f"{m}{n + 1}" for m in rs for n in cs]
 
         return subdes
-
 
     def do_startup(self):
         lg.debug("Starting up app")
@@ -565,7 +564,7 @@ class App(Gtk.Application):
     #     mppt_t = float(self.b.get_object("mpptTime").get_text())
     #     mppt_params =
     #     layout_index =
-    #     light_recipe = 
+    #     light_recipe =
     #     light_address = self.config["wavelabs"]["address"]
     #     motion_address = self.config["motion"]["address"]
     #     scan_points = float(self.b.get_object("sweepSteps").get_text())
@@ -798,7 +797,9 @@ class App(Gtk.Application):
 
 if __name__ == "__main__":
     # load info from config file
-    config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+    config = configparser.ConfigParser(
+        interpolation=configparser.ExtendedInterpolation()
+    )
     config.read("config.ini")
 
     app = App()
