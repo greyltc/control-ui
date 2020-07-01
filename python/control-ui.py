@@ -82,15 +82,7 @@ class App(Gtk.Application):
     config.read("config.ini")
 
     def __init__(self, *args, **kwargs):
-        """Constructor.
-
-        Parameters
-        ----------
-        MQTTHOST : str
-            MQTT broker IP address or hostname.
-        config : config parser object
-            Config parser object created from config file.
-        """
+        """Constructor."""
         super().__init__(
             *args,
             application_id="net.christoforo.control-ui",
