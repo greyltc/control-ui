@@ -118,11 +118,11 @@ class App(Gtk.Application):
             None,
         )
 
-        # connect to mqtt broker
-        self.MQTTHOST = self.config["network"]["MQTTHOST"]
-        self.mqttc = mqtt.Client()
-        self.mqttc.connect(self.MQTTHOST)
-        self.mqttc.loop_start()
+        # # connect to mqtt broker
+        # self.MQTTHOST = self.config["network"]["MQTTHOST"]
+        # self.mqttc = mqtt.Client()
+        # self.mqttc.connect(self.MQTTHOST)
+        # self.mqttc.loop_start()
 
     def _generate_substrate_designators(self, number_list):
         """Generate a list of substrate designators.
