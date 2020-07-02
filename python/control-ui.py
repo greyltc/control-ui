@@ -44,6 +44,8 @@ ch.setFormatter(logFormat)
 lg.addHandler(ch)
 lg.addHandler(sysL)
 
+
+
 # Webkit.WebView()
 
 
@@ -76,11 +78,6 @@ class App(Gtk.Application):
         "eqe_devs",
     ]
 
-    config = configparser.ConfigParser(
-        interpolation=configparser.ExtendedInterpolation()
-    )
-    config.read("config.ini")
-
     def __init__(self, *args, **kwargs):
         """Constructor."""
         super().__init__(
@@ -89,6 +86,29 @@ class App(Gtk.Application):
             flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
             **kwargs,
         )
+
+        # allow configuration file location to be specified by command line argument
+        self.add_main_option(
+            "config",
+            ord("c"),
+            GLib.OptionFlags.OPTIONAL_ARG,
+            GLib.OptionArg.FILENAME,
+            "Configuration file",
+            None,
+        )
+
+        self.config = configparser.ConfigParser(
+            interpolation=configparser.ExtendedInterpolation()
+            )
+
+        # let's figure out where config.ini is
+        # step 1: check the command line
+        if len(sys.argv) > 1:
+            print(sys.argv[1])
+
+
+
+        self.config.read("config.ini")
 
         # get dimentions of substrate array to generate designators
         number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
@@ -108,15 +128,6 @@ class App(Gtk.Application):
             self.galde_ui_xml_file = str("python" / gui_file)
         else:
             raise (ValueError("Can't find glade file!"))
-
-        self.add_main_option(
-            "test",
-            ord("t"),
-            GLib.OptionFlags.NONE,
-            GLib.OptionArg.NONE,
-            "Command line test",
-            None,
-        )
 
         # # connect to mqtt broker
         # self.MQTTHOST = self.config["network"]["MQTTHOST"]
@@ -278,6 +289,7 @@ class App(Gtk.Application):
         self.iv_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
 
     def on_iv_devs_changed(self, editable, user_data=None):
+        print(editable)
         valid = False
         text_is = editable.get_text()
         if len(text_is) == len(f"0x{0:{self.def_fmt_str}}"):
@@ -451,9 +463,12 @@ class App(Gtk.Application):
         # convert GVariantDict -> GVariant -> dict
         options = options.end().unpack()
 
-        if "test" in options:
-            # This is printed on the main instance
-            lg.debug('Test argument recieved: {options["test"]}')
+        if len(options) > 0:
+            lg.debug(f'Got command line options: {options}')
+
+        if "config" in options:
+            lg.debug(f'Config file given on command line: {options["config"]}')
+            self.cl_config = options['config']
 
         self.activate()
         return 0
