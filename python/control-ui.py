@@ -10,6 +10,7 @@ import systemd.journal
 # import logging.handlers
 import gi
 import sys
+import os
 import time
 import math
 import humanize
@@ -51,35 +52,38 @@ lg.addHandler(sysL)
 
 class App(Gtk.Application):
     # list of all widget id srings
-    ids = [
-        "eqe_in",
-        "eqe_int",
-        "eqedevbias",
-        "firstEnd",
-        "firstStart",
-        "gblc",
-        "iscdwell",
-        "mpptTime",
-        "nmStart",
-        "nmStep",
-        "nmStop",
-        "nmStop1",
-        "nmWidth",
-        "nplc",
-        "rblc",
-        "secondEnd",
-        "secondStart",
-        "sweepDelay",
-        "sweepSteps",
-        "vocdwell",
-        "run_name_prefix",
-        "iv_devs",
-        "autoiv",
-        "eqe_devs",
-    ]
+    # ids = [
+    #     "eqe_in",
+    #     "eqe_int",
+    #     "eqedevbias",
+    #     "firstEnd",
+    #     "firstStart",
+    #     "gblc",
+    #     "iscdwell",
+    #     "mpptTime",
+    #     "nmStart",
+    #     "nmStep",
+    #     "nmStop",
+    #     "nmStop1",
+    #     "nmWidth",
+    #     "nplc",
+    #     "rblc",
+    #     "secondEnd",
+    #     "secondStart",
+    #     "sweepDelay",
+    #     "sweepSteps",
+    #     "vocdwell",
+    #     "run_name_prefix",
+    #     "iv_devs",
+    #     "autoiv",
+    #     "eqe_devs",
+    # ]
 
     def __init__(self, *args, **kwargs):
         """Constructor."""
+        self.cl_config = pathlib.Path()
+        config_file_name = '.measurement_configuration_file.ini'
+        self.config_file = pathlib.Path(config_file_name)
         super().__init__(
             *args,
             application_id="net.christoforo.control-ui",
@@ -91,7 +95,7 @@ class App(Gtk.Application):
         self.add_main_option(
             "config",
             ord("c"),
-            GLib.OptionFlags.OPTIONAL_ARG,
+            GLib.OptionFlags.NONE,
             GLib.OptionArg.FILENAME,
             "Configuration file",
             None,
@@ -102,13 +106,47 @@ class App(Gtk.Application):
             )
 
         # let's figure out where config.ini is
-        # step 1: check the command line
-        if len(sys.argv) > 1:
-            print(sys.argv[1])
+        config_env_var = 'MEASUREMENT_CONFIGURATION_FILE_NAME'
+        if config_env_var in os.environ:
+            env_config = pathlib.Path(os.environ.get(config_env_var))
+        else:
+            env_config = pathlib.Path()
+        home_config = pathlib.Path.home() / config_file_name
+        local_config = pathlib.Path(config_file_name)
+        local_python_config = pathlib.Path('python') / config_file_name
+        config_ini = pathlib.Path('config.ini')
+        if self.cl_config.is_file():  # priority 1: check the command line
+            lg.debug("Using config file from command line")
+            self.config_file = self.cl_config
+        elif env_config.is_file(): # priority 2: check the environment
+            lg.debug(f"Using config file from {config_env_var} variable")
+            self.config_file = env_config
+        elif home_config.is_file(): # priority 3: check in home dir
+            lg.debug(f"Using config file {config_file_name} in home dir: {pathlib.Path.home()}")
+            self.config_file = home_config
+        elif local_config.is_file(): # priority 4: check in the current drectory
+            lg.debug(f"Using local config file {local_config.resolve()}")
+            self.config_file = local_config
+        elif local_python_config.is_file(): # priority 5: check in python/
+            lg.debug(f"Using local config file {local_python_config.resolve()}")
+            self.config_file = local_python_config
+        elif config_ini.is_file(): # priority 6: check for ./config.ini
+            lg.debug(f"Using local config file {config_ini.resolve()}")
+            self.config_file = config_ini
+        else:  # and give up
+            lg.error('Unable to find a configuration file to load.')
+            raise(ValueError('No config file'))
 
-
-
-        self.config.read("config.ini")
+        try:
+            lg.debug(f"Parsing {self.config_file.resolve()}")
+            with open(self.config_file, 'r') as f:
+                for line in f:
+                    lg.debug(line.rstrip())
+            self.config.read(str(self.config_file))
+        except:
+            lg.error("Unexpected error parsing config file.")
+            lg.error(sys.exc_info()[0])
+            raise
 
         # get dimentions of substrate array to generate designators
         number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
@@ -117,6 +155,7 @@ class App(Gtk.Application):
 
         self.main_win = None
         self.b = None
+        self.ids = []
         self.numPix = 6
         self.approx_seconds_per_iv = 50
 
@@ -163,8 +202,20 @@ class App(Gtk.Application):
         self.b = Gtk.Builder()
         self.b.add_from_file(self.galde_ui_xml_file)
 
+        # crawl the builder object and mine all the object ID strings we can
+        # this list of id strings will need to be filtered by the load and save functions
+        # a good starting point will be to discard those starting with "___"
+        # I should probably just rename all the saveable/loadable stuff to contain
+        # some special character so the filtering becomes easier
+        for o in self.b.get_objects():
+            try:
+                self.ids.append(Gtk.Buildable.get_name(o))
+            except:
+                pass
+
         self.label_tree, self.label_store = self.setup_label_tree()
-        self.dev_tree, self.dev_store = self.setup_picker_tree()
+        self.iv_dev_tree, self.iv_dev_store = self.setup_picker_tree()
+        self.eqe_dev_tree, self.eqe_dev_store = self.setup_picker_tree()
 
         max_devices = self.numPix * self.numSubstrates
         address_string_length = math.ceil(max_devices / 4)
@@ -180,7 +231,8 @@ class App(Gtk.Application):
 
         self.iv_dev_box.modify_font(fontdesc)
         self.iv_dev_box.set_text(default_on)
-        self.last_valid_devs = default_on
+        self.last_valid_iv_devs = default_on
+        self.last_valid_eqe_devs = default_off
         self.iv_dev_box.set_width_chars(selection_box_length)
         self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
         self.eqe_dev_box.modify_font(fontdesc)
@@ -233,63 +285,62 @@ class App(Gtk.Application):
     def dev_toggle(self, widget, path):
         path_split = path.split(":")
         # the boolean value of the selected row
-        current_value = self.dev_store[path][1]
+        current_value = self.iv_dev_store[path][1]
         # change the boolean value of the selected row in the model
-        self.dev_store[path][1] = not current_value
+        self.iv_dev_store[path][1] = not current_value
         # new current value!
         current_value = not current_value
         # if length of the path is 1 (that is, if we are selecting a substrate)
         if len(path_split) == 1:
             # get the iter associated with the path
-            piter = self.dev_store.get_iter(path)
-            self.dev_store[piter][2] = False
+            piter = self.iv_dev_store.get_iter(path)
+            self.iv_dev_store[piter][2] = False
             # get the iter associated with its first child
-            citer = self.dev_store.iter_children(piter)
+            citer = self.iv_dev_store.iter_children(piter)
             # while there are children, change the state of their boolean value
             # to the value of the substrate
             while citer is not None:
-                self.dev_store[citer][1] = current_value
-                citer = self.dev_store.iter_next(citer)
+                self.iv_dev_store[citer][1] = current_value
+                citer = self.iv_dev_store.iter_next(citer)
         # if the length of the path is not 1 (that is, if we are selecting a
         # device)
         elif len(path_split) != 1:
             # get the first child of the parent of the substrate (device 1)
-            citer = self.dev_store.get_iter(path)
-            piter = self.dev_store.iter_parent(citer)
-            citer = self.dev_store.iter_children(piter)
+            citer = self.iv_dev_store.get_iter(path)
+            piter = self.iv_dev_store.iter_parent(citer)
+            citer = self.iv_dev_store.iter_children(piter)
             # check if all the children are selected
             num_selected = 0
             while citer is not None:
-                if self.dev_store[citer][1] is True:
+                if self.iv_dev_store[citer][1] is True:
                     num_selected = num_selected + 1
-                citer = self.dev_store.iter_next(citer)
+                citer = self.iv_dev_store.iter_next(citer)
             # if they do, the device as well is selected; otherwise it is not
             if num_selected == self.numPix:
-                self.dev_store[piter][2] = False
-                self.dev_store[piter][1] = True
+                self.iv_dev_store[piter][2] = False
+                self.iv_dev_store[piter][1] = True
             elif num_selected == 0:
-                self.dev_store[piter][2] = False
-                self.dev_store[piter][1] = False
+                self.iv_dev_store[piter][2] = False
+                self.iv_dev_store[piter][1] = False
             else:
-                self.dev_store[piter][2] = True
+                self.iv_dev_store[piter][2] = True
 
         # iterate through everything and build up the result
-        siter = self.dev_store.get_iter("0")  # substrate iterator
+        siter = self.iv_dev_store.get_iter("0")  # substrate iterator
         selection_bitmask = 0
         bit_location = 0
         while siter is not None:
-            diter = self.dev_store.iter_children(siter)  # device iterator
+            diter = self.iv_dev_store.iter_children(siter)  # device iterator
             while diter is not None:
-                if self.dev_store[diter][1] is True:
+                if self.iv_dev_store[diter][1] is True:
                     selection_bitmask = selection_bitmask + (1 << bit_location)
                 bit_location = bit_location + 1
-                diter = self.dev_store.iter_next(diter)  # advance to the next device
-            siter = self.dev_store.iter_next(siter)  # advance to the next substrate
+                diter = self.iv_dev_store.iter_next(diter)  # advance to the next device
+            siter = self.iv_dev_store.iter_next(siter)  # advance to the next substrate
 
         self.iv_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
 
-    def on_iv_devs_changed(self, editable, user_data=None):
-        print(editable)
+    def on_devs_changed(self, editable, user_data=None):
         valid = False
         text_is = editable.get_text()
         if len(text_is) == len(f"0x{0:{self.def_fmt_str}}"):
@@ -309,26 +360,24 @@ class App(Gtk.Application):
 
         if valid is True:
             self.last_valid_devs = text_is
-            self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
+            editable.set_icon_from_icon_name(0, "emblem-default")
             self.iv_measure_note(selection_bitmask)
         else:
-            self.iv_dev_box.set_icon_from_icon_name(0, "dialog-error")
+            editable.set_icon_from_icon_name(0, "dialog-error")
 
-    def on_iv_devs_focus_out_event(self, event, user_data=None):
-        if self.iv_dev_box.get_icon_name(0) != "emblem-default":
-            self.iv_dev_box.set_text(self.last_valid_devs)
-        else:
-            self.iv_dev_box.set_text(self.last_valid_devs)
-
-    # device bitmask string reformatter
-    def on_iv_devs_activate(self, entry, user_data=None):
-        text_is = entry.get_text()
+    def on_devs_focus_out_event(self, widget, user_data=None):
+        text_is = widget.get_text()
         try:
             selection_bitmask = int(text_is, 16)
             should_be = f"0x{selection_bitmask:{self.def_fmt_str}}"
-            entry.set_text(should_be)
+            if text_is == should_be:
+                return
+            widget.set_text(should_be)
+            self.last_valid_devs = should_be
         except:
-            entry.set_text(self.last_valid_devs)
+            widget.set_text(self.last_valid_devs)
+            lg.info(f"Bad device selection reverted")
+        widget.set_icon_from_icon_name(0, "emblem-default")
 
     # log message printer for device selection change
     def iv_measure_note(self, selection_bitmask):
@@ -382,18 +431,18 @@ class App(Gtk.Application):
     def handle_dev_key(self, tv, event):
         keyname = Gdk.keyval_name(event.keyval)
         if keyname in ["Right", "Left"]:
-            path, col = self.dev_tree.get_cursor()
-            if self.dev_tree.row_expanded(path) is True:
-                self.dev_tree.collapse_row(path)
+            path, col = self.iv_dev_tree.get_cursor()
+            if self.iv_dev_tree.row_expanded(path) is True:
+                self.iv_dev_tree.collapse_row(path)
             else:
-                self.dev_tree.expand_row(path, False)
+                self.iv_dev_tree.expand_row(path, False)
 
     def store_substrate_label(self, widget, path, text):
         self.label_store[path][0] = text
         if text == "":
-            self.dev_store[path][0] = self.label_store[path][1]
+            self.iv_dev_store[path][0] = self.label_store[path][1]
         else:
-            self.dev_store[path][0] = self.label_store[path][0]
+            self.iv_dev_store[path][0] = self.label_store[path][0]
 
     # handle the auto iv toggle
     def on_autoiv_toggled(self, button, user_data=None):
@@ -415,6 +464,11 @@ class App(Gtk.Application):
     # runs once per second
     def tick(self, user_data=None):
         # lg.debug("tick")
+        # TODO: update connectivity status
+        # if self.mqttc.connected:
+        #   self.b.get_object("headerBar").subtitle set text something something("Status: Connected")
+        # else
+        #   self.b.get_object("headerBar").subtitle set text something something("Status: Disconnected")
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))
@@ -467,8 +521,8 @@ class App(Gtk.Application):
             lg.debug(f'Got command line options: {options}')
 
         if "config" in options:
-            lg.debug(f'Config file given on command line: {options["config"]}')
-            self.cl_config = options['config']
+            lg.debug(f'Config file given on command line: {str(options["config"])}')
+            self.cl_config = pathlib.Path(str(options['config']))
 
         self.activate()
         return 0
@@ -485,68 +539,80 @@ class App(Gtk.Application):
                 lg.debug("Shutting down")
         Gtk.Application.do_shutdown(self)
 
-    def on_runCodeButton_clicked(self, button):
+    def on_debug_button(self, button):
         lg.debug("Hello World!")
 
-    def on_iv_devs_icon_release(self, icon, b, user_data=None):
-        sw = self.dev_tree.get_parent()  # scroll window
+    def on_iv_devs_icon_release(self, entry, b, user_data=None):
+        sw = self.iv_dev_tree.get_parent()  # scroll window
         sw.set_min_content_height((self.numSubstrates + 1) * 25)
-        if self.iv_dev_box.get_icon_name(0) != "emblem-default":
-            self.iv_dev_box.set_text(self.last_valid_devs)
-        text_is = self.iv_dev_box.get_text()
+        if entry.get_icon_name(0) != "emblem-default":
+            entry.set_text(self.last_valid_devs)
+        text_is = entry.get_text()
         selection_bitmask = int(text_is, 16)
 
         bin_mask = bin(selection_bitmask)[2::]
         bin_mask_rev = bin_mask[::-1]
 
         # iterate through everything and build up the result
-        siter = self.dev_store.get_iter("0")  # substrate iterator
+        siter = self.iv_dev_store.get_iter("0")  # substrate iterator
         bit_location = 0
         while siter is not None:
             num_enabled = (
                 0  # keeps track of number of enabled devices on this substrate
             )
-            diter = self.dev_store.iter_children(siter)  # device iterator
+            diter = self.iv_dev_store.iter_children(siter)  # device iterator
             while diter is not None:
                 if (bit_location + 1 <= len(bin_mask_rev)) and (
                     bin_mask_rev[bit_location] == "1"
                 ):
-                    self.dev_store[diter][1] = True
+                    self.iv_dev_store[diter][1] = True
                     num_enabled = num_enabled + 1
                 else:
-                    self.dev_store[diter][1] = False
+                    self.iv_dev_store[diter][1] = False
                 bit_location = bit_location + 1
-                diter = self.dev_store.iter_next(diter)  # advance to the next device
+                diter = self.iv_dev_store.iter_next(diter)  # advance to the next device
             if num_enabled == 0:
-                self.dev_store[siter][1] = False  # set substrate off
+                self.iv_dev_store[siter][1] = False  # set substrate off
             elif num_enabled == self.numPix:
-                self.dev_store[siter][1] = True  # set substrate on
+                self.iv_dev_store[siter][1] = True  # set substrate on
             else:
-                self.dev_store[siter][2] = True  # set substrate inconsistant
-            siter = self.dev_store.iter_next(siter)  # advance to the next substrate
+                self.iv_dev_store[siter][2] = True  # set substrate inconsistant
+            siter = self.iv_dev_store.iter_next(siter)  # advance to the next substrate
 
         self.po.show_all()
         # lg.debug(sw.get_allocated_height())
         return True
 
-    def save(self, path):
-        """Save current state of widget entries to a file.
+    def on_pause_button(self, button):
+        lg.info("Pausing")
+        # TODO: generate pause message
 
+    def on_stop_button(self, button):
+        lg.info("Stopping")
+        # TODO: generate stop message
+    
+    def on_pd_button(self, button):
+        lg.info("Measuring photodiodes")
+        # TODO: generate photodiode message
+
+    def on_save_button(self, button):
+        """Save current state of widget entries to a file.
+        #TODO: no parameters I think. this might need to spawn its own file picker dialog or something
         Parameters
         ----------
         path : path or str
             Save path.
         """
         data = {}
-        for id_str in ids:
+        for id_str in self.ids:
             data[id_str] = self.b.get_object(id_str).get_text()
 
         with open(path, "w") as f:
             json.dump(data, f)
 
-    def open(self, path):
+    def on_open_button(self, button):
         """Populate widget entries from data saved in a file.
-
+        #TODO: no parameters I think. this might need to spawn its own file picker dialog or something
         Parameters
         ----------
         path : path or str
@@ -557,234 +623,273 @@ class App(Gtk.Application):
 
         for key, value in data:
             self.b.get_object(key).set_text(value)
+    
+    def on_connectivity_button(self, button):
+        lg.info("Checking connectivity")
+        # TODO: generate connectivity check routine message
+        
 
-    # def start_run(self):
-    #     """Send run info to experiment orchestrator via MQTT."""
-    #     save_folder = pathlib.Path(self.config["paths"]["save_folder"])
-    #     run_name = self.b.get_object("run_name").get_text()
-    #     destination = str(save_folder.joinpath(run_name))
+    def on_RTD_button(self, button):
+        lg.info("Measuring RTD(s)")
+        # TODO: generate rtd measurement message
 
-    #     iv_pixel_address = self.b.get_object("iv_devs").get_text()
-    #     eqe_pixel_address = self.b.get_object("eqe_devs").get_text()
-    #     steadystate_v = 0
-    #     steadystate_i = 0
-    #     v_t = float(self.b.get_object("vocdwell").get_text())
-    #     i_t = float(self.b.get_object("iscdwell").get_text())
-    #     mppt_t = float(self.b.get_object("mpptTime").get_text())
-    #     mppt_params =
-    #     layout_index =
-    #     light_recipe =
-    #     light_address = self.config["wavelabs"]["address"]
-    #     motion_address = self.config["motion"]["address"]
-    #     scan_points = float(self.b.get_object("sweepSteps").get_text())
-    #     scan_nplc = float(self.b.get_object("nplc").get_text())
-    #     steadystate_nplc = scan_nplc
-    #     scan_step_delay = float(self.b.get_object("sweepDelay").get_text())
-    #     sm_terminator = self.config["smu"]["terminator"]
-    #     sm_baud = int(self.config["smu"]["baud"])
-    #     sm_address = self.config["smu"]["address"]
-    #     pcb_address = motion_address
-    #     ignore_diodes = True
-    #     lia_address = self.config["lia"]["address"]
-    #     mono_address = self.config["monochromator"]["address"]
-    #     psu_address = self.config["psu"]["address"]
-    #     psu_vs = [
-    #         float(self.config["psu"]["ch1_voltage"]),
-    #         float(self.config["psu"]["ch2_voltage"]),
-    #         float(self.config["psu"]["ch3_voltage"])
-    #     ]
-    #     psu_is = [
-    #         float(self.b.get_object("gblc").get_text()),
-    #         float(self.b.get_object("rblc").get_text()),
-    #         0
-    #     ]
-    #     eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
-    #     eqe_ref_meas_path =
-    #     eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
-    #     eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
-    #     eqe_start_wl = float(self.b.get_object("nmStart").get_text())
-    #     eqe_end_wl = float(self.b.get_object("nmStop").get_text())
-    #     eqe_step = float(self.b.get_object("nmStep").get_text())
-    #     eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
-    #     eqe_integration_time = self.b.get_object("eqe_int").get_text()
-    #     eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
-    #     eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
-    #     eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
-    #     eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
+    def on_health_button(self, button):
+        lg.info("Checking health")
+        # TODO: generate health check message
+    
+    def on_home_button(self, button):
+        lg.info('Homing stage')
+        # TODO: generate stage home message
+    
+    def on_stage_read_button(self, button):
+        lg.debug("Getting stage pos")
+        # TODO: generate position request message
 
-    #     # make settings dict
-    #     settings = {
-    #         "destination": destination,
-    #         "operator": "",
-    #         "run_description": "",
-    #         "experimental_parameter": "",
-    #         "iv_pixel_address": iv_pixel_address,
-    #         "eqe_pixel_address": eqe_pixel_address,
-    #         "mqtt_host": self.MQTTHOST,
-    #         "steadystate_v": steadystate_v,
-    #         "steadystate_i": steadystate_i,
-    #         "v_t": v_t,
-    #         "i_t": i_t,
-    #         "mppt_t": mppt_t,
-    #         "mppt_params": mppt_params,
-    #         "light_recipe": light_recipe,
-    #         "light_address": light_address,
-    #         "motion_address" : motion_address,
-    #         "scan_points": scan_points,
-    #         "scan_nplc": scan_nplc,
-    #         "steadystate_nplc": steadystate_nplc,
-    #         "scan_step_delay": scan_step_delay,
-    #         "sm_terminator": sm_terminator,
-    #         "sm_baud": sm_baud,
-    #         "sm_address": sm_address,
-    #         "pcb_address": pcb_address,
-    #         "ignore_diodes": ignore_diodes,
-    #         "lia_address": lia_address,
-    #         "mono_address": mono_address,
-    #         "psu_address": psu_address,
-    #         "psu_vs": psu_vs,
-    #         "psu_is": psu_is,
-    #         "eqe_smu_v": eqe_smu_v,
-    #         "eqe_ref_meas_path": eqe_ref_meas_path,
-    #         "eqe_ref_cal_path": eqe_ref_cal_path,
-    #         "eqe_ref_spec_path": eqe_ref_spec_path,
-    #         "eqe_start_wl": eqe_start_wl,
-    #         "eqe_end_wl": eqe_end_wl,
-    #         "eqe_num_wls": eqe_num_wls,
-    #         "eqe_integration_time": eqe_integration_time,
-    #         "eqe_grating_change_wls": eqe_grating_change_wls,
-    #         "eqe_grating_change_wls": eqe_filter_change_wls,
-    #     }
+    def on_goto_button(self, button):
+        lg.debug("Sending the stage some place")
+        # TODO: generate goto message
 
-    #     # add optional parameters if required
-    #     if self.b.get_object("autoiv").get_text() == "False":
-    #         scan_start_override_1 = float(self.b.get_object("firstStart").get_text())
-    #         scan_end_override_1 = float(self.b.get_object("firstEnd").get_text())
-    #         scan_start_override_2 = float(self.b.get_object("secondStart").get_text())
-    #         scan_end_override_2 = float(self.b.get_object("secondEnd").get_text())
-    #         settings["scan_start_override_1"] = scan_start_override_1
-    #         settings["scan_end_override_1"] = scan_end_override_1
-    #         settings["scan_start_override_2"] = scan_start_override_2
-    #         settings["scan_end_override_2"] = scan_end_override_2
+    def on_run_button(self, button):
+        """Send run info to experiment orchestrator via MQTT."""
+        run_name = self.b.get_object("run_name").get_text()
+        lg.info(f"New run started: {run_name}")
+        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        destination = str(save_folder.joinpath(run_name))
 
-    #     # send settings dict over mqtt
-    #     payload = json.dumps(settings)
-    #     self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
+        iv_pixel_address = self.b.get_object("iv_devs").get_text()
+        eqe_pixel_address = self.b.get_object("eqe_devs").get_text()
+        steadystate_v = 0
+        steadystate_i = 0
+        v_t = float(self.b.get_object("vocdwell").get_text())
+        i_t = float(self.b.get_object("iscdwell").get_text())
+        mppt_t = float(self.b.get_object("mpptTime").get_text())
+        mppt_params = self.b.get_object("mppt_params").get_text()
+        layout_index = 'TODO: get this from somewhere, the config file?' # TODO
+        light_recipe = self.b.get_object("light_recipe").get_text()
+        light_address = self.config["wavelabs"]["address"]
+        motion_address = self.config["motion"]["address"]
+        scan_points = float(self.b.get_object("sweepSteps").get_text())
+        scan_nplc = float(self.b.get_object("nplc").get_text())
+        steadystate_nplc = scan_nplc
+        scan_step_delay = float(self.b.get_object("sweepDelay").get_text())
+        sm_terminator = self.config["smu"]["terminator"]
+        sm_baud = int(self.config["smu"]["baud"])
+        sm_address = self.config["smu"]["address"]
+        pcb_address = motion_address
+        ignore_diodes = True
+        lia_address = self.config["lia"]["address"]
+        mono_address = self.config["monochromator"]["address"]
+        psu_address = self.config["psu"]["address"]
+        psu_vs = [
+            float(self.config["psu"]["ch1_voltage"]),
+            float(self.config["psu"]["ch2_voltage"]),
+            float(self.config["psu"]["ch3_voltage"])
+        ]
+        psu_is = [
+            float(self.b.get_object("gblc").get_text()),
+            float(self.b.get_object("rblc").get_text()),
+            0
+        ]
+        eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
+        eqe_ref_meas_path = "What's this?" # TODO
+        eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
+        eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
+        eqe_start_wl = float(self.b.get_object("nmStart").get_text())
+        eqe_end_wl = float(self.b.get_object("nmStop").get_text())
+        eqe_step = float(self.b.get_object("nmStep").get_text())
+        eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
+        eqe_integration_time = self.b.get_object("eqe_int").get_text()
+        eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
+        eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
+        eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
+        eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
 
-    # def calibrate_eqe(self):
-    #     """Measure EQE calibration photodiode."""
-    #     save_folder = pathlib.Path(self.config["paths"]["save_folder"])
-    #     run_name = self.b.get_object("run_name").get_text()
-    #     destination = str(save_folder.joinpath(run_name))
+        # make settings dict
+        # TODO: this looks a bit fragile. I wonder if we can automate it...
+        settings = {
+            "destination": destination,
+            "operator": "",
+            "run_description": "",
+            "experimental_parameter": "",
+            "iv_pixel_address": iv_pixel_address,
+            "eqe_pixel_address": eqe_pixel_address,
+            "mqtt_host": self.MQTTHOST,
+            "steadystate_v": steadystate_v,
+            "steadystate_i": steadystate_i,
+            "v_t": v_t,
+            "i_t": i_t,
+            "mppt_t": mppt_t,
+            "mppt_params": mppt_params,
+            "light_recipe": light_recipe,
+            "light_address": light_address,
+            "motion_address" : motion_address,
+            "scan_points": scan_points,
+            "scan_nplc": scan_nplc,
+            "steadystate_nplc": steadystate_nplc,
+            "scan_step_delay": scan_step_delay,
+            "sm_terminator": sm_terminator,
+            "sm_baud": sm_baud,
+            "sm_address": sm_address,
+            "pcb_address": pcb_address,
+            "ignore_diodes": ignore_diodes,
+            "lia_address": lia_address,
+            "mono_address": mono_address,
+            "psu_address": psu_address,
+            "psu_vs": psu_vs,
+            "psu_is": psu_is,
+            "eqe_smu_v": eqe_smu_v,
+            "eqe_ref_meas_path": eqe_ref_meas_path,
+            "eqe_ref_cal_path": eqe_ref_cal_path,
+            "eqe_ref_spec_path": eqe_ref_spec_path,
+            "eqe_start_wl": eqe_start_wl,
+            "eqe_end_wl": eqe_end_wl,
+            "eqe_num_wls": eqe_num_wls,
+            "eqe_integration_time": eqe_integration_time,
+            "eqe_grating_change_wls": eqe_grating_change_wls,
+            #"eqe_grating_change_wls": eqe_filter_change_wls,
+        }
 
-    #     # Arbitrary dummy bitmask containing a single pixel.
-    #     eqe_pixel_address = "0x000000000001"
+        # add optional parameters if required
+        if not self.b.get_object("autoiv").get_active():
+            scan_start_override_1 = self.b.get_object("sweep1_start").get_value()
+            scan_end_override_1 = self.b.get_object("sweep1_end").get_value()
+            scan_start_override_2 = self.b.get_object("sweep2_start").get_value()
+            scan_end_override_2 = self.b.get_object("sweep2_end").get_value()
+            settings["scan_start_override_1"] = scan_start_override_1
+            settings["scan_end_override_1"] = scan_end_override_1
+            settings["scan_start_override_2"] = scan_start_override_2
+            settings["scan_end_override_2"] = scan_end_override_2
 
-    #     motion_address = self.config["motion"]["address"]
-    #     sm_terminator = self.config["smu"]["terminator"]
-    #     sm_baud = int(self.config["smu"]["baud"])
-    #     sm_address = self.config["smu"]["address"]
-    #     pcb_address = motion_address
-    #     ignore_diodes = True
-    #     lia_address = self.config["lia"]["address"]
-    #     mono_address = self.config["monochromator"]["address"]
-    #     psu_address = self.config["psu"]["address"]
-    #     psu_vs = [
-    #         float(self.config["psu"]["ch1_voltage"]),
-    #         float(self.config["psu"]["ch2_voltage"]),
-    #         float(self.config["psu"]["ch3_voltage"])
-    #     ]
-    #     psu_is = [
-    #         float(self.b.get_object("gblc").get_text()),
-    #         float(self.b.get_object("rblc").get_text()),
-    #         0
-    #     ]
-    #     eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
-    #     eqe_ref_meas_path =
-    #     eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
-    #     eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
-    #     eqe_start_wl = float(self.b.get_object("nmStart").get_text())
-    #     eqe_end_wl = float(self.b.get_object("nmStop").get_text())
-    #     eqe_step = float(self.b.get_object("nmStep").get_text())
-    #     eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
-    #     eqe_integration_time = self.b.get_object("eqe_int").get_text()
-    #     eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
-    #     eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
-    #     eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
-    #     eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
+        # send settings dict over mqtt
+        payload = json.dumps(settings) # TODO: could also use pickle here, which might be more general
+        lg.debug('Run Payload:')
+        lg.debug(payload)
+        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
 
-    #     settings = {
-    #         "destination": destination,
-    #         "operator": "",
-    #         "run_description": "",
-    #         "experimental_parameter": "",
-    #         "mqtt_host": self.MQTTHOST,
-    #         "eqe_pixel_address": eqe_pixel_address,
-    #         "calibrate_eqe": True,
-    #         "position_override": self.config["stage"]["photodiode_offset"],
-    #         "motion_address": motion_address,
-    #         "sm_terminator": sm_terminator,
-    #         "sm_baud": sm_baud,
-    #         "sm_address": sm_address,
-    #         "pcb_address": pcb_address,
-    #         "ignore_diodes": ignore_diodes,
-    #         "lia_address": lia_address,
-    #         "mono_address": mono_address,
-    #         "psu_address": psu_address,
-    #         "psu_vs": psu_vs,
-    #         "psu_is": psu_is,
-    #         "eqe_smu_v": eqe_smu_v,
-    #         "eqe_ref_meas_path": eqe_ref_meas_path,
-    #         "eqe_ref_cal_path": eqe_ref_cal_path,
-    #         "eqe_ref_spec_path": eqe_ref_spec_path,
-    #         "eqe_start_wl": eqe_start_wl,
-    #         "eqe_end_wl": eqe_end_wl,
-    #         "eqe_num_wls": eqe_num_wls,
-    #         "eqe_integration_time": eqe_integration_time,
-    #         "eqe_grating_change_wls": eqe_grating_change_wls,
-    #         "eqe_grating_change_wls": eqe_filter_change_wls,
-    #     }
+    def on_cal_eqe_button(self, button):
+        """Measure EQE calibration photodiode."""
+        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        run_name = self.b.get_object("run_name").get_text()
+        destination = str(save_folder.joinpath(run_name))
 
-    #     # send settings dict over mqtt
-    #     payload = json.dumps(settings)
-    #     self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
+        # Arbitrary dummy bitmask containing a single pixel.
+        bitmask_value = 1
+        eqe_pixel_address = f"0x{bitmask_value:{self.def_fmt_str}}"
 
-    # def calibrate_psu(self):
-    #     """Measure psu calibration photodiode."""
-    #     save_folder = pathlib.Path(self.config["paths"]["save_folder"])
-    #     run_name = self.b.get_object("run_name").get_text()
-    #     destination = str(save_folder.joinpath(run_name))
+        motion_address = self.config["motion"]["address"]
+        sm_terminator = self.config["smu"]["terminator"]
+        sm_baud = int(self.config["smu"]["baud"])
+        sm_address = self.config["smu"]["address"]
+        pcb_address = motion_address
+        ignore_diodes = True
+        lia_address = self.config["lia"]["address"]
+        mono_address = self.config["monochromator"]["address"]
+        psu_address = self.config["psu"]["address"]
+        psu_vs = [
+            float(self.config["psu"]["ch1_voltage"]),
+            float(self.config["psu"]["ch2_voltage"]),
+            float(self.config["psu"]["ch3_voltage"])
+        ]
+        psu_is = [
+            float(self.b.get_object("gblc").get_text()),
+            float(self.b.get_object("rblc").get_text()),
+            0
+        ]
+        eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
+        eqe_ref_meas_path = "TODO: what's this?" # TODO
+        eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
+        eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
+        eqe_start_wl = float(self.b.get_object("nmStart").get_text())
+        eqe_end_wl = float(self.b.get_object("nmStop").get_text())
+        eqe_step = float(self.b.get_object("nmStep").get_text())
+        eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
+        eqe_integration_time = self.b.get_object("eqe_int").get_text()
+        eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
+        eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
+        eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
+        eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
 
-    #     motion_address = self.config["motion"]["address"]
-    #     sm_terminator = self.config["smu"]["terminator"]
-    #     sm_baud = int(self.config["smu"]["baud"])
-    #     sm_address = self.config["smu"]["address"]
-    #     pcb_address = motion_address
-    #     ignore_diodes = True
-    #     psu_address = self.config["psu"]["address"]
+        # TODO: this looks a bit fragile. I wonder if we can automate it...
+        settings = {
+            "destination": destination,
+            "operator": "",
+            "run_description": "",
+            "experimental_parameter": "",
+            "mqtt_host": self.MQTTHOST,
+            "eqe_pixel_address": eqe_pixel_address,
+            "calibrate_eqe": True,
+            "position_override": self.config["stage"]["photodiode_offset"],
+            "motion_address": motion_address,
+            "sm_terminator": sm_terminator,
+            "sm_baud": sm_baud,
+            "sm_address": sm_address,
+            "pcb_address": pcb_address,
+            "ignore_diodes": ignore_diodes,
+            "lia_address": lia_address,
+            "mono_address": mono_address,
+            "psu_address": psu_address,
+            "psu_vs": psu_vs,
+            "psu_is": psu_is,
+            "eqe_smu_v": eqe_smu_v,
+            "eqe_ref_meas_path": eqe_ref_meas_path,
+            "eqe_ref_cal_path": eqe_ref_cal_path,
+            "eqe_ref_spec_path": eqe_ref_spec_path,
+            "eqe_start_wl": eqe_start_wl,
+            "eqe_end_wl": eqe_end_wl,
+            "eqe_num_wls": eqe_num_wls,
+            "eqe_integration_time": eqe_integration_time,
+            "eqe_grating_change_wls": eqe_grating_change_wls,
+            #"eqe_grating_change_wls": eqe_filter_change_wls,
+        }
 
-    #     settings = {
-    #         "destination": destination,
-    #         "operator": "",
-    #         "run_description": "",
-    #         "experimental_parameter": "",
-    #         "mqtt_host": self.MQTTHOST,
-    #         "position_override": self.config["stage"]["photodiode_offset"],
-    #         "motion_address": motion_address,
-    #         "sm_terminator": sm_terminator,
-    #         "sm_baud": sm_baud,
-    #         "sm_address": sm_address,
-    #         "pcb_address": pcb_address,
-    #         "ignore_diodes": ignore_diodes,
-    #         "psu_address": psu_address,
-    #         "calibrate_psu": True,
-    #         "calibrate_psu_ch": float(self.b.get_object("psu_cal_ch").get_text()),
-    #     }
+        # send settings dict over mqtt
+        payload = json.dumps(settings) # TODO: could also use pickle here, which might be more general
+        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
 
-    #     # send settings dict over mqtt
-    #     payload = json.dumps(settings)
-    #     self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
+    def on_cal_red_led_button(self, button):
+        self.calibrate_psu('red')
 
+    def on_cal_blue_led_button(self, button):
+        self.calibrate_psu('blue')
+
+    def calibrate_psu(self, channel):
+        """Measure psu calibration photodiode."""
+        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        run_name = self.b.get_object("run_name").get_text()
+        destination = str(save_folder.joinpath(run_name))
+
+        motion_address = self.config["motion"]["address"]
+        sm_terminator = self.config["smu"]["terminator"]
+        sm_baud = int(self.config["smu"]["baud"])
+        sm_address = self.config["smu"]["address"]
+        pcb_address = motion_address
+        ignore_diodes = True
+        psu_address = self.config["psu"]["address"]
+
+        # TODO: this looks a bit fragile. I wonder if we can automate it...
+        settings = {
+            "destination": destination,
+            "operator": "",
+            "run_description": "",
+            "experimental_parameter": "",
+            "mqtt_host": self.MQTTHOST,
+            "position_override": self.config["stage"]["photodiode_offset"],
+            "motion_address": motion_address,
+            "sm_terminator": sm_terminator,
+            "sm_baud": sm_baud,
+            "sm_address": sm_address,
+            "pcb_address": pcb_address,
+            "ignore_diodes": ignore_diodes,
+            "psu_address": psu_address,
+            "calibrate_psu": True,
+            "calibrate_psu_ch": channel,
+        }
+
+        # send settings dict over mqtt
+        payload = json.dumps(settings)# TODO: could also use pickle here, which might be more general
+        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
+
+    # TODO: I think this function isn't needed if we pickle the objects we send over MQTT
     # def _get_layouts_str(self):
     #     """Read and format layouts from config file.
 
