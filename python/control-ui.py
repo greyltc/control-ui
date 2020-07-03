@@ -158,6 +158,7 @@ class App(Gtk.Application):
         self.ids = []
         self.numPix = 6
         self.approx_seconds_per_iv = 50
+        self.approx_seconds_per_eqe = 150
 
         galde_ui_xml_file_name = "ui.glade"
         gui_file = pathlib.Path(galde_ui_xml_file_name)
@@ -214,55 +215,66 @@ class App(Gtk.Application):
                 pass
 
         self.label_tree, self.label_store = self.setup_label_tree()
-        self.iv_dev_tree, self.iv_dev_store = self.setup_picker_tree()
-        self.eqe_dev_tree, self.eqe_dev_store = self.setup_picker_tree()
+
+        self.dev_store = [Gtk.TreeStore(str, bool, bool), Gtk.TreeStore(str, bool, bool)] # [iv devs, eqe devs]
+        self.setup_dev_stores()
+
+        self.dev_tree = self.b.get_object("devTV")
+        self.setup_dev_tree(self.dev_tree)
+
+        # TODO: do this in a non-obsolete way (probably w/ css)
+        fontdesc = Pango.FontDescription("monospace")
 
         max_devices = self.numPix * self.numSubstrates
         address_string_length = math.ceil(max_devices / 4)
         selection_box_length = 4 + address_string_length + 3
         default_on = "0x" + "F" * address_string_length
         default_off = "0x" + "0" * address_string_length
-        self.iv_dev_box = self.b.get_object("iv_devs")
-        self.eqe_dev_box = self.b.get_object("eqe_devs")
+        
         self.def_fmt_str = f"0{address_string_length}X"
 
-        # TODO: do this in a non-obsolete way (probably w/ css)
-        fontdesc = Pango.FontDescription("monospace")
+        self.iv_dev_box = self.b.get_object("iv_devs")
+        
+        self.last_valid_devs = [default_on, default_off] # [iv devs, eqe devs]
 
+        self.iv_dev_box = self.b.get_object("iv_devs")
         self.iv_dev_box.modify_font(fontdesc)
         self.iv_dev_box.set_text(default_on)
-        self.last_valid_iv_devs = default_on
-        self.last_valid_eqe_devs = default_off
         self.iv_dev_box.set_width_chars(selection_box_length)
         self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
+
+        self.eqe_dev_box = self.b.get_object("eqe_devs")
         self.eqe_dev_box.modify_font(fontdesc)
         self.eqe_dev_box.set_text(default_off)
         self.eqe_dev_box.set_width_chars(selection_box_length)
+        self.eqe_dev_box.set_icon_from_icon_name(0, "emblem-default")
 
-        self.po = self.b.get_object("iv_pop")
+        self.po = self.b.get_object("picker_po")
         self.po.set_position(Gtk.PositionType.BOTTOM)
+
         self.tick()
         self.ticker = self.timeout_id = GLib.timeout_add_seconds(1, self.tick, None)
         self.b.connect_signals(self)  # maps all ui callbacks to functions here
+    
+    def setup_dev_stores(self):
+        for store in self.dev_store:
+            checked = True
+            inconsistent = False
+            # fill in the model
+            for i in range(self.numSubstrates):
+                if self.label_store[i][0] == "":
+                    label = self.label_store[i][1]
+                else:
+                    label = self.label_store[i][0]
+                piter = store.append(None, [label, checked, inconsistent])
+                j = 1
+                while j <= self.numPix:
+                    store.append(piter, [f"Device {j}", checked, inconsistent])
+                    j += 1
 
-    def setup_picker_tree(self):
-        deviceTree = self.b.get_object("devTV")
-        devStore = Gtk.TreeStore(str, bool, bool)
-        checked = True
-        inconsistent = False
-        # fill in the model
-        for i in range(self.numSubstrates):
-            if self.label_store[i][0] == "":
-                label = self.label_store[i][1]
-            else:
-                label = self.label_store[i][0]
-            piter = devStore.append(None, [label, checked, inconsistent])
-            j = 1
-            while j <= self.numPix:
-                devStore.append(piter, [f"Device {j}", checked, inconsistent])
-                j += 1
 
-        deviceTree.set_model(devStore)
+    def setup_dev_tree(self, deviceTree):
+        #deviceTree.set_model(devStore)
         renderDesignator = Gtk.CellRendererText()
         # the first column is created
         designator = Gtk.TreeViewColumn("Substrate/Device", renderDesignator, text=0)
@@ -279,68 +291,72 @@ class App(Gtk.Application):
 
         deviceTree.connect("key-release-event", self.handle_dev_key)
 
-        return (deviceTree, devStore)
-
     # callback function for select/deselect device/substrate
-    def dev_toggle(self, widget, path):
+    def dev_toggle(self, toggle, path):
+        eqe = 'eqe' in Gtk.Buildable.get_name(self.po.get_relative_to())
         path_split = path.split(":")
         # the boolean value of the selected row
-        current_value = self.iv_dev_store[path][1]
+        current_value = self.dev_store[eqe][path][1]
         # change the boolean value of the selected row in the model
-        self.iv_dev_store[path][1] = not current_value
+        self.dev_store[eqe][path][1] = not current_value
         # new current value!
         current_value = not current_value
         # if length of the path is 1 (that is, if we are selecting a substrate)
         if len(path_split) == 1:
             # get the iter associated with the path
-            piter = self.iv_dev_store.get_iter(path)
-            self.iv_dev_store[piter][2] = False
+            piter = self.dev_store[eqe].get_iter(path)
+            self.dev_store[eqe][piter][2] = False
             # get the iter associated with its first child
-            citer = self.iv_dev_store.iter_children(piter)
+            citer = self.dev_store[eqe].iter_children(piter)
             # while there are children, change the state of their boolean value
             # to the value of the substrate
             while citer is not None:
-                self.iv_dev_store[citer][1] = current_value
-                citer = self.iv_dev_store.iter_next(citer)
+                self.dev_store[eqe][citer][1] = current_value
+                citer = self.dev_store[eqe].iter_next(citer)
         # if the length of the path is not 1 (that is, if we are selecting a
         # device)
         elif len(path_split) != 1:
             # get the first child of the parent of the substrate (device 1)
-            citer = self.iv_dev_store.get_iter(path)
-            piter = self.iv_dev_store.iter_parent(citer)
-            citer = self.iv_dev_store.iter_children(piter)
+            citer = self.dev_store[eqe].get_iter(path)
+            piter = self.dev_store[eqe].iter_parent(citer)
+            citer = self.dev_store[eqe].iter_children(piter)
             # check if all the children are selected
             num_selected = 0
             while citer is not None:
-                if self.iv_dev_store[citer][1] is True:
+                if self.dev_store[eqe][citer][1] is True:
                     num_selected = num_selected + 1
-                citer = self.iv_dev_store.iter_next(citer)
+                citer = self.dev_store[eqe].iter_next(citer)
             # if they do, the device as well is selected; otherwise it is not
             if num_selected == self.numPix:
-                self.iv_dev_store[piter][2] = False
-                self.iv_dev_store[piter][1] = True
+                self.dev_store[eqe][piter][2] = False
+                self.dev_store[eqe][piter][1] = True
             elif num_selected == 0:
-                self.iv_dev_store[piter][2] = False
-                self.iv_dev_store[piter][1] = False
+                self.dev_store[eqe][piter][2] = False
+                self.dev_store[eqe][piter][1] = False
             else:
-                self.iv_dev_store[piter][2] = True
+                self.dev_store[eqe][piter][2] = True
 
         # iterate through everything and build up the result
-        siter = self.iv_dev_store.get_iter("0")  # substrate iterator
+        siter = self.dev_store[eqe].get_iter("0")  # substrate iterator
         selection_bitmask = 0
         bit_location = 0
         while siter is not None:
-            diter = self.iv_dev_store.iter_children(siter)  # device iterator
+            diter = self.dev_store[eqe].iter_children(siter)  # device iterator
             while diter is not None:
-                if self.iv_dev_store[diter][1] is True:
+                if self.dev_store[eqe][diter][1] is True:
                     selection_bitmask = selection_bitmask + (1 << bit_location)
                 bit_location = bit_location + 1
-                diter = self.iv_dev_store.iter_next(diter)  # advance to the next device
-            siter = self.iv_dev_store.iter_next(siter)  # advance to the next substrate
+                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
+            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
+        
+        if (eqe):
+            self.eqe_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
+        else:
+            self.iv_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
 
-        self.iv_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
-
+    # change in a device text box value
     def on_devs_changed(self, editable, user_data=None):
+        eqe = 'eqe' in Gtk.Buildable.get_name(editable)
         valid = False
         text_is = editable.get_text()
         if len(text_is) == len(f"0x{0:{self.def_fmt_str}}"):
@@ -359,13 +375,17 @@ class App(Gtk.Application):
                 pass
 
         if valid is True:
-            self.last_valid_devs = text_is
+            self.last_valid_devs[eqe] = text_is
             editable.set_icon_from_icon_name(0, "emblem-default")
-            self.iv_measure_note(selection_bitmask)
+            if eqe:
+                self.measure_note(selection_bitmask, self.approx_seconds_per_eqe)
+            else:
+                self.measure_note(selection_bitmask, self.approx_seconds_per_iv)
         else:
             editable.set_icon_from_icon_name(0, "dialog-error")
 
     def on_devs_focus_out_event(self, widget, user_data=None):
+        eqe = 'eqe' in Gtk.Buildable.get_name(widget)
         text_is = widget.get_text()
         try:
             selection_bitmask = int(text_is, 16)
@@ -373,20 +393,19 @@ class App(Gtk.Application):
             if text_is == should_be:
                 return
             widget.set_text(should_be)
-            self.last_valid_devs = should_be
+            self.last_valid_devs[eqe] = should_be
         except:
-            widget.set_text(self.last_valid_devs)
-            lg.info(f"Bad device selection reverted")
+            widget.set_text(self.last_valid_devs[eqe])
+            lg.warn(f"Bad device selection reverted")
         widget.set_icon_from_icon_name(0, "emblem-default")
 
     # log message printer for device selection change
-    def iv_measure_note(self, selection_bitmask):
+    def measure_note(self, selection_bitmask, seconds_per):
         num_selected = sum([c == "1" for c in bin(selection_bitmask)])
-        lg.info(f"{num_selected} devices selected for I-V measurement")
         duration_string = humanize.naturaldelta(
-            dt.timedelta(seconds=self.approx_seconds_per_iv * num_selected)
+            dt.timedelta(seconds=seconds_per * num_selected)
         )
-        lg.info(f"Which might take {duration_string} to measure")
+        lg.info(f"{num_selected} devices selected for ~ {duration_string}")
 
     def setup_label_tree(self):
         labelTree = self.b.get_object("labelTree")
@@ -429,20 +448,23 @@ class App(Gtk.Application):
 
     # handles keystroke in the device selection tree
     def handle_dev_key(self, tv, event):
+        #eqe = 'eqe' in Gtk.Buildable.get_name(self.po.get_relative_to())
         keyname = Gdk.keyval_name(event.keyval)
         if keyname in ["Right", "Left"]:
-            path, col = self.iv_dev_tree.get_cursor()
-            if self.iv_dev_tree.row_expanded(path) is True:
-                self.iv_dev_tree.collapse_row(path)
+            path, col = self.dev_tree.get_cursor()
+            if self.dev_tree.row_expanded(path) is True:
+                self.dev_tree.collapse_row(path)
             else:
-                self.iv_dev_tree.expand_row(path, False)
+                self.dev_tree.expand_row(path, False)
 
     def store_substrate_label(self, widget, path, text):
         self.label_store[path][0] = text
         if text == "":
-            self.iv_dev_store[path][0] = self.label_store[path][1]
+            self.dev_store[0][path][0] = self.label_store[path][1]
+            self.dev_store[1][path][0] = self.label_store[path][1]
         else:
-            self.iv_dev_store[path][0] = self.label_store[path][0]
+            self.dev_store[0][path][0] = self.label_store[path][0]
+            self.dev_store[1][path][0] = self.label_store[path][0]
 
     # handle the auto iv toggle
     def on_autoiv_toggled(self, button, user_data=None):
@@ -542,11 +564,13 @@ class App(Gtk.Application):
     def on_debug_button(self, button):
         lg.debug("Hello World!")
 
-    def on_iv_devs_icon_release(self, entry, b, user_data=None):
-        sw = self.iv_dev_tree.get_parent()  # scroll window
+    def on_devs_icon_release(self, entry, icon, user_data=None):
+        eqe = 'eqe' in Gtk.Buildable.get_name(entry)
+        self.dev_tree.set_model(self.dev_store[eqe])
+        sw = self.dev_tree.get_parent()  # scroll window
         sw.set_min_content_height((self.numSubstrates + 1) * 25)
         if entry.get_icon_name(0) != "emblem-default":
-            entry.set_text(self.last_valid_devs)
+            entry.set_text(self.last_valid_devs[eqe])
         text_is = entry.get_text()
         selection_bitmask = int(text_is, 16)
 
@@ -554,31 +578,32 @@ class App(Gtk.Application):
         bin_mask_rev = bin_mask[::-1]
 
         # iterate through everything and build up the result
-        siter = self.iv_dev_store.get_iter("0")  # substrate iterator
+        siter = self.dev_store[eqe].get_iter("0")  # substrate iterator
         bit_location = 0
         while siter is not None:
             num_enabled = (
                 0  # keeps track of number of enabled devices on this substrate
             )
-            diter = self.iv_dev_store.iter_children(siter)  # device iterator
+            diter = self.dev_store[eqe].iter_children(siter)  # device iterator
             while diter is not None:
                 if (bit_location + 1 <= len(bin_mask_rev)) and (
                     bin_mask_rev[bit_location] == "1"
                 ):
-                    self.iv_dev_store[diter][1] = True
+                    self.dev_store[eqe][diter][1] = True
                     num_enabled = num_enabled + 1
                 else:
-                    self.iv_dev_store[diter][1] = False
+                    self.dev_store[eqe][diter][1] = False
                 bit_location = bit_location + 1
-                diter = self.iv_dev_store.iter_next(diter)  # advance to the next device
+                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
             if num_enabled == 0:
-                self.iv_dev_store[siter][1] = False  # set substrate off
+                self.dev_store[eqe][siter][1] = False  # set substrate off
             elif num_enabled == self.numPix:
-                self.iv_dev_store[siter][1] = True  # set substrate on
+                self.dev_store[eqe][siter][1] = True  # set substrate on
             else:
-                self.iv_dev_store[siter][2] = True  # set substrate inconsistant
-            siter = self.iv_dev_store.iter_next(siter)  # advance to the next substrate
-
+                self.dev_store[eqe][siter][2] = True  # set substrate inconsistant
+            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
+        
+        self.po.set_relative_to(entry)
         self.po.show_all()
         # lg.debug(sw.get_allocated_height())
         return True

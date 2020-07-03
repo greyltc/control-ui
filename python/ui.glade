@@ -317,6 +317,7 @@
                           <object class="GtkEntry" id="run_name_prefix">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">Prefix for the run name</property>
                             <property name="width_chars">20</property>
                             <property name="placeholder_text" translatable="yes">Missing run name prefix</property>
                             <signal name="changed" handler="update_run_name" swapped="no"/>
@@ -344,6 +345,7 @@
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">This number gets appended to the run name prefix to ensure unique run names</property>
                             <property name="editable">False</property>
                             <property name="width_chars">10</property>
                             <property name="input_purpose">digits</property>
@@ -370,6 +372,7 @@
                           <object class="GtkEntry" id="run_name">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">Run name</property>
                             <property name="editable">False</property>
                             <property name="width_chars">30</property>
                             <property name="truncate_multiline">True</property>
@@ -407,8 +410,8 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="halign">start</property>
-                                <property name="margin_left">5</property>
-                                <property name="margin_right">5</property>
+                                <property name="margin_start">5</property>
+                                <property name="margin_end">5</property>
                                 <property name="margin_top">5</property>
                                 <property name="margin_bottom">5</property>
                                 <property name="headers_clickable">False</property>
@@ -561,7 +564,7 @@
                                     <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose I-V devices</property>
                                     <signal name="changed" handler="on_devs_changed" swapped="no"/>
                                     <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
-                                    <signal name="icon-release" handler="on_iv_devs_icon_release" swapped="no"/>
+                                    <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
                                     <style>
                                       <class name="suggested-action"/>
                                     </style>
@@ -1019,8 +1022,8 @@
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="margin_left">5</property>
-                                <property name="margin_right">5</property>
+                                <property name="margin_start">5</property>
+                                <property name="margin_end">5</property>
                                 <property name="margin_top">5</property>
                                 <property name="margin_bottom">5</property>
                                 <property name="row_spacing">5</property>
@@ -1029,12 +1032,15 @@
                                   <object class="GtkEntry" id="eqe_devs">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="text">0xFFFF</property>
+                                    <property name="tooltip_text" translatable="yes">Hex bitmask indicating which devices to measure</property>
+                                    <property name="activates_default">True</property>
                                     <property name="secondary_icon_stock">gtk-execute</property>
                                     <property name="primary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">False</property>
                                     <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose EQE devices</property>
                                     <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose EQE devices</property>
+                                    <signal name="changed" handler="on_devs_changed" swapped="no"/>
+                                    <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
+                                    <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
                                     <style>
                                       <class name=".monospace"/>
                                     </style>
@@ -1715,6 +1721,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Save the state of the gui to a file</property>
             <property name="image">image3</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_save_button" swapped="no"/>
@@ -1722,10 +1729,11 @@
         </child>
         <child>
           <object class="GtkButton">
-            <property name="label">Open</property>
+            <property name="label">Load</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Load the state of the gui from a file</property>
             <property name="image">image2</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_open_button" swapped="no"/>
@@ -1740,6 +1748,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Stop and abort the measurement routine. Also immediately cuts power to the stage motor drivers. They will need to be re-homed later.</property>
             <property name="image">image5</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_stop_button" swapped="no"/>
@@ -1755,6 +1764,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Pause the measurement routine (the current task will run to completion before actually pausing)</property>
             <property name="image">image4</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_pause_button" swapped="no"/>
@@ -1770,6 +1780,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Run the measurement suite</property>
             <property name="image">image1</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_run_button" swapped="no"/>
@@ -1785,7 +1796,7 @@
       </object>
     </child>
   </object>
-  <object class="GtkPopover" id="iv_pop">
+  <object class="GtkPopover" id="picker_po">
     <property name="can_focus">False</property>
     <property name="relative_to">iv_devs</property>
     <child>
