@@ -596,33 +596,28 @@ class App(Gtk.Application):
         # TODO: generate photodiode message
 
     def on_save_button(self, button):
-        """Save current state of widget entries to a file.
-        #TODO: no parameters I think. this might need to spawn its own file picker dialog or something
-        Parameters
-        ----------
-        path : path or str
-            Save path.
-        """
-        data = {}
-        for id_str in self.ids:
-            data[id_str] = self.b.get_object(id_str).get_text()
+        """Save current state of widget entries to a file."""
+        save_dialog = Gtk.FileChooserNative(title="Pick a place to save to", transient_for=self.b.get_object("mainWindow"), action=Gtk.FileChooserAction.SAVE)
+        response = save_dialog.run()
+        if response == Gtk.ResponseType.ACCEPT:
+            data = {}
+            for id_str in self.ids:
+                data[id_str] = self.b.get_object(id_str).get_text()
 
-        with open(path, "w") as f:
-            json.dump(data, f)
+            with open(save_dialog.get_filename(), "w") as f:
+                json.dump(data, f)
 
     def on_open_button(self, button):
-        """Populate widget entries from data saved in a file.
-        #TODO: no parameters I think. this might need to spawn its own file picker dialog or something
-        Parameters
-        ----------
-        path : path or str
-            Path to open.
-        """
-        with open(path, "r") as f:
-            data = json.load(f)
+        """Populate widget entries from data saved in a file."""
+        open_dialog = Gtk.FileChooserNative(title="Pick a file to load from", transient_for=self.b.get_object("mainWindow"), action=Gtk.FileChooserAction.OPEN)
+        response = open_dialog.run()
+        if response == Gtk.ResponseType.ACCEPT:
+            with open(open_dialog.get_filename(), "r") as f:
+                data = json.load(f)
 
-        for key, value in data:
-            self.b.get_object(key).set_text(value)
+                for key, value in data:
+                    self.b.get_object(key).set_text(value)
+
     
     def on_connectivity_button(self, button):
         lg.info("Checking connectivity")
