@@ -46,7 +46,6 @@ lg.addHandler(ch)
 lg.addHandler(sysL)
 
 
-
 # Webkit.WebView()
 
 
@@ -82,7 +81,7 @@ class App(Gtk.Application):
     def __init__(self, *args, **kwargs):
         """Constructor."""
         self.cl_config = pathlib.Path()
-        config_file_name = '.measurement_configuration_file.ini'
+        config_file_name = "measurement_config.ini"
         self.config_file = pathlib.Path(config_file_name)
         super().__init__(
             *args,
@@ -103,43 +102,45 @@ class App(Gtk.Application):
 
         self.config = configparser.ConfigParser(
             interpolation=configparser.ExtendedInterpolation()
-            )
+        )
 
         # let's figure out where config.ini is
-        config_env_var = 'MEASUREMENT_CONFIGURATION_FILE_NAME'
+        config_env_var = "MEASUREMENT_CONFIGURATION_FILE_NAME"
         if config_env_var in os.environ:
             env_config = pathlib.Path(os.environ.get(config_env_var))
         else:
             env_config = pathlib.Path()
         home_config = pathlib.Path.home() / config_file_name
         local_config = pathlib.Path(config_file_name)
-        local_python_config = pathlib.Path('python') / config_file_name
-        config_ini = pathlib.Path('config.ini')
+        local_python_config = pathlib.Path("python") / config_file_name
+        config_ini = pathlib.Path("config.ini")
         if self.cl_config.is_file():  # priority 1: check the command line
             lg.debug("Using config file from command line")
             self.config_file = self.cl_config
-        elif env_config.is_file(): # priority 2: check the environment
+        elif env_config.is_file():  # priority 2: check the environment
             lg.debug(f"Using config file from {config_env_var} variable")
             self.config_file = env_config
-        elif home_config.is_file(): # priority 3: check in home dir
-            lg.debug(f"Using config file {config_file_name} in home dir: {pathlib.Path.home()}")
+        elif home_config.is_file():  # priority 3: check in home dir
+            lg.debug(
+                f"Using config file {config_file_name} in home dir: {pathlib.Path.home()}"
+            )
             self.config_file = home_config
-        elif local_config.is_file(): # priority 4: check in the current drectory
+        elif local_config.is_file():  # priority 4: check in the current drectory
             lg.debug(f"Using local config file {local_config.resolve()}")
             self.config_file = local_config
-        elif local_python_config.is_file(): # priority 5: check in python/
+        elif local_python_config.is_file():  # priority 5: check in python/
             lg.debug(f"Using local config file {local_python_config.resolve()}")
             self.config_file = local_python_config
-        elif config_ini.is_file(): # priority 6: check for ./config.ini
+        elif config_ini.is_file():  # priority 6: check for ./config.ini
             lg.debug(f"Using local config file {config_ini.resolve()}")
             self.config_file = config_ini
         else:  # and give up
-            lg.error('Unable to find a configuration file to load.')
-            raise(ValueError('No config file'))
+            lg.error("Unable to find a configuration file to load.")
+            raise (ValueError("No config file"))
 
         try:
             lg.debug(f"Parsing {self.config_file.resolve()}")
-            with open(self.config_file, 'r') as f:
+            with open(self.config_file, "r") as f:
                 for line in f:
                     lg.debug(line.rstrip())
             self.config.read(str(self.config_file))
@@ -518,11 +519,11 @@ class App(Gtk.Application):
         options = options.end().unpack()
 
         if len(options) > 0:
-            lg.debug(f'Got command line options: {options}')
+            lg.debug(f"Got command line options: {options}")
 
         if "config" in options:
             lg.debug(f'Config file given on command line: {str(options["config"])}')
-            self.cl_config = pathlib.Path(str(options['config']))
+            self.cl_config = pathlib.Path(str(options["config"]))
 
         self.activate()
         return 0
@@ -590,14 +591,18 @@ class App(Gtk.Application):
     def on_stop_button(self, button):
         lg.info("Stopping")
         # TODO: generate stop message
-    
+
     def on_pd_button(self, button):
         lg.info("Measuring photodiodes")
         # TODO: generate photodiode message
 
     def on_save_button(self, button):
         """Save current state of widget entries to a file."""
-        save_dialog = Gtk.FileChooserNative(title="Pick a place to save to", transient_for=self.b.get_object("mainWindow"), action=Gtk.FileChooserAction.SAVE)
+        save_dialog = Gtk.FileChooserNative(
+            title="Pick a place to save to",
+            transient_for=self.b.get_object("mainWindow"),
+            action=Gtk.FileChooserAction.SAVE,
+        )
         response = save_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
             data = {}
@@ -609,7 +614,11 @@ class App(Gtk.Application):
 
     def on_open_button(self, button):
         """Populate widget entries from data saved in a file."""
-        open_dialog = Gtk.FileChooserNative(title="Pick a file to load from", transient_for=self.b.get_object("mainWindow"), action=Gtk.FileChooserAction.OPEN)
+        open_dialog = Gtk.FileChooserNative(
+            title="Pick a file to load from",
+            transient_for=self.b.get_object("mainWindow"),
+            action=Gtk.FileChooserAction.OPEN,
+        )
         response = open_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
             with open(open_dialog.get_filename(), "r") as f:
@@ -618,11 +627,9 @@ class App(Gtk.Application):
                 for key, value in data:
                     self.b.get_object(key).set_text(value)
 
-    
     def on_connectivity_button(self, button):
         lg.info("Checking connectivity")
         # TODO: generate connectivity check routine message
-        
 
     def on_RTD_button(self, button):
         lg.info("Measuring RTD(s)")
@@ -631,11 +638,11 @@ class App(Gtk.Application):
     def on_health_button(self, button):
         lg.info("Checking health")
         # TODO: generate health check message
-    
+
     def on_home_button(self, button):
-        lg.info('Homing stage')
+        lg.info("Homing stage")
         # TODO: generate stage home message
-    
+
     def on_stage_read_button(self, button):
         lg.debug("Getting stage pos")
         # TODO: generate position request message
@@ -659,7 +666,7 @@ class App(Gtk.Application):
         i_t = float(self.b.get_object("iscdwell").get_text())
         mppt_t = float(self.b.get_object("mpptTime").get_text())
         mppt_params = self.b.get_object("mppt_params").get_text()
-        layout_index = 'TODO: get this from somewhere, the config file?' # TODO
+        layout_index = "TODO: get this from somewhere, the config file?"  # TODO
         light_recipe = self.b.get_object("light_recipe").get_text()
         light_address = self.config["wavelabs"]["address"]
         motion_address = self.config["motion"]["address"]
@@ -678,15 +685,15 @@ class App(Gtk.Application):
         psu_vs = [
             float(self.config["psu"]["ch1_voltage"]),
             float(self.config["psu"]["ch2_voltage"]),
-            float(self.config["psu"]["ch3_voltage"])
+            float(self.config["psu"]["ch3_voltage"]),
         ]
         psu_is = [
             float(self.b.get_object("gblc").get_text()),
             float(self.b.get_object("rblc").get_text()),
-            0
+            0,
         ]
         eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
-        eqe_ref_meas_path = "What's this?" # TODO
+        eqe_ref_meas_path = "What's this?"  # TODO
         eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
         eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
         eqe_start_wl = float(self.b.get_object("nmStart").get_text())
@@ -717,7 +724,7 @@ class App(Gtk.Application):
             "mppt_params": mppt_params,
             "light_recipe": light_recipe,
             "light_address": light_address,
-            "motion_address" : motion_address,
+            "motion_address": motion_address,
             "scan_points": scan_points,
             "scan_nplc": scan_nplc,
             "steadystate_nplc": steadystate_nplc,
@@ -741,7 +748,7 @@ class App(Gtk.Application):
             "eqe_num_wls": eqe_num_wls,
             "eqe_integration_time": eqe_integration_time,
             "eqe_grating_change_wls": eqe_grating_change_wls,
-            #"eqe_grating_change_wls": eqe_filter_change_wls,
+            # "eqe_grating_change_wls": eqe_filter_change_wls,
         }
 
         # add optional parameters if required
@@ -756,10 +763,14 @@ class App(Gtk.Application):
             settings["scan_end_override_2"] = scan_end_override_2
 
         # send settings dict over mqtt
-        payload = json.dumps(settings) # TODO: could also use pickle here, which might be more general
-        lg.debug('Run Payload:')
+        payload = json.dumps(
+            settings
+        )  # TODO: could also use pickle here, which might be more general
+        lg.debug("Run Payload:")
         lg.debug(payload)
-        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
+        self.mqttc.publish(
+            "gui", payload, qos=2
+        ).wait_for_publish()  # TODO: probably we don't wait for this
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""
@@ -783,15 +794,15 @@ class App(Gtk.Application):
         psu_vs = [
             float(self.config["psu"]["ch1_voltage"]),
             float(self.config["psu"]["ch2_voltage"]),
-            float(self.config["psu"]["ch3_voltage"])
+            float(self.config["psu"]["ch3_voltage"]),
         ]
         psu_is = [
             float(self.b.get_object("gblc").get_text()),
             float(self.b.get_object("rblc").get_text()),
-            0
+            0,
         ]
         eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
-        eqe_ref_meas_path = "TODO: what's this?" # TODO
+        eqe_ref_meas_path = "TODO: what's this?"  # TODO
         eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
         eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
         eqe_start_wl = float(self.b.get_object("nmStart").get_text())
@@ -834,18 +845,22 @@ class App(Gtk.Application):
             "eqe_num_wls": eqe_num_wls,
             "eqe_integration_time": eqe_integration_time,
             "eqe_grating_change_wls": eqe_grating_change_wls,
-            #"eqe_grating_change_wls": eqe_filter_change_wls,
+            # "eqe_grating_change_wls": eqe_filter_change_wls,
         }
 
         # send settings dict over mqtt
-        payload = json.dumps(settings) # TODO: could also use pickle here, which might be more general
-        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
+        payload = json.dumps(
+            settings
+        )  # TODO: could also use pickle here, which might be more general
+        self.mqttc.publish(
+            "gui", payload, qos=2
+        ).wait_for_publish()  # TODO: probably we don't wait for this
 
     def on_cal_red_led_button(self, button):
-        self.calibrate_psu('red')
+        self.calibrate_psu("red")
 
     def on_cal_blue_led_button(self, button):
-        self.calibrate_psu('blue')
+        self.calibrate_psu("blue")
 
     def calibrate_psu(self, channel):
         """Measure psu calibration photodiode."""
@@ -881,8 +896,12 @@ class App(Gtk.Application):
         }
 
         # send settings dict over mqtt
-        payload = json.dumps(settings)# TODO: could also use pickle here, which might be more general
-        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
+        payload = json.dumps(
+            settings
+        )  # TODO: could also use pickle here, which might be more general
+        self.mqttc.publish(
+            "gui", payload, qos=2
+        ).wait_for_publish()  # TODO: probably we don't wait for this
 
     # TODO: I think this function isn't needed if we pickle the objects we send over MQTT
     # def _get_layouts_str(self):
