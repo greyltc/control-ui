@@ -317,6 +317,7 @@
                           <object class="GtkEntry" id="run_name_prefix">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">Prefix for the run name</property>
                             <property name="width_chars">20</property>
                             <property name="placeholder_text" translatable="yes">Missing run name prefix</property>
                             <signal name="changed" handler="update_run_name" swapped="no"/>
@@ -344,6 +345,7 @@
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">This number gets appended to the run name prefix to ensure unique run names</property>
                             <property name="editable">False</property>
                             <property name="width_chars">10</property>
                             <property name="input_purpose">digits</property>
@@ -370,6 +372,7 @@
                           <object class="GtkEntry" id="run_name">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">Run name</property>
                             <property name="editable">False</property>
                             <property name="width_chars">30</property>
                             <property name="truncate_multiline">True</property>
@@ -407,8 +410,8 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="halign">start</property>
-                                <property name="margin_left">5</property>
-                                <property name="margin_right">5</property>
+                                <property name="margin_start">5</property>
+                                <property name="margin_end">5</property>
                                 <property name="margin_top">5</property>
                                 <property name="margin_bottom">5</property>
                                 <property name="headers_clickable">False</property>
@@ -469,20 +472,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="halign">end</property>
-                                    <property name="label" translatable="yes">Steady State V&lt;sub&gt;oc&lt;/sub&gt; Dwell Time:</property>
-                                    <property name="use_markup">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">0</property>
-                                    <property name="top_attach">3</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="constant_i_dwell">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">3.0</property>
@@ -534,7 +524,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="npl">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">1.00</property>
@@ -561,7 +551,7 @@
                                     <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose I-V devices</property>
                                     <signal name="changed" handler="on_devs_changed" swapped="no"/>
                                     <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
-                                    <signal name="icon-release" handler="on_iv_devs_icon_release" swapped="no"/>
+                                    <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
                                     <style>
                                       <class name="suggested-action"/>
                                     </style>
@@ -584,7 +574,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="mppt_dwell">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">30.0</property>
@@ -648,7 +638,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="constant_v_dwell">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="width_chars">0</property>
@@ -680,7 +670,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="halign">end</property>
-                                    <property name="label" translatable="yes">I-V Sweep Step Delay:</property>
+                                    <property name="label" translatable="yes">Step Delay:</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -688,7 +678,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="iv_step_delay">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">0.000</property>
@@ -720,7 +710,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="halign">end</property>
-                                    <property name="label" translatable="yes">I-V Sweep Steps:</property>
+                                    <property name="label" translatable="yes">Voltage Steps Per Sweep:</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -728,7 +718,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="iv_steps">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">101</property>
@@ -747,193 +737,193 @@
                                   <object class="GtkFrame">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="halign">end</property>
+                                    <property name="margin_start">5</property>
+                                    <property name="margin_end">5</property>
                                     <property name="label_xalign">0</property>
                                     <property name="shadow_type">etched-out</property>
                                     <child>
-                                      <object class="GtkAlignment">
+                                      <object class="GtkGrid">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="left_padding">12</property>
+                                        <property name="halign">end</property>
+                                        <property name="margin_start">5</property>
+                                        <property name="margin_end">5</property>
+                                        <property name="margin_top">5</property>
+                                        <property name="margin_bottom">5</property>
+                                        <property name="row_spacing">5</property>
+                                        <property name="column_spacing">5</property>
                                         <child>
-                                          <object class="GtkGrid">
+                                          <object class="GtkLabel">
                                             <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
                                             <property name="can_focus">False</property>
-                                            <property name="margin_left">5</property>
-                                            <property name="margin_right">5</property>
-                                            <property name="margin_top">5</property>
-                                            <property name="margin_bottom">5</property>
-                                            <property name="row_spacing">5</property>
-                                            <property name="column_spacing">5</property>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">start</property>
-                                                <property name="label" translatable="yes">[V]</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">2</property>
-                                                <property name="top_attach">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkSpinButton" id="sweep1_start">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="input_purpose">number</property>
-                                                <property name="adjustment">firstStart</property>
-                                                <property name="digits">3</property>
-                                                <property name="numeric">True</property>
-                                                <property name="value">1.2</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">1</property>
-                                                <property name="top_attach">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">end</property>
-                                                <property name="label" translatable="yes">First Sweep Start:</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">0</property>
-                                                <property name="top_attach">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">end</property>
-                                                <property name="label" translatable="yes">First Sweep End:</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">0</property>
-                                                <property name="top_attach">1</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">start</property>
-                                                <property name="label" translatable="yes">[V]</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">2</property>
-                                                <property name="top_attach">1</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">start</property>
-                                                <property name="label" translatable="yes">[V]</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">2</property>
-                                                <property name="top_attach">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">start</property>
-                                                <property name="label" translatable="yes">[V]</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">2</property>
-                                                <property name="top_attach">3</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">end</property>
-                                                <property name="label" translatable="yes">Second Sweep End:</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">0</property>
-                                                <property name="top_attach">3</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="halign">end</property>
-                                                <property name="label" translatable="yes">Second Sweep Start:</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">0</property>
-                                                <property name="top_attach">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkSpinButton" id="sweep1_end">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="input_purpose">number</property>
-                                                <property name="adjustment">firstEnd</property>
-                                                <property name="digits">3</property>
-                                                <property name="numeric">True</property>
-                                                <property name="value">-0.2</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">1</property>
-                                                <property name="top_attach">1</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkSpinButton" id="sweep2_start">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="input_purpose">number</property>
-                                                <property name="adjustment">secondStart</property>
-                                                <property name="digits">3</property>
-                                                <property name="numeric">True</property>
-                                                <property name="value">-0.2</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">1</property>
-                                                <property name="top_attach">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkSpinButton" id="sweep2_end">
-                                                <property name="visible">True</property>
-                                                <property name="sensitive">False</property>
-                                                <property name="can_focus">True</property>
-                                                <property name="text" translatable="yes">1.200</property>
-                                                <property name="input_purpose">number</property>
-                                                <property name="adjustment">secondEnd</property>
-                                                <property name="digits">3</property>
-                                                <property name="numeric">True</property>
-                                                <property name="value">1.2</property>
-                                              </object>
-                                              <packing>
-                                                <property name="left_attach">1</property>
-                                                <property name="top_attach">3</property>
-                                              </packing>
-                                            </child>
+                                            <property name="halign">start</property>
+                                            <property name="label" translatable="yes">[V]</property>
                                           </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="top_attach">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="sweep1_start">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="text" translatable="yes">1.200</property>
+                                            <property name="input_purpose">number</property>
+                                            <property name="adjustment">firstStart</property>
+                                            <property name="digits">3</property>
+                                            <property name="numeric">True</property>
+                                            <property name="value">1.2</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="top_attach">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">end</property>
+                                            <property name="label" translatable="yes">First Sweep Start:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">0</property>
+                                            <property name="top_attach">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">end</property>
+                                            <property name="label" translatable="yes">First Sweep End:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">0</property>
+                                            <property name="top_attach">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">start</property>
+                                            <property name="label" translatable="yes">[V]</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="top_attach">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">start</property>
+                                            <property name="label" translatable="yes">[V]</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="top_attach">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">start</property>
+                                            <property name="label" translatable="yes">[V]</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">2</property>
+                                            <property name="top_attach">3</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">end</property>
+                                            <property name="label" translatable="yes">Second Sweep End:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">0</property>
+                                            <property name="top_attach">3</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">end</property>
+                                            <property name="label" translatable="yes">Second Sweep Start:</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">0</property>
+                                            <property name="top_attach">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="sweep1_end">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="text" translatable="yes">-0.200</property>
+                                            <property name="input_purpose">number</property>
+                                            <property name="adjustment">firstEnd</property>
+                                            <property name="digits">3</property>
+                                            <property name="numeric">True</property>
+                                            <property name="value">-0.2</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="top_attach">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="sweep2_start">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="text" translatable="yes">-0.200</property>
+                                            <property name="input_purpose">number</property>
+                                            <property name="adjustment">secondStart</property>
+                                            <property name="digits">3</property>
+                                            <property name="numeric">True</property>
+                                            <property name="value">-0.2</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="top_attach">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="sweep2_end">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="text" translatable="yes">1.200</property>
+                                            <property name="input_purpose">number</property>
+                                            <property name="adjustment">secondEnd</property>
+                                            <property name="digits">3</property>
+                                            <property name="numeric">True</property>
+                                            <property name="value">1.2</property>
+                                          </object>
+                                          <packing>
+                                            <property name="left_attach">1</property>
+                                            <property name="top_attach">3</property>
+                                          </packing>
                                         </child>
                                       </object>
                                     </child>
@@ -979,6 +969,19 @@
                                   </packing>
                                 </child>
                                 <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="halign">end</property>
+                                    <property name="label" translatable="yes">Steady State V&lt;sub&gt;oc&lt;/sub&gt; Dwell Time:</property>
+                                    <property name="use_markup">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">0</property>
+                                    <property name="top_attach">3</property>
+                                  </packing>
+                                </child>
+                                <child>
                                   <placeholder/>
                                 </child>
                                 <child>
@@ -1019,8 +1022,8 @@
                               <object class="GtkGrid">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="margin_left">5</property>
-                                <property name="margin_right">5</property>
+                                <property name="margin_start">5</property>
+                                <property name="margin_end">5</property>
                                 <property name="margin_top">5</property>
                                 <property name="margin_bottom">5</property>
                                 <property name="row_spacing">5</property>
@@ -1029,12 +1032,15 @@
                                   <object class="GtkEntry" id="eqe_devs">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="text">0xFFFF</property>
+                                    <property name="tooltip_text" translatable="yes">Hex bitmask indicating which devices to measure</property>
+                                    <property name="activates_default">True</property>
                                     <property name="secondary_icon_stock">gtk-execute</property>
                                     <property name="primary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">False</property>
                                     <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose EQE devices</property>
                                     <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose EQE devices</property>
+                                    <signal name="changed" handler="on_devs_changed" swapped="no"/>
+                                    <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
+                                    <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
                                     <style>
                                       <class name=".monospace"/>
                                     </style>
@@ -1105,7 +1111,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="eqe_start">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">300</property>
@@ -1118,7 +1124,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="eqe_end">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">1100</property>
@@ -1233,7 +1239,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="eqe_bias">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="text" translatable="yes">0.00</property>
@@ -1272,7 +1278,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton">
+                                  <object class="GtkSpinButton" id="eqe_step">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="input_purpose">digits</property>
@@ -1297,7 +1303,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkComboBox">
+                                  <object class="GtkComboBox" id="eqe_int_t">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="model">eqe_in</property>
@@ -1715,6 +1721,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Save the state of the gui to a file</property>
             <property name="image">image3</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_save_button" swapped="no"/>
@@ -1722,10 +1729,11 @@
         </child>
         <child>
           <object class="GtkButton">
-            <property name="label">Open</property>
+            <property name="label">Load</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Load the state of the gui from a file</property>
             <property name="image">image2</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_open_button" swapped="no"/>
@@ -1740,6 +1748,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Stop and abort the measurement routine. Also immediately cuts power to the stage motor drivers. They will need to be re-homed later.</property>
             <property name="image">image5</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_stop_button" swapped="no"/>
@@ -1755,6 +1764,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Pause the measurement routine (the current task will run to completion before actually pausing)</property>
             <property name="image">image4</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_pause_button" swapped="no"/>
@@ -1770,6 +1780,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="tooltip_text" translatable="yes">Run the measurement suite</property>
             <property name="image">image1</property>
             <property name="always_show_image">True</property>
             <signal name="clicked" handler="on_run_button" swapped="no"/>
@@ -1785,7 +1796,7 @@
       </object>
     </child>
   </object>
-  <object class="GtkPopover" id="iv_pop">
+  <object class="GtkPopover" id="picker_po">
     <property name="can_focus">False</property>
     <property name="relative_to">iv_devs</property>
     <child>
