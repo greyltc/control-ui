@@ -3,12 +3,12 @@
 <interface>
   <requires lib="gtk+" version="3.20"/>
   <object class="GtkAdjustment" id="adjx">
-    <property name="upper">100</property>
+    <property name="upper">100000000000000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjy">
-    <property name="upper">100</property>
+    <property name="upper">100000000000000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -2091,17 +2091,22 @@
                               <object class="GtkBox">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="halign">center</property>
+                                <property name="valign">center</property>
+                                <property name="hexpand">True</property>
                                 <child>
                                   <object class="GtkSpinButton" id="goto_x">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="text" translatable="yes">0.0</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="width_chars">11</property>
+                                    <property name="caps_lock_warning">False</property>
                                     <property name="adjustment">adjx</property>
-                                    <property name="digits">1</property>
+                                    <property name="snap_to_ticks">True</property>
                                     <property name="numeric">True</property>
                                   </object>
                                   <packing>
-                                    <property name="expand">False</property>
+                                    <property name="expand">True</property>
                                     <property name="fill">True</property>
                                     <property name="position">0</property>
                                   </packing>
@@ -2110,20 +2115,22 @@
                                   <object class="GtkSpinButton" id="goto_y">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="text" translatable="yes">0.0</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="width_chars">11</property>
+                                    <property name="caps_lock_warning">False</property>
                                     <property name="adjustment">adjy</property>
-                                    <property name="digits">1</property>
+                                    <property name="snap_to_ticks">True</property>
                                     <property name="numeric">True</property>
                                   </object>
                                   <packing>
-                                    <property name="expand">False</property>
+                                    <property name="expand">True</property>
                                     <property name="fill">True</property>
                                     <property name="position">1</property>
                                   </packing>
                                 </child>
                               </object>
                               <packing>
-                                <property name="expand">False</property>
+                                <property name="expand">True</property>
                                 <property name="fill">True</property>
                                 <property name="position">1</property>
                               </packing>
@@ -2171,6 +2178,95 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">center</property>
+                            <property name="valign">center</property>
+                            <property name="orientation">vertical</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">EQE Bias Light Calibration</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="halign">center</property>
+                                <property name="valign">center</property>
+                                <property name="spacing">5</property>
+                                <child>
+                                  <object class="GtkButton">
+                                    <property name="label" translatable="yes">Channel 1</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                    <property name="image_position">top</property>
+                                    <property name="always_show_image">True</property>
+                                    <signal name="clicked" handler="on_cal_red_led_button" swapped="no"/>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton">
+                                    <property name="label" translatable="yes">Channel 2</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                    <property name="image_position">top</property>
+                                    <property name="always_show_image">True</property>
+                                    <signal name="clicked" handler="on_cal_blue_led_button" swapped="no"/>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton">
+                                    <property name="label" translatable="yes">Channel 3</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">2</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
                           <object class="GtkButton">
                             <property name="label" translatable="yes">Measure Photodiode Currents</property>
                             <property name="visible">True</property>
@@ -2198,44 +2294,6 @@
                             <property name="image_position">top</property>
                             <property name="always_show_image">True</property>
                             <signal name="clicked" handler="on_cal_eqe_button" swapped="no"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <object class="GtkButton">
-                            <property name="label" translatable="yes">Calibrate Red Bias LED</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="image_position">top</property>
-                            <property name="always_show_image">True</property>
-                            <signal name="clicked" handler="on_cal_red_led_button" swapped="no"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <object class="GtkButton">
-                            <property name="label" translatable="yes">Calibrate Blue Bias LED</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="image_position">top</property>
-                            <property name="always_show_image">True</property>
-                            <signal name="clicked" handler="on_cal_blue_led_button" swapped="no"/>
                           </object>
                         </child>
                       </object>
