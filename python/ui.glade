@@ -584,7 +584,7 @@
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="tooltip_text" translatable="yes">Measaurement routine that uses auto-detected and recommended settings</property>
-                                            <signal name="activate" handler="update_gui" swapped="no"/>
+                                            <signal name="state-set" handler="update_gui" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -714,7 +714,7 @@
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="halign">end</property>
-                                            <property name="label" translatable="yes">Auto Delay:</property>
+                                            <property name="label" translatable="yes">Auto Source Delay:</property>
                                             <property name="width_chars">14</property>
                                             <property name="xalign">1</property>
                                           </object>
@@ -730,7 +730,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="tooltip_text" translatable="yes">Let the sourcemeter choose the best source delay setting for any given measurement (recommended)</property>
                                             <property name="active">True</property>
-                                            <signal name="state-set" handler="on_ad_switch_state_set" swapped="no"/>
+                                            <signal name="state-set" handler="update_gui" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -863,6 +863,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">Amount of time for constant current measurement</property>
                                                     <property name="halign">start</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">3.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -925,6 +926,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_markup" translatable="yes">Current setpoint for constant current measurement (typically 0mA for V&lt;sub&gt;OC&lt;/sub&gt;)</property>
                                                     <property name="halign">start</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">0.000</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1015,6 +1017,7 @@
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">The start voltage value for the first I-V sweep</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">1.200</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1074,6 +1077,7 @@
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">The end voltage value for the first I-V sweep</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">-0.200</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1134,7 +1138,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">After the initial I-V sweep, do another one in the opposite direction (strongly recommended)</property>
                                                     <property name="active">True</property>
-                                                    <signal name="state-set" handler="on_return_switch_state_set" swapped="no"/>
+                                                    <signal name="state-set" handler="update_gui" swapped="no"/>
                                                   </object>
                                                   <packing>
                                                     <property name="expand">False</property>
@@ -1206,6 +1210,7 @@
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">Amount of time for constant voltage measurement</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">3.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1265,6 +1270,7 @@
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">Voltage setpoint for constant current measurement (typically 0mV for I&lt;sub&gt;SC&lt;/sub&gt;)</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">0.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1354,6 +1360,7 @@
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">Amount of time to track max power point for</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">30.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1414,6 +1421,7 @@
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">Advanced parameters to control the max power point tracker's algorithm</property>
                                                     <property name="margin_end">2</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="text" translatable="yes">basic://</property>
                                                   </object>
                                                   <packing>

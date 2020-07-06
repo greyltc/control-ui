@@ -883,7 +883,7 @@ class App(Gtk.Application):
     def on_smart_mode_activate(self, button):
         self.update_gui()
     
-    def update_gui(self):
+    def update_gui(self, *args):
         #lg.debug("Updating gui...")
         if self.b.get_object("ad_switch").get_active():
             self.b.get_object("sd_lab").set_sensitive(False)
@@ -900,12 +900,52 @@ class App(Gtk.Application):
             self.b.get_object("sweep_check").set_label('Step 2: I-V Sweeps')
         else:
             self.b.get_object("sweep_check").set_label('Step 2: I-V Sweep')
+        
+        me = self.b.get_object('i_dwell_check')
+        parent = me.get_parent()
+        if me.get_active():
+            for sib in parent.get_children():
+                sib.set_sensitive(True)
+        else:
+            for sib in parent.get_children():
+                sib.set_sensitive(False)
+            me.set_sensitive(True)
 
-    def on_ad_switch_state_set(self, switch, state):
-        self.update_gui()
+        me = self.b.get_object('sweep_check')
+        parent = me.get_parent()
+        if me.get_active():
+            for sib in parent.get_children():
+                sib.set_sensitive(True)
+        else:
+            for sib in parent.get_children():
+                sib.set_sensitive(False)
+            me.set_sensitive(True)
+        
+        me = self.b.get_object('v_dwell_check')
+        parent = me.get_parent()
+        if me.get_active():
+            for sib in parent.get_children():
+                sib.set_sensitive(True)
+        else:
+            for sib in parent.get_children():
+                sib.set_sensitive(False)
+            me.set_sensitive(True)
+
+        me = self.b.get_object('mppt_check')
+        parent = me.get_parent()
+        if me.get_active():
+            for sib in parent.get_children():
+                sib.set_sensitive(True)
+        else:
+            for sib in parent.get_children():
+                sib.set_sensitive(False)
+            me.set_sensitive(True)
+
+    #def on_ad_switch_state_set(self, switch, state):
+    #    self.update_gui()
     
-    def on_return_switch_state_set(self, switch, state):
-        self.update_gui()
+    #def on_return_switch_state_set(self, switch, state):
+    #    self.update_gui()
 
 
     def calibrate_psu(self, channel):
