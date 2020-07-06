@@ -884,7 +884,29 @@ class App(Gtk.Application):
         self.update_gui()
     
     def update_gui(self):
-        pass
+        #lg.debug("Updating gui...")
+        if self.b.get_object("ad_switch").get_active():
+            self.b.get_object("sd_lab").set_sensitive(False)
+            self.b.get_object("source_delay").set_sensitive(False)
+            self.b.get_object("source_delay").set_visibility(False)
+            self.b.get_object("sd_dt").set_sensitive(False)
+        else:
+            self.b.get_object("sd_lab").set_sensitive(True)
+            self.b.get_object("source_delay").set_sensitive(True)
+            self.b.get_object("source_delay").set_visibility(True)
+            self.b.get_object("sd_dt").set_sensitive(True)
+        
+        if self.b.get_object("return_switch").get_active():
+            self.b.get_object("sweep_check").set_label('Step 2: I-V Sweeps')
+        else:
+            self.b.get_object("sweep_check").set_label('Step 2: I-V Sweep')
+
+    def on_ad_switch_state_set(self, switch, state):
+        self.update_gui()
+    
+    def on_return_switch_state_set(self, switch, state):
+        self.update_gui()
+
 
     def calibrate_psu(self, channel):
         """Measure psu calibration photodiode."""

@@ -725,12 +725,12 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkSwitch">
+                                          <object class="GtkSwitch" id="ad_switch">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="tooltip_text" translatable="yes">Let the sourcemeter choose the best source delay setting for any given measurement (recommended)</property>
                                             <property name="active">True</property>
-                                            <signal name="activate" handler="update_gui" swapped="no"/>
+                                            <signal name="state-set" handler="on_ad_switch_state_set" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -789,7 +789,7 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkLabel">
+                                          <object class="GtkLabel" id="sd_dt">
                                             <property name="visible">True</property>
                                             <property name="sensitive">False</property>
                                             <property name="can_focus">False</property>
@@ -1129,11 +1129,12 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkSwitch">
+                                                  <object class="GtkSwitch" id="return_switch">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">After the initial I-V sweep, do another one in the opposite direction (strongly recommended)</property>
                                                     <property name="active">True</property>
+                                                    <signal name="state-set" handler="on_return_switch_state_set" swapped="no"/>
                                                   </object>
                                                   <packing>
                                                     <property name="expand">False</property>
