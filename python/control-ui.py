@@ -871,11 +871,20 @@ class App(Gtk.Application):
         payload = json.dumps(settings) # TODO: could also use pickle here, which might be more general
         self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
 
-    def on_cal_red_led_button(self, button):
-        self.calibrate_psu('red')
+    def on_cal_ch3_button(self, button):
+        self.calibrate_psu(3)
 
-    def on_cal_blue_led_button(self, button):
-        self.calibrate_psu('blue')
+    def on_cal_ch2_button(self, button):
+        self.calibrate_psu(2)
+    
+    def on_cal_ch1_button(self, button):
+        self.calibrate_psu(1)
+    
+    def on_smart_mode_activate(self, button):
+        self.update_gui()
+    
+    def update_gui(self):
+        pass
 
     def calibrate_psu(self, channel):
         """Measure psu calibration photodiode."""

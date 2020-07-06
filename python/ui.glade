@@ -4,20 +4,17 @@
   <requires lib="gtk+" version="3.20"/>
   <requires lib="webkit2gtk" version="2.12"/>
   <object class="GtkAdjustment" id="ch1_bias_light_adj">
-    <property name="lower">-1000</property>
-    <property name="upper">1000</property>
+    <property name="upper">3000</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
   </object>
   <object class="GtkAdjustment" id="ch2_bias_light_adj">
-    <property name="lower">-1000</property>
-    <property name="upper">1000</property>
+    <property name="upper">3000</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
   </object>
   <object class="GtkAdjustment" id="ch3_bias_light_adj">
-    <property name="lower">-1000</property>
-    <property name="upper">1000</property>
+    <property name="upper">3000</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
   </object>
@@ -130,13 +127,12 @@
   <object class="GtkImage" id="image1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">system-run-symbolic</property>
+    <property name="icon_name">media-playback-start-symbolic</property>
   </object>
   <object class="GtkImage" id="image2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">document-open-symbolic</property>
-    <property name="use_fallback">True</property>
   </object>
   <object class="GtkImage" id="image3">
     <property name="visible">True</property>
@@ -147,13 +143,11 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">media-playback-pause-symbolic</property>
-    <property name="use_fallback">True</property>
   </object>
   <object class="GtkImage" id="image5">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">media-playback-stop-symbolic</property>
-    <property name="use_fallback">True</property>
   </object>
   <object class="GtkAdjustment" id="iv_steps_adj">
     <property name="lower">3</property>
@@ -497,7 +491,7 @@
                                           <object class="GtkEntry" id="iv_devs">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full EQE measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
+                                            <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full I-V measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
                                             <property name="margin_start">2</property>
                                             <property name="margin_end">2</property>
                                             <property name="margin_bottom">2</property>
@@ -509,9 +503,6 @@
                                             <signal name="changed" handler="on_devs_changed" swapped="no"/>
                                             <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
                                             <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
-                                            <style>
-                                              <class name="suggested-action"/>
-                                            </style>
                                           </object>
                                         </child>
                                         <child type="label">
@@ -593,7 +584,7 @@
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="tooltip_text" translatable="yes">Measaurement routine that uses auto-detected and recommended settings</property>
-                                            <signal name="activate" handler="on_smart_mode_activate" swapped="no"/>
+                                            <signal name="activate" handler="update_gui" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -739,7 +730,7 @@
                                             <property name="can_focus">True</property>
                                             <property name="tooltip_text" translatable="yes">Let the sourcemeter choose the best source delay setting for any given measurement (recommended)</property>
                                             <property name="active">True</property>
-                                            <signal name="activate" handler="on_auto_delay_activate" swapped="no"/>
+                                            <signal name="activate" handler="update_gui" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -979,7 +970,7 @@
                                             <property name="tooltip_markup" translatable="yes">Enable measurement routine step 1 (typically a steady state V&lt;sub&gt;OC&lt;/sub&gt; measurement)</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step1_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
@@ -1160,7 +1151,7 @@
                                           </object>
                                         </child>
                                         <child type="label">
-                                          <object class="GtkCheckButton" id="sweep_a_check">
+                                          <object class="GtkCheckButton" id="sweep_check">
                                             <property name="label" translatable="yes">Step 2: I-V Sweeps</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
@@ -1168,7 +1159,7 @@
                                             <property name="tooltip_text" translatable="yes">Enable measurement routine step 2, I-V sweep(s)</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step2_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
@@ -1317,7 +1308,7 @@
                                             <property name="tooltip_text" translatable="yes">Enable measurement routine step 3 (typically a steady state I&lt;sub&gt;SC&lt;/sub&gt; measurement)</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step3_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
@@ -1448,7 +1439,7 @@
                                             <property name="tooltip_text" translatable="yes">Enable measurement routine step 4, continuous tracking of maximum power point</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step4_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
@@ -1508,7 +1499,7 @@
                                       <object class="GtkEntry" id="eqe_devs">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full I-V measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
+                                        <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full EQE measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
                                         <property name="margin_start">2</property>
                                         <property name="margin_end">2</property>
                                         <property name="margin_bottom">2</property>
@@ -1713,7 +1704,7 @@
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="halign">end</property>
-                                        <property name="label" translatable="yes">Integration Time:</property>
+                                        <property name="label" translatable="yes">Time Constant:</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -1724,7 +1715,7 @@
                                       <object class="GtkComboBox" id="eqe_int_">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="tooltip_text" translatable="yes">Lock-In measurement time.  Larger values yield more precise measurements.</property>
+                                        <property name="tooltip_text" translatable="yes">Lock-in time constant. Larger values filter noise more effectively.</property>
                                         <property name="model">eqe_in</property>
                                         <property name="active">10</property>
                                         <child>
@@ -1787,7 +1778,6 @@
                                                 <property name="caps_lock_warning">False</property>
                                                 <property name="input_purpose">number</property>
                                                 <property name="adjustment">ch1_bias_light_adj</property>
-                                                <property name="digits">1</property>
                                                 <property name="numeric">True</property>
                                               </object>
                                               <packing>
@@ -1844,7 +1834,6 @@
                                                 <property name="caps_lock_warning">False</property>
                                                 <property name="input_purpose">number</property>
                                                 <property name="adjustment">ch2_bias_light_adj</property>
-                                                <property name="digits">1</property>
                                                 <property name="numeric">True</property>
                                               </object>
                                               <packing>
@@ -1901,7 +1890,6 @@
                                                 <property name="caps_lock_warning">False</property>
                                                 <property name="input_purpose">number</property>
                                                 <property name="adjustment">ch3_bias_light_adj</property>
-                                                <property name="digits">1</property>
                                                 <property name="numeric">True</property>
                                               </object>
                                               <packing>
@@ -2164,7 +2152,7 @@
                                     <property name="receives_default">True</property>
                                     <property name="image_position">top</property>
                                     <property name="always_show_image">True</property>
-                                    <signal name="clicked" handler="on_cal_red_led_button" swapped="no"/>
+                                    <signal name="clicked" handler="on_cal_ch1_button" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
