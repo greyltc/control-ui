@@ -21,13 +21,13 @@ import json
 
 # os.environ["DEBUSSY"] = "1"
 
-# gi.require_version('WebKit2', '4.0')
+gi.require_version('WebKit2', '4.0')
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
 # Gdk.set_allowed_backends('broadway')
-# from gi.repository.WebKit2 import WebView, Settings
+from gi.repository.WebKit2 import WebView, Settings
 # gi.require_version('WebKit2', '4.0')
 # from gi.repository import WebKit2 as Webkit
 
@@ -155,10 +155,11 @@ class App(Gtk.Application):
 
         self.main_win = None
         self.b = None
-        self.ids = []
+        self.ids = [] # ids of objects to save/load
         self.numPix = 6
         self.approx_seconds_per_iv = 50
         self.approx_seconds_per_eqe = 150
+        self.live_data_uri = "https://userinyerface.com/"
 
         galde_ui_xml_file_name = "ui.glade"
         gui_file = pathlib.Path(galde_ui_xml_file_name)
@@ -255,6 +256,10 @@ class App(Gtk.Application):
         self.tick()
         self.ticker = self.timeout_id = GLib.timeout_add_seconds(1, self.tick, None)
         self.b.connect_signals(self)  # maps all ui callbacks to functions here
+
+        wv = self.b.get_object('wv')
+        if self.live_data_uri != '':
+            wv.load_uri(self.live_data_uri)
     
     def setup_dev_stores(self):
         for store in self.dev_store:
