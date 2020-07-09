@@ -2,31 +2,19 @@
 <!-- Generated with glade 3.36.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <object class="GtkAdjustment" id="adjx">
-    <property name="upper">100000000000000</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjy">
-    <property name="upper">100000000000000</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
+  <requires lib="webkit2gtk" version="2.12"/>
   <object class="GtkAdjustment" id="ch1_bias_light_adj">
-    <property name="lower">-1000</property>
-    <property name="upper">1000</property>
+    <property name="upper">3000</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
   </object>
   <object class="GtkAdjustment" id="ch2_bias_light_adj">
-    <property name="lower">-1000</property>
-    <property name="upper">1000</property>
+    <property name="upper">3000</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
   </object>
   <object class="GtkAdjustment" id="ch3_bias_light_adj">
-    <property name="lower">-1000</property>
-    <property name="upper">1000</property>
+    <property name="upper">3000</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
   </object>
@@ -124,20 +112,6 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="firstEnd">
-    <property name="lower">-10</property>
-    <property name="upper">10</property>
-    <property name="value">-0.2</property>
-    <property name="step_increment">0.1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="firstStart">
-    <property name="lower">-10</property>
-    <property name="upper">10</property>
-    <property name="value">1.2</property>
-    <property name="step_increment">0.1</property>
-    <property name="page_increment">10</property>
-  </object>
   <object class="GtkAdjustment" id="i_dwell_adj">
     <property name="upper">500000000</property>
     <property name="value">3</property>
@@ -153,13 +127,12 @@
   <object class="GtkImage" id="image1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">system-run-symbolic</property>
+    <property name="icon_name">media-playback-start-symbolic</property>
   </object>
   <object class="GtkImage" id="image2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">document-open-symbolic</property>
-    <property name="use_fallback">True</property>
   </object>
   <object class="GtkImage" id="image3">
     <property name="visible">True</property>
@@ -170,18 +143,11 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">media-playback-pause-symbolic</property>
-    <property name="use_fallback">True</property>
   </object>
   <object class="GtkImage" id="image5">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">media-playback-stop-symbolic</property>
-    <property name="use_fallback">True</property>
-  </object>
-  <object class="GtkAdjustment" id="iv_step_delay_adj">
-    <property name="upper">999999</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="iv_steps_adj">
     <property name="lower">3</property>
@@ -196,17 +162,17 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="nmStart">
-    <property name="lower">300</property>
-    <property name="upper">1500</property>
-    <property name="value">300</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="nmWidth">
+  <object class="GtkAdjustment" id="nm_size_adj">
     <property name="lower">1</property>
     <property name="upper">100</property>
     <property name="value">10</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="nm_start_adj">
+    <property name="lower">300</property>
+    <property name="upper">1500</property>
+    <property name="value">300</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -254,17 +220,33 @@
       </object>
     </child>
   </object>
-  <object class="GtkAdjustment" id="secondEnd">
-    <property name="lower">-10</property>
-    <property name="upper">10</property>
-    <property name="value">1.2</property>
-    <property name="step_increment">0.1</property>
+  <object class="GtkAdjustment" id="source_delay_adj">
+    <property name="upper">999999</property>
+    <property name="value">3</property>
+    <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="secondStart">
+  <object class="GtkAdjustment" id="stage_x_adj">
+    <property name="upper">100000000000000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="stage_y_adj">
+    <property name="upper">100000000000000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="sweep_end_adj">
     <property name="lower">-10</property>
     <property name="upper">10</property>
     <property name="value">-0.2</property>
+    <property name="step_increment">0.1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="sweep_start_adj">
+    <property name="lower">-10</property>
+    <property name="upper">10</property>
+    <property name="value">1.2</property>
     <property name="step_increment">0.1</property>
     <property name="page_increment">10</property>
   </object>
@@ -440,6 +422,7 @@
                           <object class="GtkFrame">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Enter custom labels for individual substrates here</property>
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
                             <child>
@@ -508,7 +491,7 @@
                                           <object class="GtkEntry" id="iv_devs">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="tooltip_text" translatable="yes">Hex bitmask indicating which devices to measure</property>
+                                            <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full I-V measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
                                             <property name="margin_start">2</property>
                                             <property name="margin_end">2</property>
                                             <property name="margin_bottom">2</property>
@@ -516,13 +499,10 @@
                                             <property name="secondary_icon_stock">gtk-execute</property>
                                             <property name="primary_icon_activatable">False</property>
                                             <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose I-V devices</property>
-                                            <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose I-V devices</property>
+                                            <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose devices for I-V measurement</property>
                                             <signal name="changed" handler="on_devs_changed" swapped="no"/>
                                             <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
                                             <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
-                                            <style>
-                                              <class name="suggested-action"/>
-                                            </style>
                                           </object>
                                         </child>
                                         <child type="label">
@@ -562,6 +542,8 @@
                                           <object class="GtkEntry" id="light_recipe">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
+                                            <property name="tooltip_text" translatable="yes">This must match the name of a recipe in the solar sim's control software</property>
+                                            <property name="margin_end">2</property>
                                             <property name="text" translatable="yes">AM1.5_1.0SUN</property>
                                             <property name="caps_lock_warning">False</property>
                                           </object>
@@ -601,7 +583,8 @@
                                           <object class="GtkSwitch" id="smart_mode">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <signal name="activate" handler="on_smart_mode_activate" swapped="no"/>
+                                            <property name="tooltip_text" translatable="yes">Measaurement routine that uses auto-detected and recommended settings</property>
+                                            <signal name="state-set" handler="update_gui" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -640,6 +623,7 @@
                                           <object class="GtkSpinButton" id="nplc">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
+                                            <property name="tooltip_text" translatable="yes">Integration time for each measurement the sourcemeter makes, given in number of power line cycles. Larger values yield more precise measurements which take longer to make. Values below 1.0 are not recommended.</property>
                                             <property name="width_chars">7</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="input_purpose">number</property>
@@ -698,6 +682,7 @@
                                           <object class="GtkSpinButton" id="iv_steps">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
+                                            <property name="tooltip_text" translatable="yes">Number of voltage steps taken during I-V sweeps</property>
                                             <property name="width_chars">7</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="input_purpose">number</property>
@@ -729,7 +714,7 @@
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="halign">end</property>
-                                            <property name="label" translatable="yes">Sweep Step Delay:</property>
+                                            <property name="label" translatable="yes">Auto Source Delay:</property>
                                             <property name="width_chars">14</property>
                                             <property name="xalign">1</property>
                                           </object>
@@ -740,15 +725,62 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkSpinButton" id="iv_step_delay">
+                                          <object class="GtkSwitch" id="ad_switch">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
+                                            <property name="tooltip_text" translatable="yes">Let the sourcemeter choose the best source delay setting for any given measurement (recommended)</property>
+                                            <property name="active">True</property>
+                                            <signal name="state-set" handler="update_gui" swapped="no"/>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">5</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkBox">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="spacing">5</property>
+                                        <child>
+                                          <object class="GtkLabel" id="sd_lab">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="halign">end</property>
+                                            <property name="label" translatable="yes">Source Delay:</property>
+                                            <property name="width_chars">14</property>
+                                            <property name="xalign">1</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkSpinButton" id="source_delay">
+                                            <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="tooltip_text" translatable="yes">The time between when the source changes values and when a measurement begins (settling time). Only use values below 3 ms if you know exactly what that means (strongly not recommended). Typically used to slow down I-V sweeps, but consider increasing sweep step count or NPLC for this instead.</property>
+                                            <property name="visibility">False</property>
+                                            <property name="invisible_char">-</property>
                                             <property name="width_chars">7</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="input_purpose">number</property>
-                                            <property name="adjustment">iv_step_delay_adj</property>
+                                            <property name="adjustment">source_delay_adj</property>
                                             <property name="digits">1</property>
                                             <property name="numeric">True</property>
+                                            <property name="value">3</property>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -757,8 +789,9 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkLabel">
+                                          <object class="GtkLabel" id="sd_dt">
                                             <property name="visible">True</property>
+                                            <property name="sensitive">False</property>
                                             <property name="can_focus">False</property>
                                             <property name="halign">start</property>
                                             <property name="label" translatable="yes">[ms]</property>
@@ -773,7 +806,7 @@
                                       <packing>
                                         <property name="expand">False</property>
                                         <property name="fill">True</property>
-                                        <property name="position">5</property>
+                                        <property name="position">6</property>
                                       </packing>
                                     </child>
                                   </object>
@@ -828,7 +861,9 @@
                                                     <property name="height_request">-1</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">Amount of time for constant current measurement</property>
                                                     <property name="halign">start</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">3.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -884,12 +919,14 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkSpinButton" id="i_dwell_value">
+                                                  <object class="GtkSpinButton" id="i_dwell_value_ma">
                                                     <property name="width_request">-1</property>
                                                     <property name="height_request">-1</property>
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
+                                                    <property name="tooltip_markup" translatable="yes">Current setpoint for constant current measurement (typically 0mA for V&lt;sub&gt;OC&lt;/sub&gt;)</property>
                                                     <property name="halign">start</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">0.000</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -932,9 +969,10 @@
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
+                                            <property name="tooltip_markup" translatable="yes">Enable measurement routine step 1 (typically a steady state V&lt;sub&gt;OC&lt;/sub&gt; measurement)</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step1_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
@@ -975,14 +1013,16 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkSpinButton" id="sweep1_start">
+                                                  <object class="GtkSpinButton" id="sweep_start">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">The start voltage value for the first I-V sweep</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">1.200</property>
                                                     <property name="caps_lock_warning">False</property>
                                                     <property name="input_purpose">number</property>
-                                                    <property name="adjustment">firstStart</property>
+                                                    <property name="adjustment">sweep_start_adj</property>
                                                     <property name="digits">3</property>
                                                     <property name="numeric">True</property>
                                                     <property name="value">1.2</property>
@@ -1033,14 +1073,16 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkSpinButton" id="sweep1_end">
+                                                  <object class="GtkSpinButton" id="sweep_end">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">The end voltage value for the first I-V sweep</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">-0.200</property>
                                                     <property name="caps_lock_warning">False</property>
                                                     <property name="input_purpose">number</property>
-                                                    <property name="adjustment">firstEnd</property>
+                                                    <property name="adjustment">sweep_end_adj</property>
                                                     <property name="digits">3</property>
                                                     <property name="numeric">True</property>
                                                     <property name="value">-0.2</property>
@@ -1071,17 +1113,58 @@
                                                 <property name="position">1</property>
                                               </packing>
                                             </child>
+                                            <child>
+                                              <object class="GtkBox">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="spacing">5</property>
+                                                <child>
+                                                  <object class="GtkLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">Return Sweep:</property>
+                                                    <property name="width_chars">14</property>
+                                                    <property name="xalign">1</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">0</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkSwitch" id="return_switch">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">After the initial I-V sweep, do another one in the opposite direction (strongly recommended)</property>
+                                                    <property name="active">True</property>
+                                                    <signal name="state-set" handler="update_gui" swapped="no"/>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">1</property>
+                                                  </packing>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">2</property>
+                                              </packing>
+                                            </child>
                                           </object>
                                         </child>
                                         <child type="label">
-                                          <object class="GtkCheckButton" id="sweep_a_check">
-                                            <property name="label" translatable="yes">Step 2: I-V Sweep A</property>
+                                          <object class="GtkCheckButton" id="sweep_check">
+                                            <property name="label" translatable="yes">Step 2: I-V Sweeps</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
+                                            <property name="tooltip_text" translatable="yes">Enable measurement routine step 2, I-V sweep(s)</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step2_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
@@ -1123,9 +1206,11 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkSpinButton" id="constant_v_dwell">
+                                                  <object class="GtkSpinButton" id="v_dwell">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">Amount of time for constant voltage measurement</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">3.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1181,9 +1266,11 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkSpinButton">
+                                                  <object class="GtkSpinButton" id="v_dwell_value_mv">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">Voltage setpoint for constant current measurement (typically 0mV for I&lt;sub&gt;SC&lt;/sub&gt;)</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">0.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1225,9 +1312,10 @@
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
+                                            <property name="tooltip_text" translatable="yes">Enable measurement routine step 3 (typically a steady state I&lt;sub&gt;SC&lt;/sub&gt; measurement)</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step3_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
@@ -1235,151 +1323,6 @@
                                         <property name="expand">False</property>
                                         <property name="fill">True</property>
                                         <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkFrame">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="label_xalign">0</property>
-                                        <child>
-                                          <object class="GtkBox">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="margin_bottom">2</property>
-                                            <property name="orientation">vertical</property>
-                                            <child>
-                                              <object class="GtkBox">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="spacing">5</property>
-                                                <child>
-                                                  <object class="GtkLabel">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">Start:</property>
-                                                    <property name="width_chars">14</property>
-                                                    <property name="xalign">1</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">0</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkSpinButton" id="sweep2_start">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">True</property>
-                                                    <property name="width_chars">7</property>
-                                                    <property name="text" translatable="yes">-0.200</property>
-                                                    <property name="caps_lock_warning">False</property>
-                                                    <property name="input_purpose">number</property>
-                                                    <property name="adjustment">secondStart</property>
-                                                    <property name="digits">3</property>
-                                                    <property name="numeric">True</property>
-                                                    <property name="value">-0.1999999999999993</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">1</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkLabel">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">[V]</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">2</property>
-                                                  </packing>
-                                                </child>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkBox">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="spacing">5</property>
-                                                <child>
-                                                  <object class="GtkLabel">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">End:</property>
-                                                    <property name="width_chars">14</property>
-                                                    <property name="xalign">1</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">0</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkSpinButton" id="sweep2_end">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">True</property>
-                                                    <property name="width_chars">7</property>
-                                                    <property name="text" translatable="yes">1.200</property>
-                                                    <property name="caps_lock_warning">False</property>
-                                                    <property name="input_purpose">number</property>
-                                                    <property name="adjustment">secondEnd</property>
-                                                    <property name="digits">3</property>
-                                                    <property name="numeric">True</property>
-                                                    <property name="value">1.2</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">1</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkLabel">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">[V]</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">2</property>
-                                                  </packing>
-                                                </child>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                        </child>
-                                        <child type="label">
-                                          <object class="GtkCheckButton" id="sweep_b_check">
-                                            <property name="label" translatable="yes">Step 4: I-V Sweep B</property>
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="receives_default">False</property>
-                                            <property name="active">True</property>
-                                            <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step4_toggle" swapped="no"/>
-                                          </object>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">3</property>
                                       </packing>
                                     </child>
                                     <child>
@@ -1416,6 +1359,8 @@
                                                   <object class="GtkSpinButton" id="mppt_dwell">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">Amount of time to track max power point for</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">30.0</property>
                                                     <property name="caps_lock_warning">False</property>
@@ -1474,8 +1419,9 @@
                                                   <object class="GtkEntry" id="mppt_params">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
-                                                    <property name="margin_right">2</property>
+                                                    <property name="tooltip_text" translatable="yes">Advanced parameters to control the max power point tracker's algorithm</property>
                                                     <property name="margin_end">2</property>
+                                                    <property name="invisible_char">-</property>
                                                     <property name="text" translatable="yes">basic://</property>
                                                   </object>
                                                   <packing>
@@ -1495,20 +1441,21 @@
                                         </child>
                                         <child type="label">
                                           <object class="GtkCheckButton" id="mppt_check">
-                                            <property name="label" translatable="yes">Step 5: Maximum Power Point Tracking</property>
+                                            <property name="label" translatable="yes">Step 4: Maximum Power Point Tracking</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
+                                            <property name="tooltip_text" translatable="yes">Enable measurement routine step 4, continuous tracking of maximum power point</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="step5_toggle" swapped="no"/>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
                                           </object>
                                         </child>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
                                         <property name="fill">True</property>
-                                        <property name="position">4</property>
+                                        <property name="position">3</property>
                                       </packing>
                                     </child>
                                   </object>
@@ -1561,7 +1508,7 @@
                                       <object class="GtkEntry" id="eqe_devs">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="tooltip_text" translatable="yes">Hex bitmask indicating which devices to measure</property>
+                                        <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full EQE measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
                                         <property name="margin_start">2</property>
                                         <property name="margin_end">2</property>
                                         <property name="margin_bottom">2</property>
@@ -1655,7 +1602,7 @@
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="caps_lock_warning">False</property>
-                                        <property name="adjustment">nmStart</property>
+                                        <property name="adjustment">nm_start_adj</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
                                         <property name="value">300</property>
@@ -1706,9 +1653,10 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkSpinButton" id="eqe_bias">
+                                      <object class="GtkSpinButton" id="eqe_bias_mv">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">Voltage to apply to device during EQE sweep</property>
                                         <property name="input_purpose">number</property>
                                         <property name="adjustment">eqe_dev_bias_adj</property>
                                         <property name="digits">3</property>
@@ -1747,6 +1695,7 @@
                                       <object class="GtkSpinButton" id="eqe_step">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">EQE wavelength sweep step size</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
                                         <property name="adjustment">nm_step_adj</property>
@@ -1764,7 +1713,7 @@
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="halign">end</property>
-                                        <property name="label" translatable="yes">Integration Time:</property>
+                                        <property name="label" translatable="yes">Time Constant:</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -1772,9 +1721,10 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkComboBox" id="eqe_int_t">
+                                      <object class="GtkComboBox" id="eqe_int_">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Lock-in time constant. Larger values filter noise more effectively.</property>
                                         <property name="model">eqe_in</property>
                                         <property name="active">10</property>
                                         <child>
@@ -1829,14 +1779,14 @@
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkSpinButton">
+                                              <object class="GtkSpinButton" id="chan1_ma">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="tooltip_text" translatable="yes">Current through EQE light bias LED connected to power supply channel 1</property>
                                                 <property name="width_chars">7</property>
                                                 <property name="caps_lock_warning">False</property>
                                                 <property name="input_purpose">number</property>
                                                 <property name="adjustment">ch1_bias_light_adj</property>
-                                                <property name="digits">1</property>
                                                 <property name="numeric">True</property>
                                               </object>
                                               <packing>
@@ -1885,14 +1835,14 @@
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkSpinButton">
+                                              <object class="GtkSpinButton" id="chan2_ma">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="tooltip_text" translatable="yes">Current through EQE light bias LED connected to power supply channel 2</property>
                                                 <property name="width_chars">7</property>
                                                 <property name="caps_lock_warning">False</property>
                                                 <property name="input_purpose">number</property>
                                                 <property name="adjustment">ch2_bias_light_adj</property>
-                                                <property name="digits">1</property>
                                                 <property name="numeric">True</property>
                                               </object>
                                               <packing>
@@ -1941,14 +1891,14 @@
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkSpinButton">
+                                              <object class="GtkSpinButton" id="chan3_ma">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
+                                                <property name="tooltip_text" translatable="yes">Current through EQE light bias LED connected to power supply channel 2</property>
                                                 <property name="width_chars">7</property>
                                                 <property name="caps_lock_warning">False</property>
                                                 <property name="input_purpose">number</property>
                                                 <property name="adjustment">ch3_bias_light_adj</property>
-                                                <property name="digits">1</property>
                                                 <property name="numeric">True</property>
                                               </object>
                                               <packing>
@@ -2018,7 +1968,6 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="name">page0</property>
                     <property name="title" translatable="yes">Run Setup</property>
                   </packing>
                 </child>
@@ -2101,7 +2050,7 @@
                                     <property name="hexpand">True</property>
                                     <property name="width_chars">11</property>
                                     <property name="caps_lock_warning">False</property>
-                                    <property name="adjustment">adjx</property>
+                                    <property name="adjustment">stage_x_adj</property>
                                     <property name="snap_to_ticks">True</property>
                                     <property name="numeric">True</property>
                                   </object>
@@ -2118,7 +2067,7 @@
                                     <property name="hexpand">True</property>
                                     <property name="width_chars">11</property>
                                     <property name="caps_lock_warning">False</property>
-                                    <property name="adjustment">adjy</property>
+                                    <property name="adjustment">stage_y_adj</property>
                                     <property name="snap_to_ticks">True</property>
                                     <property name="numeric">True</property>
                                   </object>
@@ -2189,7 +2138,7 @@
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">EQE Bias Light Calibration</property>
+                                <property name="label" translatable="yes">EQE Bias Light LED Calibration</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -2212,7 +2161,7 @@
                                     <property name="receives_default">True</property>
                                     <property name="image_position">top</property>
                                     <property name="always_show_image">True</property>
-                                    <signal name="clicked" handler="on_cal_red_led_button" swapped="no"/>
+                                    <signal name="clicked" handler="on_cal_ch1_button" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -2228,7 +2177,7 @@
                                     <property name="receives_default">True</property>
                                     <property name="image_position">top</property>
                                     <property name="always_show_image">True</property>
-                                    <signal name="clicked" handler="on_cal_blue_led_button" swapped="no"/>
+                                    <signal name="clicked" handler="on_cal_ch2_button" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -2242,6 +2191,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
+                                    <signal name="clicked" handler="on_cal_ch3_button" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -2338,20 +2288,20 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="name">page1</property>
                     <property name="title" translatable="yes">Maintenance</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkSpinner">
-                    <property name="height_request">221</property>
+                  <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv">
+                    <property name="height_request">96</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="active">True</property>
+                    <property name="can_focus">True</property>
+                    <child>
+                      <placeholder/>
+                    </child>
                   </object>
                   <packing>
-                    <property name="name">page2</property>
                     <property name="title" translatable="yes">Live Data</property>
                     <property name="position">2</property>
                   </packing>
@@ -2367,7 +2317,6 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="name">page3</property>
                     <property name="title" translatable="yes">Log View</property>
                     <property name="position">3</property>
                   </packing>
