@@ -82,7 +82,7 @@ class App(Gtk.Application):
     def __init__(self, *args, **kwargs):
         """Constructor."""
         self.cl_config = pathlib.Path()
-        config_file_name = "measurement_config.ini"
+        config_file_name = ".measurement_configuration_file.ini"
         self.config_file = pathlib.Path(config_file_name)
         super().__init__(
             *args,
