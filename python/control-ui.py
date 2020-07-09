@@ -697,12 +697,17 @@ class App(Gtk.Application):
         self.mqttc.publish("gui/home", "home", qos=2).wait_for_publish()
 
     def on_stage_read_button(self, button):
+        """Read the current stage position."""
         lg.debug("Getting stage pos")
-        # TODO: generate position request message
+        self.mqttc.publish("gui/read_stage", "read_stage", qos=2).wait_for_publish()
 
     def on_goto_button(self, button):
+        """Goto stage position."""
         lg.debug("Sending the stage some place")
-        # TODO: generate goto message
+        ax1_pos = self.b.get_object("goto_x").get_text()
+        ax2_pos = self.b.get_object("goto_y").get_text()
+        payload = json.dumps([ax1_pos, ax2_pos])
+        self.mqttc.publish("gui/goto", payload, qos=2).wait_for_publish()
 
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
