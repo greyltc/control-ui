@@ -21,13 +21,14 @@ import json
 
 # os.environ["DEBUSSY"] = "1"
 
-gi.require_version('WebKit2', '4.0')
+gi.require_version("WebKit2", "4.0")
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
 # Gdk.set_allowed_backends('broadway')
 from gi.repository.WebKit2 import WebView, Settings
+
 # gi.require_version('WebKit2', '4.0')
 # from gi.repository import WebKit2 as Webkit
 
@@ -156,7 +157,7 @@ class App(Gtk.Application):
 
         self.main_win = None
         self.b = None
-        self.ids = [] # ids of objects to save/load
+        self.ids = []  # ids of objects to save/load
         self.numPix = 6
         self.approx_seconds_per_iv = 50
         self.approx_seconds_per_eqe = 150
@@ -218,7 +219,10 @@ class App(Gtk.Application):
 
         self.label_tree, self.label_store = self.setup_label_tree()
 
-        self.dev_store = [Gtk.TreeStore(str, bool, bool), Gtk.TreeStore(str, bool, bool)] # [iv devs, eqe devs]
+        self.dev_store = [
+            Gtk.TreeStore(str, bool, bool),
+            Gtk.TreeStore(str, bool, bool),
+        ]  # [iv devs, eqe devs]
         self.setup_dev_stores()
 
         self.dev_tree = self.b.get_object("devTV")
@@ -232,12 +236,12 @@ class App(Gtk.Application):
         selection_box_length = 4 + address_string_length + 3
         default_on = "0x" + "F" * address_string_length
         default_off = "0x" + "0" * address_string_length
-        
+
         self.def_fmt_str = f"0{address_string_length}X"
 
         self.iv_dev_box = self.b.get_object("iv_devs")
-        
-        self.last_valid_devs = [default_on, default_off] # [iv devs, eqe devs]
+
+        self.last_valid_devs = [default_on, default_off]  # [iv devs, eqe devs]
 
         self.iv_dev_box = self.b.get_object("iv_devs")
         self.iv_dev_box.modify_font(fontdesc)
@@ -258,10 +262,15 @@ class App(Gtk.Application):
         self.ticker = self.timeout_id = GLib.timeout_add_seconds(1, self.tick, None)
         self.b.connect_signals(self)  # maps all ui callbacks to functions here
 
-        wv = self.b.get_object('wv')
-        if self.live_data_uri != '':
+        wv = self.b.get_object("wv")
+        if self.live_data_uri != "":
             wv.load_uri(self.live_data_uri)
-    
+
+        # send config file to CLI MQTT client
+        with open(self.config_file, "r") as f:
+            payload = json.dumps(f.read())
+        self.mqttc.publish("gui/config", payload, qos=2).wait_for_publish()
+
     def setup_dev_stores(self):
         for store in self.dev_store:
             checked = True
@@ -278,9 +287,8 @@ class App(Gtk.Application):
                     store.append(piter, [f"Device {j}", checked, inconsistent])
                     j += 1
 
-
     def setup_dev_tree(self, deviceTree):
-        #deviceTree.set_model(devStore)
+        # deviceTree.set_model(devStore)
         renderDesignator = Gtk.CellRendererText()
         # the first column is created
         designator = Gtk.TreeViewColumn("Substrate/Device", renderDesignator, text=0)
@@ -299,7 +307,7 @@ class App(Gtk.Application):
 
     # callback function for select/deselect device/substrate
     def dev_toggle(self, toggle, path):
-        eqe = 'eqe' in Gtk.Buildable.get_name(self.po.get_relative_to())
+        eqe = "eqe" in Gtk.Buildable.get_name(self.po.get_relative_to())
         path_split = path.split(":")
         # the boolean value of the selected row
         current_value = self.dev_store[eqe][path][1]
@@ -352,17 +360,21 @@ class App(Gtk.Application):
                 if self.dev_store[eqe][diter][1] is True:
                     selection_bitmask = selection_bitmask + (1 << bit_location)
                 bit_location = bit_location + 1
-                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
-            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
-        
-        if (eqe):
+                diter = self.dev_store[eqe].iter_next(
+                    diter
+                )  # advance to the next device
+            siter = self.dev_store[eqe].iter_next(
+                siter
+            )  # advance to the next substrate
+
+        if eqe:
             self.eqe_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
         else:
             self.iv_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
 
     # change in a device text box value
     def on_devs_changed(self, editable, user_data=None):
-        eqe = 'eqe' in Gtk.Buildable.get_name(editable)
+        eqe = "eqe" in Gtk.Buildable.get_name(editable)
         valid = False
         text_is = editable.get_text()
         if len(text_is) == len(f"0x{0:{self.def_fmt_str}}"):
@@ -391,7 +403,7 @@ class App(Gtk.Application):
             editable.set_icon_from_icon_name(0, "dialog-error")
 
     def on_devs_focus_out_event(self, widget, user_data=None):
-        eqe = 'eqe' in Gtk.Buildable.get_name(widget)
+        eqe = "eqe" in Gtk.Buildable.get_name(widget)
         text_is = widget.get_text()
         try:
             selection_bitmask = int(text_is, 16)
@@ -454,7 +466,7 @@ class App(Gtk.Application):
 
     # handles keystroke in the device selection tree
     def handle_dev_key(self, tv, event):
-        #eqe = 'eqe' in Gtk.Buildable.get_name(self.po.get_relative_to())
+        # eqe = 'eqe' in Gtk.Buildable.get_name(self.po.get_relative_to())
         keyname = Gdk.keyval_name(event.keyval)
         if keyname in ["Right", "Left"]:
             path, col = self.dev_tree.get_cursor()
@@ -571,7 +583,7 @@ class App(Gtk.Application):
         lg.debug("Hello World!")
 
     def on_devs_icon_release(self, entry, icon, user_data=None):
-        eqe = 'eqe' in Gtk.Buildable.get_name(entry)
+        eqe = "eqe" in Gtk.Buildable.get_name(entry)
         self.dev_tree.set_model(self.dev_store[eqe])
         sw = self.dev_tree.get_parent()  # scroll window
         sw.set_min_content_height((self.numSubstrates + 1) * 25)
@@ -600,15 +612,19 @@ class App(Gtk.Application):
                 else:
                     self.dev_store[eqe][diter][1] = False
                 bit_location = bit_location + 1
-                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
+                diter = self.dev_store[eqe].iter_next(
+                    diter
+                )  # advance to the next device
             if num_enabled == 0:
                 self.dev_store[eqe][siter][1] = False  # set substrate off
             elif num_enabled == self.numPix:
                 self.dev_store[eqe][siter][1] = True  # set substrate on
             else:
                 self.dev_store[eqe][siter][2] = True  # set substrate inconsistant
-            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
-        
+            siter = self.dev_store[eqe].iter_next(
+                siter
+            )  # advance to the next substrate
+
         self.po.set_relative_to(entry)
         self.po.show_all()
         # lg.debug(sw.get_allocated_height())
@@ -891,15 +907,15 @@ class App(Gtk.Application):
 
     def on_cal_ch2_button(self, button):
         self.calibrate_psu(2)
-    
+
     def on_cal_ch1_button(self, button):
         self.calibrate_psu(1)
-    
+
     def on_smart_mode_activate(self, button):
         self.update_gui()
-    
+
     def update_gui(self, *args):
-        #lg.debug("Updating gui...")
+        # lg.debug("Updating gui...")
         if self.b.get_object("ad_switch").get_active():
             self.b.get_object("sd_lab").set_sensitive(False)
             self.b.get_object("source_delay").set_sensitive(False)
@@ -910,13 +926,13 @@ class App(Gtk.Application):
             self.b.get_object("source_delay").set_sensitive(True)
             self.b.get_object("source_delay").set_visibility(True)
             self.b.get_object("sd_dt").set_sensitive(True)
-        
+
         if self.b.get_object("return_switch").get_active():
-            self.b.get_object("sweep_check").set_label('Step 2: I-V Sweeps')
+            self.b.get_object("sweep_check").set_label("Step 2: I-V Sweeps")
         else:
-            self.b.get_object("sweep_check").set_label('Step 2: I-V Sweep')
-        
-        me = self.b.get_object('i_dwell_check')
+            self.b.get_object("sweep_check").set_label("Step 2: I-V Sweep")
+
+        me = self.b.get_object("i_dwell_check")
         parent = me.get_parent()
         if me.get_active():
             for sib in parent.get_children():
@@ -926,17 +942,7 @@ class App(Gtk.Application):
                 sib.set_sensitive(False)
             me.set_sensitive(True)
 
-        me = self.b.get_object('sweep_check')
-        parent = me.get_parent()
-        if me.get_active():
-            for sib in parent.get_children():
-                sib.set_sensitive(True)
-        else:
-            for sib in parent.get_children():
-                sib.set_sensitive(False)
-            me.set_sensitive(True)
-        
-        me = self.b.get_object('v_dwell_check')
+        me = self.b.get_object("sweep_check")
         parent = me.get_parent()
         if me.get_active():
             for sib in parent.get_children():
@@ -946,7 +952,7 @@ class App(Gtk.Application):
                 sib.set_sensitive(False)
             me.set_sensitive(True)
 
-        me = self.b.get_object('mppt_check')
+        me = self.b.get_object("v_dwell_check")
         parent = me.get_parent()
         if me.get_active():
             for sib in parent.get_children():
@@ -956,12 +962,21 @@ class App(Gtk.Application):
                 sib.set_sensitive(False)
             me.set_sensitive(True)
 
-    #def on_ad_switch_state_set(self, switch, state):
-    #    self.update_gui()
-    
-    #def on_return_switch_state_set(self, switch, state):
+        me = self.b.get_object("mppt_check")
+        parent = me.get_parent()
+        if me.get_active():
+            for sib in parent.get_children():
+                sib.set_sensitive(True)
+        else:
+            for sib in parent.get_children():
+                sib.set_sensitive(False)
+            me.set_sensitive(True)
+
+    # def on_ad_switch_state_set(self, switch, state):
     #    self.update_gui()
 
+    # def on_return_switch_state_set(self, switch, state):
+    #    self.update_gui()
 
     def calibrate_psu(self, channel):
         """Measure psu calibration photodiode."""
