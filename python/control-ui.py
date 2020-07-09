@@ -1052,5 +1052,26 @@ class App(Gtk.Application):
 
 
 if __name__ == "__main__":
+
+    def on_message(mqttc, obj, msg):
+        """Act on an MQTT message from the CLI."""
+        m = json.loads(msg.payload)
+
+        if (subtopic := msg.topic.split("/")[-1]) == "stage_pos":
+            app.b.get_object("goto_x").set_text(m[0])
+            app.b.get_object("goto_y").set_text(m[0])
+
+    # create a subsriber client to cli messages. It would be better to have this inside
+    # the app class but I don't think it's possible.
+    mqtt_sub = mqtt.Client()
+    mqtt_sub.on_message = on_message
+    # TODO: make the address not hard coded
+    mqtt_sub.connect("mqtt.greyltc.net")
+    mqtt_sub.subscribe("cli/#", qos=2)
+    mqtt_sub.loop_start()
+
     app = App()
     app.run(sys.argv)
+
+    mqtt_sub.loop_stop()
+    mqtt_sub.disconnect()
