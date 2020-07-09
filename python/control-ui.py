@@ -635,12 +635,14 @@ class App(Gtk.Application):
         return True
 
     def on_pause_button(self, button):
+        """Pause experiment operation."""
         lg.info("Pausing")
-        # TODO: generate pause message
+        self.mqttc.publish("gui/pause", "pause", qos=2).wait_for_publish()
 
     def on_stop_button(self, button):
+        """Stop experiment operation."""
         lg.info("Stopping")
-        # TODO: generate stop message
+        self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
 
     def on_pd_button(self, button):
         lg.info("Measuring photodiodes")
@@ -690,8 +692,9 @@ class App(Gtk.Application):
         # TODO: generate health check message
 
     def on_home_button(self, button):
+        """Home the stage."""
         lg.info("Homing stage")
-        # TODO: generate stage home message
+        self.mqttc.publish("gui/home", "home", qos=2).wait_for_publish()
 
     def on_stage_read_button(self, button):
         lg.debug("Getting stage pos")
