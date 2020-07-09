@@ -579,6 +579,10 @@ class App(Gtk.Application):
                 lg.debug("Shutting down")
         Gtk.Application.do_shutdown(self)
 
+        # disconnect MQTT
+        self.mqttc.loop_stop()
+        self.mqttc.disconnect()
+
     def on_debug_button(self, button):
         lg.debug("Hello World!")
 
