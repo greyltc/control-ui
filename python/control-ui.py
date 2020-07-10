@@ -675,7 +675,7 @@ class App(Gtk.Application):
         # TODO: generate stage home message
     
     def on_stage_read_button(self, button):
-        lg.debug("Getting stage pos")
+        lg.debug("Getting stage position")
         # TODO: generate position request message
 
     def on_goto_button(self, button):

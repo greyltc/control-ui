@@ -149,6 +149,12 @@
     <property name="can_focus">False</property>
     <property name="icon_name">media-playback-stop-symbolic</property>
   </object>
+  <object class="GtkImage" id="image6">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">dialog-warning-symbolic</property>
+    <property name="icon_size">3</property>
+  </object>
   <object class="GtkAdjustment" id="iv_steps_adj">
     <property name="lower">3</property>
     <property name="upper">10000001</property>
@@ -2002,6 +2008,10 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">WARNING!
+Pressing this will immediately cause the stage to travel to its limits. Ensure everything is clear.
+Performs the stage homing procedure.</property>
+                            <property name="image">image6</property>
                             <property name="image_position">top</property>
                             <property name="always_show_image">True</property>
                             <signal name="clicked" handler="on_home_button" swapped="no"/>
@@ -2026,6 +2036,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <property name="tooltip_text" translatable="yes">Reads the current stage position</property>
                                 <signal name="clicked" handler="on_stage_read_button" swapped="no"/>
                               </object>
                               <packing>
@@ -2045,6 +2056,7 @@
                                   <object class="GtkSpinButton" id="goto_x">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="tooltip_text" translatable="yes">Stage position Y (in steps)</property>
                                     <property name="hexpand">True</property>
                                     <property name="width_chars">11</property>
                                     <property name="caps_lock_warning">False</property>
@@ -2062,6 +2074,7 @@
                                   <object class="GtkSpinButton" id="goto_y">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="tooltip_text" translatable="yes">Stage position Y (in steps)</property>
                                     <property name="hexpand">True</property>
                                     <property name="width_chars">11</property>
                                     <property name="caps_lock_warning">False</property>
@@ -2088,6 +2101,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <property name="tooltip_text" translatable="yes">Sends the stage to a position</property>
                                 <signal name="clicked" handler="on_goto_button" swapped="no"/>
                               </object>
                               <packing>
@@ -2302,6 +2316,7 @@
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="tooltip_text" translatable="yes">Full window log view</property>
                     <property name="halign">start</property>
                     <property name="orientation">vertical</property>
                     <child>
