@@ -614,11 +614,11 @@ class App(Gtk.Application):
         return True
 
     def on_pause_button(self, button):
-        lg.info("Pausing")
+        lg.info("Pausing run")
         # TODO: generate pause message
 
     def on_stop_button(self, button):
-        lg.info("Stopping")
+        lg.info("Stopping run")
         # TODO: generate stop message
     
     def on_pd_button(self, button):
@@ -630,23 +630,31 @@ class App(Gtk.Application):
         save_dialog = Gtk.FileChooserNative(title="Pick a place to save to", transient_for=self.b.get_object("mainWindow"), action=Gtk.FileChooserAction.SAVE)
         response = save_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
-            data = {}
-            for id_str in self.ids:
-                data[id_str] = self.b.get_object(id_str).get_text()
+            this_file = save_dialog.get_filename()
+            lg.info(f"Saving gui state to: {this_file}")
+            #data = {}
+            #for id_str in self.ids:
+            #    data[id_str] = self.b.get_object(id_str).get_text()
 
-            with open(save_dialog.get_filename(), "w") as f:
-                json.dump(data, f)
+            # with open(save_dialog.get_filename(), "w") as f:
+            #     json.dump(data, f)
+        else:
+            lg.info(f"Save aborted.")
 
     def on_open_button(self, button):
         """Populate widget entries from data saved in a file."""
         open_dialog = Gtk.FileChooserNative(title="Pick a file to load from", transient_for=self.b.get_object("mainWindow"), action=Gtk.FileChooserAction.OPEN)
         response = open_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
-            with open(open_dialog.get_filename(), "r") as f:
-                data = json.load(f)
+            this_file = open_dialog.get_filename()
+            lg.info(f"Loading gui state from: {this_file}")
+            # with open(open_dialog.get_filename(), "r") as f:
+            #     data = json.load(f)
 
-                for key, value in data:
-                    self.b.get_object(key).set_text(value)
+            #     for key, value in data:
+            #         self.b.get_object(key).set_text(value)
+        else:
+            lg.info(f"Load aborted.")
 
     
     def on_connectivity_button(self, button):
@@ -677,8 +685,8 @@ class App(Gtk.Application):
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
         run_name = self.b.get_object("run_name").get_text()
-        lg.info(f"New run started: {run_name}")
-        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        lg.info(f"Starting new run: {run_name}")
+        """save_folder = pathlib.Path(self.config["paths"]["save_folder"])
         destination = str(save_folder.joinpath(run_name))
 
         iv_pixel_address = self.b.get_object("iv_devs").get_text()
@@ -789,7 +797,7 @@ class App(Gtk.Application):
         payload = json.dumps(settings) # TODO: could also use pickle here, which might be more general
         lg.debug('Run Payload:')
         lg.debug(payload)
-        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this
+        self.mqttc.publish("gui", payload, qos=2).wait_for_publish() #TODO: probably we don't wait for this """
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""

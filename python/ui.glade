@@ -19,10 +19,10 @@
     <property name="page_increment">100</property>
   </object>
   <object class="GtkAdjustment" id="eqe_dev_bias_adj">
-    <property name="lower">-10000</property>
-    <property name="upper">10000</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">1</property>
+    <property name="lower">-20</property>
+    <property name="upper">20</property>
+    <property name="step_increment">0.01</property>
+    <property name="page_increment">0.1</property>
   </object>
   <object class="GtkListStore" id="eqe_in">
     <columns>
@@ -113,7 +113,7 @@
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="i_dwell_adj">
-    <property name="upper">500000000</property>
+    <property name="upper">100000000000</property>
     <property name="value">3</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
@@ -237,31 +237,31 @@
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="sweep_end_adj">
-    <property name="lower">-10</property>
-    <property name="upper">10</property>
+    <property name="lower">-20</property>
+    <property name="upper">20</property>
     <property name="value">-0.2</property>
-    <property name="step_increment">0.1</property>
-    <property name="page_increment">10</property>
+    <property name="step_increment">0.01</property>
+    <property name="page_increment">0.1</property>
   </object>
   <object class="GtkAdjustment" id="sweep_start_adj">
-    <property name="lower">-10</property>
-    <property name="upper">10</property>
+    <property name="lower">-20</property>
+    <property name="upper">20</property>
     <property name="value">1.2</property>
-    <property name="step_increment">0.1</property>
-    <property name="page_increment">10</property>
+    <property name="step_increment">0.01</property>
+    <property name="page_increment">0.1</property>
   </object>
   <object class="GtkTextBuffer" id="tbLog"/>
   <object class="GtkAdjustment" id="v_dwell_adj">
-    <property name="upper">500000000</property>
+    <property name="upper">100000000000</property>
     <property name="value">3</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="v_dwell_value_adj">
-    <property name="lower">-20000</property>
-    <property name="upper">20000</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="lower">-20</property>
+    <property name="upper">20</property>
+    <property name="step_increment">0.01</property>
+    <property name="page_increment">0.1</property>
   </object>
   <object class="GtkApplicationWindow" id="mainWindow">
     <property name="can_focus">False</property>
@@ -303,7 +303,6 @@
                 <child>
                   <object class="GtkBox">
                     <property name="height_request">-1</property>
-                    <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="valign">start</property>
                     <property name="orientation">vertical</property>
@@ -623,7 +622,7 @@
                                           <object class="GtkSpinButton" id="nplc">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="tooltip_text" translatable="yes">Integration time for each measurement the sourcemeter makes, given in number of power line cycles. Larger values yield more precise measurements which take longer to make. Values below 1.0 are not recommended.</property>
+                                            <property name="tooltip_text" translatable="yes">Integration time for each measurement the sourcemeter makes, given in number of power line cycles. Larger values yield more precise measurements which take longer to make. 1.0 is generally a good value to use.</property>
                                             <property name="width_chars">7</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="input_purpose">number</property>
@@ -1266,7 +1265,7 @@
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkSpinButton" id="v_dwell_value_mv">
+                                                  <object class="GtkSpinButton" id="v_dwell_value">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="tooltip_text" translatable="yes">Voltage setpoint for constant current measurement (typically 0mV for I&lt;sub&gt;SC&lt;/sub&gt;)</property>
@@ -1276,7 +1275,7 @@
                                                     <property name="caps_lock_warning">False</property>
                                                     <property name="input_purpose">number</property>
                                                     <property name="adjustment">v_dwell_value_adj</property>
-                                                    <property name="digits">1</property>
+                                                    <property name="digits">3</property>
                                                     <property name="numeric">True</property>
                                                   </object>
                                                   <packing>
@@ -1289,7 +1288,7 @@
                                                   <object class="GtkLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">[mV]</property>
+                                                    <property name="label" translatable="yes">[V]</property>
                                                   </object>
                                                   <packing>
                                                     <property name="expand">False</property>
@@ -1419,7 +1418,7 @@
                                                   <object class="GtkEntry" id="mppt_params">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
-                                                    <property name="tooltip_text" translatable="yes">Advanced parameters to control the max power point tracker's algorithm</property>
+                                                    <property name="tooltip_markup" translatable="yes">Advanced parameters to control the max power point tracker's algorithm. The default is ``</property>
                                                     <property name="margin_end">2</property>
                                                     <property name="invisible_char">-</property>
                                                     <property name="text" translatable="yes">basic://</property>
@@ -1645,7 +1644,7 @@
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="halign">start</property>
-                                        <property name="label" translatable="yes">[mV]</property>
+                                        <property name="label" translatable="yes">[V]</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">2</property>
@@ -1653,7 +1652,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkSpinButton" id="eqe_bias_mv">
+                                      <object class="GtkSpinButton" id="eqe_bias">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="tooltip_text" translatable="yes">Voltage to apply to device during EQE sweep</property>
@@ -1979,7 +1978,6 @@
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
@@ -2106,7 +2104,6 @@
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
@@ -2124,7 +2121,6 @@
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkBox">
@@ -2214,7 +2210,6 @@
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
@@ -2233,7 +2228,6 @@
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
@@ -2252,7 +2246,6 @@
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
-                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
@@ -2295,7 +2288,6 @@
                 <child>
                   <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv">
                     <property name="height_request">96</property>
-                    <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <child>
                       <placeholder/>
