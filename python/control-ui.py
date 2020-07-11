@@ -26,12 +26,8 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
-# Gdk.set_allowed_backends('broadway')
+# Gdk.set_allowed_backends('broadway')  # for gui over web
 from gi.repository.WebKit2 import WebView, Settings
-
-# gi.require_version('WebKit2', '4.0')
-# from gi.repository import WebKit2 as Webkit
-
 
 # setup logging
 lg = logging.getLogger("control-ui")
@@ -82,7 +78,7 @@ class App(Gtk.Application):
     def __init__(self, *args, **kwargs):
         """Constructor."""
         self.cl_config = pathlib.Path()
-        config_file_name = ".measurement_configuration_file.ini"
+        config_file_name = "measurement_config.ini"
         self.config_file = pathlib.Path(config_file_name)
         super().__init__(
             *args,
@@ -105,7 +101,7 @@ class App(Gtk.Application):
             interpolation=configparser.ExtendedInterpolation()
         )
 
-        # let's figure out where config.ini is
+        # let's figure out where the configuration file is
         config_env_var = "MEASUREMENT_CONFIGURATION_FILE_NAME"
         if config_env_var in os.environ:
             env_config = pathlib.Path(os.environ.get(config_env_var))
@@ -158,10 +154,12 @@ class App(Gtk.Application):
         self.main_win = None
         self.b = None
         self.ids = []  # ids of objects to save/load
-        self.numPix = 6
+        self.numPix = len(
+            self.config[self.config["substrates"]["active_layout"]]["pixels"].split(",")
+        )
         self.approx_seconds_per_iv = 50
         self.approx_seconds_per_eqe = 150
-        self.live_data_uri = "https://userinyerface.com/"
+        self.live_data_uri = self.config["network"]["live_data_uri"]
 
         galde_ui_xml_file_name = "ui.glade"
         gui_file = pathlib.Path(galde_ui_xml_file_name)
@@ -657,13 +655,13 @@ class App(Gtk.Application):
 
     def on_pause_button(self, button):
         """Pause experiment operation."""
-        lg.info("Pausing")
-        self.mqttc.publish("gui/pause", "pause", qos=2).wait_for_publish()
+        lg.info("Pausing run")
+        # self.mqttc.publish("gui/pause", "pause", qos=2).wait_for_publish()
 
     def on_stop_button(self, button):
         """Stop experiment operation."""
-        lg.info("Stopping")
-        self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
+        lg.info("Stopping run")
+        # self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
 
     def on_pd_button(self, button):
         lg.info("Measuring photodiodes")
@@ -678,12 +676,16 @@ class App(Gtk.Application):
         )
         response = save_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
-            data = {}
-            for id_str in self.ids:
-                data[id_str] = self.b.get_object(id_str).get_text()
+            this_file = save_dialog.get_filename()
+            lg.info(f"Saving gui state to: {this_file}")
+            # data = {}
+            # for id_str in self.ids:
+            #    data[id_str] = self.b.get_object(id_str).get_text()
 
-            with open(save_dialog.get_filename(), "w") as f:
-                json.dump(data, f)
+            # with open(save_dialog.get_filename(), "w") as f:
+            #     json.dump(data, f)
+        else:
+            lg.info(f"Save aborted.")
 
     def on_open_button(self, button):
         """Populate widget entries from data saved in a file."""
@@ -694,11 +696,15 @@ class App(Gtk.Application):
         )
         response = open_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
-            with open(open_dialog.get_filename(), "r") as f:
-                data = json.load(f)
+            this_file = open_dialog.get_filename()
+            lg.info(f"Loading gui state from: {this_file}")
+            # with open(open_dialog.get_filename(), "r") as f:
+            #     data = json.load(f)
 
-                for key, value in data:
-                    self.b.get_object(key).set_text(value)
+            #     for key, value in data:
+            #         self.b.get_object(key).set_text(value)
+        else:
+            lg.info(f"Load aborted.")
 
     def on_connectivity_button(self, button):
         lg.info("Checking connectivity")
@@ -719,8 +725,8 @@ class App(Gtk.Application):
 
     def on_stage_read_button(self, button):
         """Read the current stage position."""
-        lg.debug("Getting stage pos")
-        self.mqttc.publish("gui/read_stage", "read_stage", qos=2).wait_for_publish()
+        lg.debug("Getting stage position")
+        # self.mqttc.publish("gui/read_stage", "read_stage", qos=2).wait_for_publish()
 
     def on_goto_button(self, button):
         """Goto stage position."""
@@ -733,8 +739,8 @@ class App(Gtk.Application):
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
         run_name = self.b.get_object("run_name").get_text()
-        lg.info(f"New run started: {run_name}")
-        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        lg.info(f"Starting new run: {run_name}")
+        """save_folder = pathlib.Path(self.config["paths"]["save_folder"])
         destination = str(save_folder.joinpath(run_name))
 
         iv_pixel_address = self.b.get_object("iv_devs").get_text()
@@ -849,7 +855,7 @@ class App(Gtk.Application):
         lg.debug(payload)
         self.mqttc.publish(
             "gui", payload, qos=2
-        ).wait_for_publish()  # TODO: probably we don't wait for this
+        ).wait_for_publish()  # TODO: probably we don't wait for this """
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""
