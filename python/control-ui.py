@@ -284,7 +284,7 @@ class App(Gtk.Application):
         self.po.set_position(Gtk.PositionType.BOTTOM)
 
         self.tick()
-        self.ticker = self.timeout_id = GLib.timeout_add_seconds(1, self.tick, None)
+        self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
         self.b.connect_signals(self)  # maps all ui callbacks to functions here
 
         wv = self.b.get_object("wv")
@@ -572,7 +572,7 @@ class App(Gtk.Application):
             lg.debug("Gui logging setup.")
             lg.info(f"Using configuration file: {self.config_file.resolve()}")
             if self.config_warn == True:
-                lg.warning(f"You're using a fallback configuration file. That's probably not what you want.")
+                lg.warning(f"You're using a fallback configuration file. That's likely not what you want.")
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
@@ -600,15 +600,19 @@ class App(Gtk.Application):
         about_dialog.show()
 
     def do_shutdown(self):
+        # stop the ticker
+        GLib.source_remove(self.ticker_id)
+
+        # disconnect MQTT
+        self._stop_mqtt()
+
         # remove gui log handler
         for h in lg.handlers:
             if h.get_name() == "ui":
                 lg.removeHandler(h)
                 lg.debug("Shutting down")
-        Gtk.Application.do_shutdown(self)
 
-        # disconnect MQTT
-        self._stop_mqtt()
+        Gtk.Application.do_shutdown(self)
 
     def on_debug_button(self, button):
         lg.debug("Hello World!")
