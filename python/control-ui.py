@@ -571,7 +571,7 @@ class App(Gtk.Application):
             lg.debug("Gui logging setup.")
             lg.info(f"Using configuration file: {self.config_file.resolve()}")
             if self.config_warn == True:
-                lg.warn(f"You're using a fallback configuration file. That's probably not what you want.")
+                lg.warning(f"You're using a fallback configuration file. That's probably not what you want.")
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
