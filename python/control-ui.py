@@ -112,6 +112,7 @@ class App(Gtk.Application):
         local_config = pathlib.Path(config_file_name)
         local_python_config = pathlib.Path("python") / config_file_name
         config_ini = pathlib.Path("config.ini")
+        self.config_warn = False
         if self.cl_config.is_file():  # priority 1: check the command line
             lg.debug("Using config file from command line")
             self.config_file = self.cl_config
@@ -129,6 +130,7 @@ class App(Gtk.Application):
         elif local_python_config.is_file():  # priority 5: check in python/
             lg.debug(f"Using local config file {local_python_config.resolve()}")
             self.config_file = local_python_config
+            self.config_warn = True
         elif config_ini.is_file():  # priority 6: check for ./config.ini
             lg.debug(f"Using local config file {config_ini.resolve()}")
             self.config_file = config_ini
@@ -146,6 +148,7 @@ class App(Gtk.Application):
             lg.error("Unexpected error parsing config file.")
             lg.error(sys.exc_info()[0])
             raise
+
 
         # get dimentions of substrate array to generate designators
         number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
@@ -201,6 +204,7 @@ class App(Gtk.Application):
         def on_message(mqttc, obj, msg):
             """Act on an MQTT message."""
             m = json.loads(msg.payload)
+            lg.debug(f"New message: {m}")
 
             if (subtopic := msg.topic.split("/")[-1]) == "stage_pos":
                 self.b.get_object("goto_x").set_text(m[0])
@@ -525,11 +529,10 @@ class App(Gtk.Application):
     # runs once per second
     def tick(self, user_data=None):
         # lg.debug("tick")
-        # TODO: update connectivity status
-        # if self.mqttc.connected:
-        #   self.b.get_object("headerBar").subtitle set text something something("Status: Connected")
-        # else
-        #   self.b.get_object("headerBar").subtitle set text something something("Status: Disconnected")
+        if self.mqttc.is_connected():
+           self.b.get_object("headerBar").set_subtitle("Status: Connected")
+        else:
+           self.b.get_object("headerBar").set_subtitle("Status: Disconnected")
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))
@@ -567,6 +570,8 @@ class App(Gtk.Application):
             lg.addHandler(uiLog)
             lg.debug("Gui logging setup.")
             lg.info(f"Using configuration file: {self.config_file.resolve()}")
+            if self.config_warn == True:
+                lg.warn(f"You're using a fallback configuration file. That's probably not what you want.")
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
