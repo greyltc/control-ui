@@ -26,12 +26,8 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
-# Gdk.set_allowed_backends('broadway')
+# Gdk.set_allowed_backends('broadway')  # for gui over web
 from gi.repository.WebKit2 import WebView, Settings
-
-# gi.require_version('WebKit2', '4.0')
-# from gi.repository import WebKit2 as Webkit
-
 
 # setup logging
 lg = logging.getLogger("control-ui")
@@ -82,7 +78,7 @@ class App(Gtk.Application):
     def __init__(self, *args, **kwargs):
         """Constructor."""
         self.cl_config = pathlib.Path()
-        config_file_name = ".measurement_configuration_file.ini"
+        config_file_name = "measurement_config.ini"
         self.config_file = pathlib.Path(config_file_name)
         super().__init__(
             *args,
@@ -105,7 +101,7 @@ class App(Gtk.Application):
             interpolation=configparser.ExtendedInterpolation()
         )
 
-        # let's figure out where config.ini is
+        # let's figure out where the configuration file is
         config_env_var = "MEASUREMENT_CONFIGURATION_FILE_NAME"
         if config_env_var in os.environ:
             env_config = pathlib.Path(os.environ.get(config_env_var))
@@ -158,10 +154,10 @@ class App(Gtk.Application):
         self.main_win = None
         self.b = None
         self.ids = []  # ids of objects to save/load
-        self.numPix = 6
+        self.numPix = len(self.config[self.config["substrates"]["active_layout"]]["pixels"].split(','))
         self.approx_seconds_per_iv = 50
         self.approx_seconds_per_eqe = 150
-        self.live_data_uri = "https://userinyerface.com/"
+        self.live_data_uri = self.config["network"]["live_data_uri"]
 
         galde_ui_xml_file_name = "ui.glade"
         gui_file = pathlib.Path(galde_ui_xml_file_name)

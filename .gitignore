@@ -133,5 +133,3 @@ dmypy.json
 # vscode
 .vscode/
 
-# config file
-python/.measurement_configuration_file.ini
