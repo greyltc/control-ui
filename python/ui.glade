@@ -614,7 +614,6 @@ Author: Greyson Christoforo
                                         </child>
                                         <child>
                                           <object class="GtkSwitch" id="smart_mode">
-                                            <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="tooltip_text" translatable="yes">Measaurement routine that uses auto-detected and recommended settings</property>
                                             <signal name="state-set" handler="update_gui" swapped="no"/>

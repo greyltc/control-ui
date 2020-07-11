@@ -149,12 +149,6 @@ class App(Gtk.Application):
             lg.error(sys.exc_info()[0])
             raise
 
-
-        # get dimentions of substrate array to generate designators
-        number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
-        self.substrate_designators = self._generate_substrate_designators(number_list)
-        self.numSubstrates = len(self.substrate_designators)
-
         self.main_win = None
         self.b = None
         self.ids = []  # ids of objects to save/load
@@ -242,7 +236,17 @@ class App(Gtk.Application):
             except:
                 pass
 
-        self.label_tree, self.label_store = self.setup_label_tree()
+        # get dimentions of substrate array to generate designators
+        number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
+        sd = self._generate_substrate_designators(number_list)
+        ns = len(sd)
+        self.numSubstrates = ns
+        self.substrate_designators = sd
+
+        # list that shadows the device label names
+        self.label_shadow = ['']*ns
+
+        self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, sd, 0)
 
         self.dev_store = [
             Gtk.TreeStore(str, bool, bool),
@@ -450,21 +454,13 @@ class App(Gtk.Application):
         )
         lg.info(f"{num_selected} devices selected for ~ {duration_string}")
 
-    def setup_label_tree(self):
+    def setup_label_tree(self, labels, substrate_designators, cell_y_padding):
         labelTree = self.b.get_object("labelTree")
         labelStore = Gtk.ListStore(str, str, int)
-        y_pad = 0
-        label = ""
-        for i in range(self.numSubstrates):
-            # the iter piter is returned when appending the author
-            # designator = self.substrate_designators[i]
-            labelStore.append([label, self.substrate_designators[i], y_pad])
-        labelTree.set_model(labelStore)
 
-        # the uneditable substrate designator col
-        # renderText = Gtk.CellRendererText()
-        # numbers = Gtk.TreeViewColumn("Substrate", renderText, text=0, ypad=3)
-        # labelTree.append_column(numbers)
+        for i in range(self.numSubstrates):
+            labelStore.append([labels[i], substrate_designators[i], cell_y_padding])
+        labelTree.set_model(labelStore)
 
         # the editable substrate label col
         renderEdit = Gtk.CellRendererText()
@@ -472,7 +468,10 @@ class App(Gtk.Application):
         labels = Gtk.TreeViewColumn(
             "Substrate Label", renderEdit, text=0, placeholder_text=1, ypad=2
         )
-        labelTree.append_column(labels)
+        # only append the col if it's not already there
+        # fixes double col on file load
+        if labelTree.get_columns() == []:
+            labelTree.append_column(labels)
 
         renderEdit.connect("edited", self.store_substrate_label)
         labelTree.connect("key-release-event", self.handle_label_key)
@@ -502,10 +501,11 @@ class App(Gtk.Application):
 
     def store_substrate_label(self, widget, path, text):
         self.label_store[path][0] = text
-        if text == "":
+        if text == "": # if it's empty use the default
             self.dev_store[0][path][0] = self.label_store[path][1]
             self.dev_store[1][path][0] = self.label_store[path][1]
-        else:
+        else: # otherwise use the user's one
+            self.label_shadow[int(path)] = text
             self.dev_store[0][path][0] = self.label_store[path][0]
             self.dev_store[1][path][0] = self.label_store[path][0]
 
@@ -704,10 +704,10 @@ class App(Gtk.Application):
                     elif isinstance(this_obj, gi.repository.Gtk.Entry):
                         save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
                     elif isinstance(this_obj, gi.overrides.Gtk.TreeView):
-                        if id_str == "lableTree":
-                            save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_model(), "call_to_set": "set_model"}
+                        if id_str == "labelTree":
+                            save_data[id_str] = {"type": str(type(this_obj)), "value": self.label_shadow, "call_to_set": None}
 
-            with open(save_dialog.get_filename(), "wb") as f:
+            with open(this_file, "wb") as f:
                 pickle.dump(save_data,f)
         else:
             lg.info(f"Save aborted.")
@@ -723,11 +723,25 @@ class App(Gtk.Application):
         if response == Gtk.ResponseType.ACCEPT:
             this_file = open_dialog.get_filename()
             lg.info(f"Loading gui state from: {this_file}")
-            # with open(open_dialog.get_filename(), "r") as f:
-            #     data = json.load(f)
+            with open(this_file, "rb") as f:
+                load_data = pickle.load(f)
 
-            #     for key, value in data:
-            #         self.b.get_object(key).set_text(value)
+            for id_str, obj_info in load_data.items():
+                if id_str == 'labelTree':  # load and apply the device labels
+                    # NOTE: loading will likely crash if loading into a setup with the wrong number of pixels/devices
+                    try:
+                        self.label_shadow = obj_info['value']
+                        # i'm going to assume the substrate designators didn't change across loads...
+                        self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, self.substrate_designators, 0)
+                        for i, lab in enumerate(self.label_shadow):
+                            self.store_substrate_label(None, str(i), lab)
+                    except:
+                        lg.info(f"Loading substrate labels failed.")
+                else:
+                    this_obj = self.b.get_object(id_str)
+                    call_to_set = getattr(this_obj, obj_info['call_to_set'])
+                    call_to_set(obj_info['value'])
+            self.update_gui()
         else:
             lg.info(f"Load aborted.")
 
