@@ -530,9 +530,10 @@ class App(Gtk.Application):
     def tick(self, user_data=None):
         # lg.debug("tick")
         if self.mqttc.is_connected():
-           self.b.get_object("headerBar").set_subtitle("Status: Connected")
+            status = "Connected"
         else:
-           self.b.get_object("headerBar").set_subtitle("Status: Disconnected")
+            status = "Disconnected"
+        self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))
