@@ -217,8 +217,8 @@ class App(Gtk.Application):
 
     def _stop_mqtt(self):
         """Stop the MQTT client."""
-        self.mqtt_sub.loop_stop()
-        self.mqtt_sub.disconnect()
+        self.mqttc.loop_stop()
+        self.mqttc.disconnect()
 
     def do_startup(self):
         lg.debug("Starting up app")
