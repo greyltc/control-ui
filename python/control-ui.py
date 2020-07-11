@@ -155,7 +155,9 @@ class App(Gtk.Application):
         self.main_win = None
         self.b = None
         self.ids = []  # ids of objects to save/load
-        self.numPix = len(self.config[self.config["substrates"]["active_layout"]]["pixels"].split(','))
+        self.numPix = len(
+            self.config[self.config["substrates"]["active_layout"]]["pixels"].split(",")
+        )
         self.approx_seconds_per_iv = 50
         self.approx_seconds_per_eqe = 150
         self.live_data_uri = self.config["network"]["live_data_uri"]
@@ -169,11 +171,8 @@ class App(Gtk.Application):
         else:
             raise (ValueError("Can't find glade file!"))
 
-        # setup mqtt broker
-        self.MQTTHOST = self.config["network"]["MQTTHOST"]
-        self.mqttc = mqtt.Client()
-        # self.mqttc.connect(self.MQTTHOST)
-        # self.mqttc.loop_start()
+        # start MQTT client
+        self._start_mqtt()
 
     def _generate_substrate_designators(self, number_list):
         """Generate a list of substrate designators.
@@ -195,6 +194,31 @@ class App(Gtk.Application):
         subdes = [f"{m}{n + 1}" for m in rs for n in cs]
 
         return subdes
+
+    def _start_mqtt(self):
+        """Start the MQTT client and subscribe to the CLI topic."""
+
+        def on_message(mqttc, obj, msg):
+            """Act on an MQTT message."""
+            m = json.loads(msg.payload)
+
+            if (subtopic := msg.topic.split("/")[-1]) == "stage_pos":
+                self.b.get_object("goto_x").set_text(m[0])
+                self.b.get_object("goto_y").set_text(m[0])
+
+        # connect to mqtt broker
+        self.MQTTHOST = self.config["network"]["MQTTHOST"]
+        self.mqttc = mqtt.Client()
+        self.mqttc.on_message = on_message
+        self.mqttc.connect(self.MQTTHOST)
+        # subscribe to cli topic to report back on progress
+        self.mqttc.subscribe("cli/#", qos=2)
+        self.mqttc.loop_start()
+
+    def _stop_mqtt(self):
+        """Stop the MQTT client."""
+        self.mqtt_sub.loop_stop()
+        self.mqtt_sub.disconnect()
 
     def do_startup(self):
         lg.debug("Starting up app")
@@ -263,10 +287,10 @@ class App(Gtk.Application):
         if self.live_data_uri != "":
             wv.load_uri(self.live_data_uri)
 
-        # # send config file to CLI MQTT client
-        # with open(self.config_file, "r") as f:
-        #     payload = json.dumps(f.read())
-        # self.mqttc.publish("gui/config", payload, qos=2).wait_for_publish()
+        # send config file to CLI MQTT client
+        with open(self.config_file, "r") as f:
+            payload = json.dumps(f.read())
+        self.mqttc.publish("gui/config", payload, qos=2).wait_for_publish()
 
     def setup_dev_stores(self):
         for store in self.dev_store:
@@ -577,9 +601,8 @@ class App(Gtk.Application):
                 lg.debug("Shutting down")
         Gtk.Application.do_shutdown(self)
 
-        # # disconnect MQTT
-        # self.mqttc.loop_stop()
-        # self.mqttc.disconnect()
+        # disconnect MQTT
+        self._stop_mqtt()
 
     def on_debug_button(self, button):
         lg.debug("Hello World!")
@@ -713,7 +736,7 @@ class App(Gtk.Application):
     def on_home_button(self, button):
         """Home the stage."""
         lg.info("Homing stage")
-        # self.mqttc.publish("gui/home", "home", qos=2).wait_for_publish()
+        self.mqttc.publish("gui/home", "home", qos=2).wait_for_publish()
 
     def on_stage_read_button(self, button):
         """Read the current stage position."""
@@ -726,7 +749,7 @@ class App(Gtk.Application):
         ax1_pos = self.b.get_object("goto_x").get_text()
         ax2_pos = self.b.get_object("goto_y").get_text()
         payload = json.dumps([ax1_pos, ax2_pos])
-        # self.mqttc.publish("gui/goto", payload, qos=2).wait_for_publish()
+        self.mqttc.publish("gui/goto", payload, qos=2).wait_for_publish()
 
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
@@ -1072,26 +1095,5 @@ class App(Gtk.Application):
 
 
 if __name__ == "__main__":
-
-    # def on_message(mqttc, obj, msg):
-    #     """Act on an MQTT message from the CLI."""
-    #     m = json.loads(msg.payload)
-
-    #     if (subtopic := msg.topic.split("/")[-1]) == "stage_pos":
-    #         app.b.get_object("goto_x").set_text(m[0])
-    #         app.b.get_object("goto_y").set_text(m[0])
-
-    # # create a subsriber client to cli messages. It would be better to have this inside
-    # # the app class but I don't think it's possible.
-    # mqtt_sub = mqtt.Client()
-    # mqtt_sub.on_message = on_message
-    # # TODO: make the address not hard coded
-    # mqtt_sub.connect("mqtt.greyltc.net")
-    # mqtt_sub.subscribe("cli/#", qos=2)
-    # mqtt_sub.loop_start()
-
     app = App()
     app.run(sys.argv)
-
-    # mqtt_sub.loop_stop()
-    # mqtt_sub.disconnect()
