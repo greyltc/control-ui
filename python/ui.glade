@@ -131,7 +131,7 @@ Author: Greyson Christoforo
       </row>
     </data>
   </object>
-  <object class="GtkAdjustment" id="eqe_int">
+  <object class="GtkAdjustment" id="eqe_int_adj">
     <property name="upper">100</property>
     <property name="value">300</property>
     <property name="step_increment">1</property>
@@ -296,6 +296,7 @@ Author: Greyson Christoforo
   </object>
   <object class="GtkApplicationWindow" id="mainWindow">
     <property name="can_focus">False</property>
+    <property name="default_height">700</property>
     <property name="has_resize_grip">True</property>
     <property name="show_menubar">False</property>
     <child>
@@ -1753,7 +1754,7 @@ Author: Greyson Christoforo
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkComboBox" id="eqe_int_">
+                                      <object class="GtkComboBox" id="eqe_int">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="tooltip_text" translatable="yes">Lock-in time constant. Larger values filter noise more effectively.</property>
@@ -2328,9 +2329,10 @@ Performs the stage homing procedure.</property>
                 </child>
                 <child>
                   <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv">
-                    <property name="height_request">96</property>
+                    <property name="height_request">900</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="valign">start</property>
                     <child>
                       <placeholder/>
                     </child>
@@ -2478,7 +2480,7 @@ Performs the stage homing procedure.</property>
           </packing>
         </child>
         <child>
-          <object class="GtkButton">
+          <object class="GtkButton" id="run_but">
             <property name="label" translatable="yes">Run</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>

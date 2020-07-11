@@ -18,6 +18,7 @@ import datetime as dt
 import paho.mqtt.client as mqtt
 import configparser
 import json
+import pickle
 
 # os.environ["DEBUSSY"] = "1"
 
@@ -168,9 +169,9 @@ class App(Gtk.Application):
         else:
             raise (ValueError("Can't find glade file!"))
 
-        # # connect to mqtt broker
-        # self.MQTTHOST = self.config["network"]["MQTTHOST"]
-        # self.mqttc = mqtt.Client()
+        # setup mqtt broker
+        self.MQTTHOST = self.config["network"]["MQTTHOST"]
+        self.mqttc = mqtt.Client()
         # self.mqttc.connect(self.MQTTHOST)
         # self.mqttc.loop_start()
 
@@ -541,6 +542,7 @@ class App(Gtk.Application):
             uiLog.setFormatter(uiLogFormat)
             lg.addHandler(uiLog)
             lg.debug("Gui logging setup.")
+            lg.info(f"Using configuration file: {self.config_file.resolve()}")
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
@@ -581,6 +583,8 @@ class App(Gtk.Application):
 
     def on_debug_button(self, button):
         lg.debug("Hello World!")
+        self.b.get_object("run_but").set_sensitive(True)
+        
 
     def on_devs_icon_release(self, entry, icon, user_data=None):
         eqe = "eqe" in Gtk.Buildable.get_name(entry)
@@ -655,12 +659,23 @@ class App(Gtk.Application):
         if response == Gtk.ResponseType.ACCEPT:
             this_file = save_dialog.get_filename()
             lg.info(f"Saving gui state to: {this_file}")
-            #data = {}
-            #for id_str in self.ids:
-            #    data[id_str] = self.b.get_object(id_str).get_text()
 
-            # with open(save_dialog.get_filename(), "w") as f:
-            #     json.dump(data, f)
+            save_data = {}
+            for id_str in self.ids:
+                if not id_str.startswith('___'):
+                    this_obj = self.b.get_object(id_str)
+                    if isinstance(this_obj, gi.repository.Gtk.Switch) or isinstance(this_obj, gi.repository.Gtk.CheckButton) or isinstance(this_obj, gi.overrides.Gtk.ComboBox):
+                        save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_active(), "call_to_set": "set_active"}
+                    elif isinstance(this_obj, gi.repository.Gtk.SpinButton):
+                        save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_value(), "call_to_set": "set_value"}
+                    elif isinstance(this_obj, gi.repository.Gtk.Entry):
+                        save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
+                    elif isinstance(this_obj, gi.overrides.Gtk.TreeView):
+                        if id_str == "lableTree":
+                            save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_model(), "call_to_set": "set_model"}
+
+            with open(save_dialog.get_filename(), "wb") as f:
+                pickle.dump(save_data,f)
         else:
             lg.info(f"Save aborted.")
 
@@ -715,6 +730,7 @@ class App(Gtk.Application):
 
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
+        self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
         run_name = self.b.get_object("run_name").get_text()
         lg.info(f"Starting new run: {run_name}")
         """save_folder = pathlib.Path(self.config["paths"]["save_folder"])
