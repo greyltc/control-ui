@@ -180,6 +180,11 @@ Author: Greyson Christoforo
     <property name="icon_name">dialog-warning-symbolic</property>
     <property name="icon_size">3</property>
   </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">dialog-warning-symbolic</property>
+  </object>
   <object class="GtkAdjustment" id="iv_steps_adj">
     <property name="lower">3</property>
     <property name="upper">10000001</property>
@@ -600,7 +605,6 @@ Author: Greyson Christoforo
                                         <property name="spacing">5</property>
                                         <child>
                                           <object class="GtkLabel">
-                                            <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="label" translatable="yes">Smart Mode:</property>
                                             <property name="width_chars">14</property>
@@ -2124,11 +2128,14 @@ Performs the stage homing procedure.</property>
                             </child>
                             <child>
                               <object class="GtkButton">
-                                <property name="label" translatable="yes">Goto</property>
+                                <property name="label" translatable="yes">GoTo</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">Sends the stage to a position</property>
+                                <property name="tooltip_text" translatable="yes">WARNING! Pressing this will cause immediate stage movement
+Sends the stage to a position</property>
+                                <property name="image">image7</property>
+                                <property name="always_show_image">True</property>
                                 <signal name="clicked" handler="on_goto_button" swapped="no"/>
                               </object>
                               <packing>
