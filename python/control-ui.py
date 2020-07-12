@@ -681,6 +681,26 @@ class App(Gtk.Application):
         lg.info("Measuring photodiodes")
         # TODO: generate photodiode message
 
+    def harvest_gui_data(self):
+        """
+        Packages up all the (relevant) info the user has entered into the gui
+        Used when the user saves the gui state or clicks the button to start a measurement run
+        """
+        gui_data = {}
+        for id_str in self.ids:
+            if not id_str.startswith('___'):  # ignore ids that don't have their value explicitly set
+                this_obj = self.b.get_object(id_str)
+                if isinstance(this_obj, gi.repository.Gtk.Switch) or isinstance(this_obj, gi.repository.Gtk.CheckButton) or isinstance(this_obj, gi.overrides.Gtk.ComboBox):
+                    gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_active(), "call_to_set": "set_active"}
+                elif isinstance(this_obj, gi.repository.Gtk.SpinButton):
+                    gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_value(), "call_to_set": "set_value"}
+                elif isinstance(this_obj, gi.repository.Gtk.Entry):
+                    gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
+                elif isinstance(this_obj, gi.overrides.Gtk.TreeView):  # the TreeViews are unfortunately not pickalble
+                    if id_str == "labelTree":
+                        gui_data[id_str] = {"type": str(type(this_obj)), "value": self.label_shadow, "call_to_set": None}
+        return gui_data
+
     def on_save_button(self, button):
         """Save current state of widget entries to a file."""
         save_dialog = Gtk.FileChooserNative(
@@ -688,27 +708,26 @@ class App(Gtk.Application):
             transient_for=self.b.get_object("mainWindow"),
             action=Gtk.FileChooserAction.SAVE,
         )
+        filt = Gtk.FileFilter()
+        filt.add_pattern("*.dat")
+        filt.set_name("GUI State Files (*.dat)")
+        save_dialog.add_filter(filt)
+
+        filt = Gtk.FileFilter()
+        filt.add_pattern("*")
+        filt.set_name("All Files")
+        save_dialog.add_filter(filt)
+
+        save_dialog.set_current_name("gui_state.dat")
+
         response = save_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
             this_file = save_dialog.get_filename()
             lg.info(f"Saving gui state to: {this_file}")
 
-            save_data = {}
-            for id_str in self.ids:
-                if not id_str.startswith('___'):
-                    this_obj = self.b.get_object(id_str)
-                    if isinstance(this_obj, gi.repository.Gtk.Switch) or isinstance(this_obj, gi.repository.Gtk.CheckButton) or isinstance(this_obj, gi.overrides.Gtk.ComboBox):
-                        save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_active(), "call_to_set": "set_active"}
-                    elif isinstance(this_obj, gi.repository.Gtk.SpinButton):
-                        save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_value(), "call_to_set": "set_value"}
-                    elif isinstance(this_obj, gi.repository.Gtk.Entry):
-                        save_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
-                    elif isinstance(this_obj, gi.overrides.Gtk.TreeView):
-                        if id_str == "labelTree":
-                            save_data[id_str] = {"type": str(type(this_obj)), "value": self.label_shadow, "call_to_set": None}
-
+            save_data = self.harvest_gui_data()
             with open(this_file, "wb") as f:
-                pickle.dump(save_data,f)
+                pickle.dump(save_data,f,protocol=pickle.HIGHEST_PROTOCOL)
         else:
             lg.info(f"Save aborted.")
 
@@ -719,6 +738,17 @@ class App(Gtk.Application):
             transient_for=self.b.get_object("mainWindow"),
             action=Gtk.FileChooserAction.OPEN,
         )
+
+        filt = Gtk.FileFilter()
+        filt.add_pattern("*.dat")
+        filt.set_name("GUI State Files (*.dat)")
+        open_dialog.add_filter(filt)
+
+        filt = Gtk.FileFilter()
+        filt.add_pattern("*")
+        filt.set_name("All Files")
+        open_dialog.add_filter(filt)
+
         response = open_dialog.run()
         if response == Gtk.ResponseType.ACCEPT:
             this_file = open_dialog.get_filename()
@@ -780,122 +810,11 @@ class App(Gtk.Application):
         self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
         run_name = self.b.get_object("run_name").get_text()
         lg.info(f"Starting new run: {run_name}")
-        """save_folder = pathlib.Path(self.config["paths"]["save_folder"])
-        destination = str(save_folder.joinpath(run_name))
 
-        iv_pixel_address = self.b.get_object("iv_devs").get_text()
-        eqe_pixel_address = self.b.get_object("eqe_devs").get_text()
-        steadystate_v = 0
-        steadystate_i = 0
-        v_t = float(self.b.get_object("vocdwell").get_text())
-        i_t = float(self.b.get_object("iscdwell").get_text())
-        mppt_t = float(self.b.get_object("mpptTime").get_text())
-        mppt_params = self.b.get_object("mppt_params").get_text()
-        layout_index = "TODO: get this from somewhere, the config file?"  # TODO
-        light_recipe = self.b.get_object("light_recipe").get_text()
-        light_address = self.config["wavelabs"]["address"]
-        motion_address = self.config["motion"]["address"]
-        scan_points = float(self.b.get_object("sweepSteps").get_text())
-        scan_nplc = float(self.b.get_object("nplc").get_text())
-        steadystate_nplc = scan_nplc
-        scan_step_delay = float(self.b.get_object("sweepDelay").get_text())
-        sm_terminator = self.config["smu"]["terminator"]
-        sm_baud = int(self.config["smu"]["baud"])
-        sm_address = self.config["smu"]["address"]
-        pcb_address = motion_address
-        ignore_diodes = True
-        lia_address = self.config["lia"]["address"]
-        mono_address = self.config["monochromator"]["address"]
-        psu_address = self.config["psu"]["address"]
-        psu_vs = [
-            float(self.config["psu"]["ch1_voltage"]),
-            float(self.config["psu"]["ch2_voltage"]),
-            float(self.config["psu"]["ch3_voltage"]),
-        ]
-        psu_is = [
-            float(self.b.get_object("gblc").get_text()),
-            float(self.b.get_object("rblc").get_text()),
-            0,
-        ]
-        eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
-        eqe_ref_meas_path = "What's this?"  # TODO
-        eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
-        eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
-        eqe_start_wl = float(self.b.get_object("nmStart").get_text())
-        eqe_end_wl = float(self.b.get_object("nmStop").get_text())
-        eqe_step = float(self.b.get_object("nmStep").get_text())
-        eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
-        eqe_integration_time = self.b.get_object("eqe_int").get_text()
-        eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
-        eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
-        eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
-        eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
+        to_send = {"gui_data": self.harvest_gui_data(), "config_data": self.config}
+        payload = pickle.dumps(to_send, protocol=pickle.HIGHEST_PROTOCOL)
 
-        # make settings dict
-        # TODO: this looks a bit fragile. I wonder if we can automate it...
-        settings = {
-            "destination": destination,
-            "operator": "",
-            "run_description": "",
-            "experimental_parameter": "",
-            "iv_pixel_address": iv_pixel_address,
-            "eqe_pixel_address": eqe_pixel_address,
-            "mqtt_host": self.MQTTHOST,
-            "steadystate_v": steadystate_v,
-            "steadystate_i": steadystate_i,
-            "v_t": v_t,
-            "i_t": i_t,
-            "mppt_t": mppt_t,
-            "mppt_params": mppt_params,
-            "light_recipe": light_recipe,
-            "light_address": light_address,
-            "motion_address": motion_address,
-            "scan_points": scan_points,
-            "scan_nplc": scan_nplc,
-            "steadystate_nplc": steadystate_nplc,
-            "scan_step_delay": scan_step_delay,
-            "sm_terminator": sm_terminator,
-            "sm_baud": sm_baud,
-            "sm_address": sm_address,
-            "pcb_address": pcb_address,
-            "ignore_diodes": ignore_diodes,
-            "lia_address": lia_address,
-            "mono_address": mono_address,
-            "psu_address": psu_address,
-            "psu_vs": psu_vs,
-            "psu_is": psu_is,
-            "eqe_smu_v": eqe_smu_v,
-            "eqe_ref_meas_path": eqe_ref_meas_path,
-            "eqe_ref_cal_path": eqe_ref_cal_path,
-            "eqe_ref_spec_path": eqe_ref_spec_path,
-            "eqe_start_wl": eqe_start_wl,
-            "eqe_end_wl": eqe_end_wl,
-            "eqe_num_wls": eqe_num_wls,
-            "eqe_integration_time": eqe_integration_time,
-            "eqe_grating_change_wls": eqe_grating_change_wls,
-            # "eqe_grating_change_wls": eqe_filter_change_wls,
-        }
-
-        # add optional parameters if required
-        if not self.b.get_object("autoiv").get_active():
-            scan_start_override_1 = self.b.get_object("sweep1_start").get_value()
-            scan_end_override_1 = self.b.get_object("sweep1_end").get_value()
-            scan_start_override_2 = self.b.get_object("sweep2_start").get_value()
-            scan_end_override_2 = self.b.get_object("sweep2_end").get_value()
-            settings["scan_start_override_1"] = scan_start_override_1
-            settings["scan_end_override_1"] = scan_end_override_1
-            settings["scan_start_override_2"] = scan_start_override_2
-            settings["scan_end_override_2"] = scan_end_override_2
-
-        # send settings dict over mqtt
-        payload = json.dumps(
-            settings
-        )  # TODO: could also use pickle here, which might be more general
-        lg.debug("Run Payload:")
-        lg.debug(payload)
-        self.mqttc.publish(
-            "gui", payload, qos=2
-        ).wait_for_publish()  # TODO: probably we don't wait for this """
+        self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""
