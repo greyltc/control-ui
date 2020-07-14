@@ -13,7 +13,7 @@ Name=Control
 Comment=Solar cell measurement system controller
 
 # The path to the folder in which the executable is run
-Path=/home/labuser/git/control-ui
+Path=${HOME}/git/control-ui
 
 # The executable of the application, possibly with arguments.
 Exec=bash run_local.sh
