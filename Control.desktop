@@ -1,0 +1,29 @@
+[Desktop Entry]
+
+# The type as listed above
+Type=Application
+
+# The version of the desktop entry specification to which this file complies
+Version=1.0
+
+# The name of the application
+Name=Control
+
+# A comment which can/will be used as a tooltip
+Comment=Solar cell measurement system controller
+
+# The path to the folder in which the executable is run
+Path=/home/labuser/git/control-ui
+
+# The executable of the application, possibly with arguments.
+Exec=bash run_local.sh
+
+# The name of the icon that will be used to display this entry
+Icon=applications-science-symbolic
+
+# Describes whether this application needs to be run in a terminal or not
+Terminal=true
+
+# Describes the categories in which this entry should be shown
+Categories=Education;Science;Tools;
+
