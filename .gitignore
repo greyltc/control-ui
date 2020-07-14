@@ -134,3 +134,6 @@ dmypy.json
 .vscode/
 
 \#*
+
+# don't check in customized config files
+measurement_config.ini
