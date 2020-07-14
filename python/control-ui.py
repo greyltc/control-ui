@@ -44,49 +44,17 @@ lg.addHandler(ch)
 lg.addHandler(sysL)
 
 
-# Webkit.WebView()
-
-
 class App(Gtk.Application):
-    # list of all widget id srings
-    # ids = [
-    #     "eqe_in",
-    #     "eqe_int",
-    #     "eqedevbias",
-    #     "firstEnd",
-    #     "firstStart",
-    #     "gblc",
-    #     "iscdwell",
-    #     "mpptTime",
-    #     "nmStart",
-    #     "nmStep",
-    #     "nmStop",
-    #     "nmStop1",
-    #     "nmWidth",
-    #     "nplc",
-    #     "rblc",
-    #     "secondEnd",
-    #     "secondStart",
-    #     "sweepDelay",
-    #     "sweepSteps",
-    #     "vocdwell",
-    #     "run_name_prefix",
-    #     "iv_devs",
-    #     "autoiv",
-    #     "eqe_devs",
-    # ]
 
     def __init__(self, *args, **kwargs):
         """Constructor."""
-        self.cl_config = pathlib.Path()
-        config_file_name = "measurement_config.ini"
-        self.config_file = pathlib.Path(config_file_name)
         super().__init__(
             *args,
             application_id="net.christoforo.control-ui",
             flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
             **kwargs,
         )
+        self.main_win = None
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -97,79 +65,6 @@ class App(Gtk.Application):
             "Configuration file",
             None,
         )
-
-        self.config = configparser.ConfigParser(
-            interpolation=configparser.ExtendedInterpolation()
-        )
-
-        # let's figure out where the configuration file is
-        config_env_var = "MEASUREMENT_CONFIGURATION_FILE_NAME"
-        if config_env_var in os.environ:
-            env_config = pathlib.Path(os.environ.get(config_env_var))
-        else:
-            env_config = pathlib.Path()
-        home_config = pathlib.Path.home() / config_file_name
-        local_config = pathlib.Path(config_file_name)
-        local_python_config = pathlib.Path("python") / config_file_name
-        config_ini = pathlib.Path("config.ini")
-        self.config_warn = False
-        if self.cl_config.is_file():  # priority 1: check the command line
-            lg.debug("Using config file from command line")
-            self.config_file = self.cl_config
-        elif env_config.is_file():  # priority 2: check the environment
-            lg.debug(f"Using config file from {config_env_var} variable")
-            self.config_file = env_config
-        elif home_config.is_file():  # priority 3: check in home dir
-            lg.debug(
-                f"Using config file {config_file_name} in home dir: {pathlib.Path.home()}"
-            )
-            self.config_file = home_config
-        elif local_config.is_file():  # priority 4: check in the current drectory
-            lg.debug(f"Using local config file {local_config.resolve()}")
-            self.config_file = local_config
-        elif local_python_config.is_file():  # priority 5: check in python/
-            lg.debug(f"Using local config file {local_python_config.resolve()}")
-            self.config_file = local_python_config
-            self.config_warn = True
-        elif config_ini.is_file():  # priority 6: check for ./config.ini
-            lg.debug(f"Using local config file {config_ini.resolve()}")
-            self.config_file = config_ini
-        else:  # and give up
-            lg.error("Unable to find a configuration file to load.")
-            raise (ValueError("No config file"))
-
-        try:
-            lg.debug(f"Parsing {self.config_file.resolve()}")
-            with open(self.config_file, "r") as f:
-                for line in f:
-                    lg.debug(line.rstrip())
-            self.config.read(str(self.config_file))
-        except:
-            lg.error("Unexpected error parsing config file.")
-            lg.error(sys.exc_info()[0])
-            raise
-
-        self.main_win = None
-        self.b = None
-        self.ids = []  # ids of objects to save/load
-        self.numPix = len(
-            self.config[self.config["substrates"]["active_layout"]]["pixels"].split(",")
-        )
-        self.approx_seconds_per_iv = 50
-        self.approx_seconds_per_eqe = 150
-        self.live_data_uri = self.config["network"]["live_data_uri"]
-
-        galde_ui_xml_file_name = "ui.glade"
-        gui_file = pathlib.Path(galde_ui_xml_file_name)
-        if gui_file.is_file():
-            self.galde_ui_xml_file = str(gui_file)
-        elif ("python" / gui_file).is_file():  # for debugging
-            self.galde_ui_xml_file = str("python" / gui_file)
-        else:
-            raise (ValueError("Can't find glade file!"))
-
-        # start MQTT client
-        self._start_mqtt()
 
     def _generate_substrate_designators(self, number_list):
         """Generate a list of substrate designators.
@@ -219,8 +114,22 @@ class App(Gtk.Application):
         self.mqttc.disconnect()
 
     def do_startup(self):
-        lg.debug("Starting up app")
+        lg.debug(f"Starting up app from {__file__}")
         Gtk.Application.do_startup(self)
+        self.this_file = pathlib.Path(__file__)
+
+        galde_ui_xml_file_name = "ui.glade"
+        gui_file = pathlib.Path(galde_ui_xml_file_name)
+        python_gui_file = ("python" / gui_file)
+        file_sibling_gui_file = self.this_file.parent / galde_ui_xml_file_name
+        if gui_file.is_file():
+            self.galde_ui_xml_file = str(gui_file.resolve())
+        elif python_gui_file.is_file():  # so that debug from code works
+            self.galde_ui_xml_file = str(python_gui_file.resolve())
+        elif file_sibling_gui_file.is_file():  # look in __file__'s dir
+            self.galde_ui_xml_file = str(file_sibling_gui_file.resolve())
+        else:
+            raise (ValueError("Can't find glade file!"))
 
         self.b = Gtk.Builder()
         self.b.add_from_file(self.galde_ui_xml_file)
@@ -230,89 +139,26 @@ class App(Gtk.Application):
         # a good starting point will be to discard those starting with "___"
         # I should probably just rename all the saveable/loadable stuff to contain
         # some special character so the filtering becomes easier
+        self.ids = []
         for o in self.b.get_objects():
             try:
                 self.ids.append(Gtk.Buildable.get_name(o))
             except:
                 pass
 
-        # get dimentions of substrate array to generate designators
-        number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
-        sd = self._generate_substrate_designators(number_list)
-        ns = len(sd)
-        self.numSubstrates = ns
-        self.substrate_designators = sd
-
-        # list that shadows the device label names
-        self.label_shadow = ['']*ns
-
-        self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, sd, 0)
-
-        self.dev_store = [
-            Gtk.TreeStore(str, bool, bool),
-            Gtk.TreeStore(str, bool, bool),
-        ]  # [iv devs, eqe devs]
-        self.setup_dev_stores()
-
-        self.dev_tree = self.b.get_object("devTV")
-        self.setup_dev_tree(self.dev_tree)
-
-        # TODO: do this in a non-obsolete way (probably w/ css)
-        fontdesc = Pango.FontDescription("monospace")
-
-        max_devices = self.numPix * self.numSubstrates
-        address_string_length = math.ceil(max_devices / 4)
-        selection_box_length = 4 + address_string_length + 3
-        default_on = "0x" + "F" * address_string_length
-        default_off = "0x" + "0" * address_string_length
-
-        self.def_fmt_str = f"0{address_string_length}X"
-
-        self.iv_dev_box = self.b.get_object("iv_devs")
-
-        self.last_valid_devs = [default_on, default_off]  # [iv devs, eqe devs]
-
-        self.iv_dev_box = self.b.get_object("iv_devs")
-        self.iv_dev_box.modify_font(fontdesc)
-        self.iv_dev_box.set_text(default_on)
-        self.iv_dev_box.set_width_chars(selection_box_length)
-        self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
-
-        self.eqe_dev_box = self.b.get_object("eqe_devs")
-        self.eqe_dev_box.modify_font(fontdesc)
-        self.eqe_dev_box.set_text(default_off)
-        self.eqe_dev_box.set_width_chars(selection_box_length)
-        self.eqe_dev_box.set_icon_from_icon_name(0, "emblem-default")
-
-        self.po = self.b.get_object("picker_po")
-        self.po.set_position(Gtk.PositionType.BOTTOM)
-
-        self.tick()
-        self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
-        self.b.connect_signals(self)  # maps all ui callbacks to functions here
-
-        wv = self.b.get_object("wv")
-        if self.live_data_uri != "":
-            wv.load_uri(self.live_data_uri)
-
-        # send config file to CLI MQTT client
-        with open(self.config_file, "r") as f:
-            payload = json.dumps(f.read())
-        self.mqttc.publish("gui/config", payload, qos=2).wait_for_publish()
-
-    def setup_dev_stores(self):
-        for store in self.dev_store:
+    def setup_dev_stores(self, num_substrates, num_pix, dev_stores, label_store):
+        for store in dev_stores:
             checked = True
             inconsistent = False
             # fill in the model
-            for i in range(self.numSubstrates):
-                if self.label_store[i][0] == "":
-                    label = self.label_store[i][1]
+            for i in range(num_substrates):
+                if label_store[i][0] == "":
+                    label = label_store[i][1]
                 else:
-                    label = self.label_store[i][0]
+                    label = label_store[i][0]
                 piter = store.append(None, [label, checked, inconsistent])
                 j = 1
-                while j <= self.numPix:
+                while j <= num_pix:
                     store.append(piter, [f"Device {j}", checked, inconsistent])
                     j += 1
 
@@ -370,7 +216,7 @@ class App(Gtk.Application):
                     num_selected = num_selected + 1
                 citer = self.dev_store[eqe].iter_next(citer)
             # if they do, the device as well is selected; otherwise it is not
-            if num_selected == self.numPix:
+            if num_selected == self.num_pix:
                 self.dev_store[eqe][piter][2] = False
                 self.dev_store[eqe][piter][1] = True
             elif num_selected == 0:
@@ -458,7 +304,7 @@ class App(Gtk.Application):
         labelTree = self.b.get_object("labelTree")
         labelStore = Gtk.ListStore(str, str, int)
 
-        for i in range(self.numSubstrates):
+        for i in range(self.num_substrates):
             labelStore.append([labels[i], substrate_designators[i], cell_y_padding])
         labelTree.set_model(labelStore)
 
@@ -553,6 +399,7 @@ class App(Gtk.Application):
         if self.main_win is None:
             # Windows are associated with the application
             # when the last one is closed the application shuts down
+
             self.logTB = self.b.get_object("tbLog")  # log text buffer
             self.ltv = self.b.get_object("ltv")  # log text view
 
@@ -570,9 +417,145 @@ class App(Gtk.Application):
             uiLog.setFormatter(uiLogFormat)
             lg.addHandler(uiLog)
             lg.debug("Gui logging setup.")
+
+            self.config = configparser.ConfigParser(
+                interpolation=configparser.ExtendedInterpolation()
+            )
+            
+            example_config_file_name = "example_config.ini"
+            config_file_name = "measurement_config.ini"
+            self.config_file = pathlib.Path(config_file_name)
+
+            # let's figure out where the configuration file is
+            config_env_var = "MEASUREMENT_CONFIGURATION_FILE_NAME"
+            if config_env_var in os.environ:
+                env_config = pathlib.Path(os.environ.get(config_env_var))
+            else:
+                env_config = pathlib.Path()
+            home_config = pathlib.Path.home() / config_file_name
+            local_config = pathlib.Path(config_file_name)
+            example_config = pathlib.Path(example_config_file_name)
+            example_python_config = pathlib.Path("python") / example_config_file_name
+            file_sibling_config = self.this_file.parent / example_config_file_name
+            self.config_warn = False
+            if self.cl_config.is_file():  # priority 1: check the command line
+                lg.debug("Using config file from command line")
+                self.config_file = self.cl_config
+            elif env_config.is_file():  # priority 2: check the environment
+                lg.debug(f"Using config file from {config_env_var} variable")
+                self.config_file = env_config
+            elif local_config.is_file():  # priority 3: check in the current drectory
+                #lg.debug(f"Using local config file {local_config.resolve()}")
+                self.config_file = local_config
+            elif home_config.is_file():  # priority 4: check in home dir
+                lg.debug(
+                    f"Using config file {config_file_name} in home dir: {pathlib.Path.home()}"
+                )
+                self.config_file = home_config
+            elif example_config.is_file():  # priority 5: check in cwd for example
+                lg.debug(f"Using example config file: {example_config.resolve()}")
+                self.config_file = example_config
+                self.config_warn = True
+            elif example_python_config.is_file():  # priority 6: check in python/for example
+                lg.debug(f"Using example config file: {example_python_config.resolve()}")
+                self.config_file = example_python_config
+                self.config_warn = True
+            elif file_sibling_config.is_file():
+                lg.debug(f"Using example config file next to __file__: {file_sibling_config.resolve()}")
+                self.config_file = file_sibling_config
+                self.config_warn = True
+            else:  # and give up
+                lg.error("Unable to find a configuration file to load.")
+                raise (ValueError("No config file"))
+
             lg.info(f"Using configuration file: {self.config_file.resolve()}")
             if self.config_warn == True:
-                lg.warning(f"You're using a fallback configuration file. That's likely not what you want.")
+                lg.warning(f"You're running with the example configuration file. That's likely not what you want.")
+
+            try:
+                with open(self.config_file, "r") as f:
+                    for line in f:
+                        lg.debug(line.rstrip())
+                self.config.read(str(self.config_file))
+            except:
+                lg.error("Unexpected error parsing config file.")
+                lg.error(sys.exc_info()[0])
+                raise
+
+            # get dimentions of substrate array to generate designators
+            number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
+            self.substrate_designators = self._generate_substrate_designators(number_list)
+            self.num_substrates = len(self.substrate_designators)
+
+            self.num_pix = len(
+                self.config[self.config["substrates"]["active_layout"]]["pixels"].split(",")
+            )
+            self.live_data_uri = self.config["network"]["live_data_uri"]
+
+            # list that shadows the device label names
+            self.label_shadow = ['']*self.num_substrates
+
+            self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, self.substrate_designators, 0)
+
+            self.dev_store = [
+                Gtk.TreeStore(str, bool, bool),
+                Gtk.TreeStore(str, bool, bool),
+            ]  # [iv devs, eqe devs]
+            self.setup_dev_stores(self.num_substrates, self.num_pix, self.dev_store, self.label_store)
+
+            self.dev_tree = self.b.get_object("devTV")
+            self.setup_dev_tree(self.dev_tree)
+
+            # TODO: do this in a non-obsolete way (probably w/ css)
+            fontdesc = Pango.FontDescription("monospace")
+
+            max_devices = self.num_pix * self.num_substrates
+            address_string_length = math.ceil(max_devices / 4)
+            selection_box_length = 4 + address_string_length + 3
+            default_on = "0x" + "F" * address_string_length
+            default_off = "0x" + "0" * address_string_length
+
+            self.def_fmt_str = f"0{address_string_length}X"
+
+            self.iv_dev_box = self.b.get_object("iv_devs")
+
+            self.last_valid_devs = [default_on, default_off]  # [iv devs, eqe devs]
+
+            self.iv_dev_box = self.b.get_object("iv_devs")
+            self.iv_dev_box.modify_font(fontdesc)
+            self.iv_dev_box.set_text(default_on)
+            self.iv_dev_box.set_width_chars(selection_box_length)
+            self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
+
+            self.eqe_dev_box = self.b.get_object("eqe_devs")
+            self.eqe_dev_box.modify_font(fontdesc)
+            self.eqe_dev_box.set_text(default_off)
+            self.eqe_dev_box.set_width_chars(selection_box_length)
+            self.eqe_dev_box.set_icon_from_icon_name(0, "emblem-default")
+
+            self.po = self.b.get_object("picker_po")
+            self.po.set_position(Gtk.PositionType.BOTTOM)
+
+            self.approx_seconds_per_iv = 50
+            self.approx_seconds_per_eqe = 150
+
+            wv = self.b.get_object("wv")
+            if self.live_data_uri != "":
+                wv.load_uri(self.live_data_uri)
+
+            # start MQTT client
+            self._start_mqtt()
+
+            # send config file to CLI MQTT client
+            # not really sure why this should go out now...
+            # with open(self.config_file, "r") as f:
+            #     payload = json.dumps(f.read())
+            # self.mqttc.publish("gui/config", payload, qos=2)
+
+            self.tick()
+            self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
+            self.b.connect_signals(self)  # maps all ui callbacks to functions here
+
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
@@ -585,12 +568,16 @@ class App(Gtk.Application):
         # convert GVariantDict -> GVariant -> dict
         options = options.end().unpack()
 
+        # something that fails the is_file test later
+        self.cl_config = pathlib.Path() 
+
         if len(options) > 0:
             lg.debug(f"Got command line options: {options}")
 
         if "config" in options:
-            lg.debug(f'Config file given on command line: {str(options["config"])}')
-            self.cl_config = pathlib.Path(str(options["config"]))
+            conf = bytes(options["config"]).decode().rstrip('\0')
+            lg.debug(f'Config file given on command line: {conf}')
+            self.cl_config = pathlib.Path(conf)
 
         self.activate()
         return 0
@@ -623,7 +610,7 @@ class App(Gtk.Application):
         eqe = "eqe" in Gtk.Buildable.get_name(entry)
         self.dev_tree.set_model(self.dev_store[eqe])
         sw = self.dev_tree.get_parent()  # scroll window
-        sw.set_min_content_height((self.numSubstrates + 1) * 25)
+        sw.set_min_content_height((self.num_substrates + 1) * 25)
         if entry.get_icon_name(0) != "emblem-default":
             entry.set_text(self.last_valid_devs[eqe])
         text_is = entry.get_text()
@@ -654,7 +641,7 @@ class App(Gtk.Application):
                 )  # advance to the next device
             if num_enabled == 0:
                 self.dev_store[eqe][siter][1] = False  # set substrate off
-            elif num_enabled == self.numPix:
+            elif num_enabled == self.num_pix:
                 self.dev_store[eqe][siter][1] = True  # set substrate on
             else:
                 self.dev_store[eqe][siter][2] = True  # set substrate inconsistant
