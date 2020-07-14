@@ -7,7 +7,7 @@ Type=Application
 Version=1.0
 
 # The name of the application
-Name=Control
+Name=Measurement Control
 
 # A comment which can/will be used as a tooltip
 Comment=Solar cell measurement system controller
@@ -19,7 +19,7 @@ Path=${HOME}/git/control-ui
 Exec=bash run_local.sh
 
 # The name of the icon that will be used to display this entry
-Icon=applications-science-symbolic
+Icon=applications-engineering
 
 # Describes whether this application needs to be run in a terminal or not
 Terminal=true
