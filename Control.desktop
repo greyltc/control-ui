@@ -17,7 +17,8 @@ Comment=Solar cell measurement system controller
 #Path=${HOME}/git/control-ui
 
 # The executable of the application, possibly with arguments.
-Exec=python -m control-ui
+Exec=bash -c "PYTHONPATH=${HOME}/python python -m control-ui"
+#Exec=python -m control-ui
 
 # The name of the icon that will be used to display this entry
 Icon=applications-engineering
