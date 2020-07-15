@@ -55,6 +55,8 @@ class App(Gtk.Application):
             **kwargs,
         )
         self.main_win = None
+        self.mqtt_setup = False
+        self.mqtt_connecting = False
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -89,6 +91,7 @@ class App(Gtk.Application):
 
     def _start_mqtt(self):
         """Start the MQTT client and subscribe to the CLI topic."""
+        self.mqtt_connecting = True
 
         def on_message(mqttc, obj, msg):
             """Act on an MQTT message."""
@@ -112,6 +115,7 @@ class App(Gtk.Application):
         except:
             lg.error("Unable to connect to the backend.")
             self.mqtt_setup = False
+        self.mqtt_connecting = False
 
     def _stop_mqtt(self):
         """Stop the MQTT client."""
@@ -389,10 +393,11 @@ class App(Gtk.Application):
                 self.mqtt_connected = False
             self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
         else:
-            status = "Disconnected"
             self.mqtt_connected = False
+            status = "Disconnected"
             self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
-            self._start_mqtt()
+            if self.mqtt_connecting == False: # don't spam connections
+                self._start_mqtt()
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))
