@@ -99,14 +99,19 @@ class App(Gtk.Application):
                 self.b.get_object("goto_x").set_text(m[0])
                 self.b.get_object("goto_y").set_text(m[0])
 
-        # connect to mqtt broker
-        self.MQTTHOST = self.config["network"]["MQTTHOST"]
-        self.mqttc = mqtt.Client()
-        self.mqttc.on_message = on_message
-        self.mqttc.connect(self.MQTTHOST)
-        # subscribe to cli topic to report back on progress
-        self.mqttc.subscribe("cli/#", qos=2)
-        self.mqttc.loop_start()
+        try:
+            # connect to mqtt broker
+            self.MQTTHOST = self.config["network"]["MQTTHOST"]
+            self.mqttc = mqtt.Client()
+            self.mqttc.on_message = on_message
+            self.mqttc.connect(self.MQTTHOST)
+            # subscribe to cli topic to report back on progress
+            self.mqttc.subscribe("cli/#", qos=2)
+            self.mqttc.loop_start()
+            self.mqtt_setup = True
+        except:
+            lg.error("Unable to connect to the backend.")
+            self.mqtt_setup = False
 
     def _stop_mqtt(self):
         """Stop the MQTT client."""
@@ -375,11 +380,19 @@ class App(Gtk.Application):
     # runs once per second
     def tick(self, user_data=None):
         # lg.debug("tick")
-        if self.mqttc.is_connected():
-            status = "Connected"
+        if self.mqtt_setup == True:
+            if self.mqttc.is_connected():
+                status = "Connected"
+                self.mqtt_connected = True
+            else:
+                status = "Disconnected"
+                self.mqtt_connected = False
+            self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
         else:
             status = "Disconnected"
-        self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
+            self.mqtt_connected = False
+            self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
+            self._start_mqtt()
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))
