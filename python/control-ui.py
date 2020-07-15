@@ -431,6 +431,7 @@ class App(Gtk.Application):
             self.logTB.write = myWrite
             self.logTB.flush = myFlush
             uiLog = logging.StreamHandler(stream=self.logTB)
+            uiLog.setLevel(logging.INFO)
             uiLog.set_name("ui")
             uiLog.setFormatter(uiLogFormat)
             lg.addHandler(uiLog)
