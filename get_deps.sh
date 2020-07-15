@@ -6,7 +6,7 @@ PACMAN_DEPS="python-systemd python-humanize python-paho-mqtt python-gobject webk
 
 if test "${ARG1}" = "print"
 then
-	echo "${PACMAN_DEPS}"
+	echo "${PACMAN_DEPS} "
 else
 	sudo pacman -Syu --needed ${PACMAN_DEPS}
 fi
