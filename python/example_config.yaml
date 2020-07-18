@@ -12,15 +12,18 @@ visa:
 controller:
     address: 172.0.0.3
 
-# source-measure unit
-smu:
-    address: ASRL1::INSTR
-    baud: 57600
-    terminator: \n
-    # if front terminals is false, use rear terminals
-    front_terminals: false
-    # if 2 wire is false, use 4 wire
-    two_wire: false
+# source-measure unit(s)
+smus:
+    smu1:
+        address: ASRL1::INSTR
+        baud: 57600
+        terminator: \n
+        # if front terminals is false, use rear terminals
+        front_terminals: false
+        # if 2 wire is false, use 4 wire
+        two_wire: false
+        # list of mux relays served by smu
+        mux_relays: []
 
 solarsim:
     address: wavelabs-relay://127.0.0.1:3335
