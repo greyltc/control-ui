@@ -22,13 +22,13 @@ smus:
         # if 2 wire is false, use 4 wire
         two_wire: false
         # list of mux relays served by smu
-        mux_relays: []
+        mux_relays: null
 
 solarsim:
     address: wavelabs-relay://127.0.0.1:3335
-    # file path for solar sim spectrum calibration data. Using a relative path for a
-    # file located in the same folder as this config file is safest.
-    spectral_calibration_file: solarsim_calibration.txt
+    spectral_calibration:
+        wls: null
+        cal: null
 
 # lock-in amplifier
 lia:
@@ -139,9 +139,9 @@ calibration_diodes:
         # if externally connected, specify the position of the stage along each available axis
         # in steps
         position: [1010000, 1200000]
-        # file path for photodiode eqe data. Using a relative path for a file located
-        # in the same folder as this config file is safest.
-        eqe_file: pd1_eqe.txt
+        eqe:
+            wls: null
+            eqe: null
         # 1 sun equivalent calibration current
         solarsim: null
 
@@ -149,6 +149,6 @@ calibration_diodes:
 reference:
     # spectral irradiance data
     spectra:
-        # file path for AM1.5G spectrum data. Using a relative path for a file located
-        # in the same folder as this config file is safest.
-        AM1.5G_file: am15g.txt 
+        AM1.5G:
+            wls: null
+            irr: null
