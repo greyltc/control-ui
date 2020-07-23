@@ -1284,7 +1284,7 @@ Author: Greyson Christoforo
                                                   <object class="GtkSpinButton" id="v_dwell">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
-                                                    <property name="tooltip_text" translatable="yes">Amount of time for constant voltage measurement</property>
+                                                    <property name="tooltip_markup" translatable="yes">Amount of time for constant voltage measurement</property>
                                                     <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">3.0</property>
@@ -1344,7 +1344,7 @@ Author: Greyson Christoforo
                                                   <object class="GtkSpinButton" id="v_dwell_value">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
-                                                    <property name="tooltip_text" translatable="yes">Voltage setpoint for constant current measurement (typically 0mV for I&lt;sub&gt;SC&lt;/sub&gt;)</property>
+                                                    <property name="tooltip_markup" translatable="yes">Voltage setpoint for constant current measurement (typically 0mV for I&lt;sub&gt;SC&lt;/sub&gt;)</property>
                                                     <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">0.0</property>
