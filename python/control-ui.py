@@ -792,11 +792,28 @@ class App(Gtk.Application):
     def on_health_button(self, button):
         lg.info("Checking health")
         # TODO: generate health check message
+    
+    def move_warning(self):
+        message_dialog = Gtk.MessageDialog(
+            modal=True,
+            destroy_with_parent=True,
+            transient_for=self.b.get_object("mainWindow"),
+            message_type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            text="This action will cause the stage to move."
+        )
+        message_dialog.format_secondary_text("Before clicking OK, check that all foreign objects are clear from the stage area and that it is safe to move.")
+
+        result = message_dialog.run()
+        message_dialog.destroy()
+        return(result)
 
     def on_home_button(self, button):
         """Home the stage."""
-        lg.info("Homing stage")
-        self.mqttc.publish("gui/home", "home", qos=2).wait_for_publish()
+        if (self.move_warning() == Gtk.ResponseType.OK):
+            lg.info("Homing stage")
+            self.mqttc.publish("gui/home", "home", qos=2).wait_for_publish()
+
 
     def on_stage_read_button(self, button):
         """Read the current stage position."""
@@ -805,22 +822,24 @@ class App(Gtk.Application):
 
     def on_goto_button(self, button):
         """Goto stage position."""
-        lg.debug("Sending the stage some place")
-        ax1_pos = self.b.get_object("goto_x").get_text()
-        ax2_pos = self.b.get_object("goto_y").get_text()
-        payload = json.dumps([ax1_pos, ax2_pos])
-        self.mqttc.publish("gui/goto", payload, qos=2).wait_for_publish()
+        if (self.move_warning() == Gtk.ResponseType.OK):
+            lg.debug("Sending the stage some place")
+            ax1_pos = self.b.get_object("goto_x").get_text()
+            ax2_pos = self.b.get_object("goto_y").get_text()
+            payload = json.dumps([ax1_pos, ax2_pos])
+            self.mqttc.publish("gui/goto", payload, qos=2).wait_for_publish()
 
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
-        self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
-        run_name = self.b.get_object("run_name").get_text()
-        lg.info(f"Starting new run: {run_name}")
+        if (self.move_warning() == Gtk.ResponseType.OK):
+            self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
+            run_name = self.b.get_object("run_name").get_text()
+            lg.info(f"Starting new run: {run_name}")
 
-        to_send = {"gui_data": self.harvest_gui_data(), "config_data": self.config}
-        payload = pickle.dumps(to_send, protocol=pickle.HIGHEST_PROTOCOL)
+            to_send = {"gui_data": self.harvest_gui_data(), "config_data": self.config}
+            payload = pickle.dumps(to_send, protocol=pickle.HIGHEST_PROTOCOL)
 
-        self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
+            self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""

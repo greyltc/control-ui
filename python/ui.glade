@@ -1189,6 +1189,45 @@ Author: Greyson Christoforo
                                                 <property name="position">2</property>
                                               </packing>
                                             </child>
+                                            <child>
+                                              <object class="GtkBox">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="spacing">5</property>
+                                                <child>
+                                                  <object class="GtkLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">Dark Sweep:</property>
+                                                    <property name="width_chars">14</property>
+                                                    <property name="xalign">1</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">0</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkSwitch" id="dark_switch">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">Also perform all sweeps with the light off</property>
+                                                    <property name="active">True</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">1</property>
+                                                  </packing>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">3</property>
+                                              </packing>
+                                            </child>
                                           </object>
                                         </child>
                                         <child type="label">
@@ -2294,6 +2333,7 @@ Sends the stage to a position</property>
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
@@ -2471,7 +2511,6 @@ Sends the stage to a position</property>
         <child>
           <object class="GtkButton">
             <property name="label">Pause</property>
-            <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <property name="tooltip_text" translatable="yes">Pause the measurement routine (the current task will run to completion before actually pausing)</property>
