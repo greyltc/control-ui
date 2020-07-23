@@ -2126,7 +2126,7 @@ Performs the stage homing procedure.</property>
                                   <object class="GtkSpinButton" id="goto_x">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="tooltip_text" translatable="yes">Stage position Y (in steps)</property>
+                                    <property name="tooltip_text" translatable="yes">Stage position X (in steps)</property>
                                     <property name="hexpand">True</property>
                                     <property name="width_chars">11</property>
                                     <property name="caps_lock_warning">False</property>
