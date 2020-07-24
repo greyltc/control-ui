@@ -812,13 +812,17 @@ class App(Gtk.Application):
         """Home the stage."""
         if (self.move_warning() == Gtk.ResponseType.OK):
             lg.info("Homing stage")
-            self.mqttc.publish("gui/home", "home", qos=2).wait_for_publish()
+            self.mqttc.publish("gui/stage", "home", qos=2).wait_for_publish()
 
+    def on_halt_button(self, button):
+        """Emergency stop"""
+        lg.warning("Powering down the stage motor drivers")
+        self.mqttc.publish("gui/stage", "halt", qos=2).wait_for_publish()
 
     def on_stage_read_button(self, button):
         """Read the current stage position."""
         lg.debug("Getting stage position")
-        # self.mqttc.publish("gui/read_stage", "read_stage", qos=2).wait_for_publish()
+        self.mqttc.publish("gui/stage", "read_stage", qos=2).wait_for_publish()
 
     def on_goto_button(self, button):
         """Goto stage position."""
@@ -827,7 +831,7 @@ class App(Gtk.Application):
             ax1_pos = self.b.get_object("goto_x").get_text()
             ax2_pos = self.b.get_object("goto_y").get_text()
             payload = json.dumps([ax1_pos, ax2_pos])
-            self.mqttc.publish("gui/goto", payload, qos=2).wait_for_publish()
+            self.mqttc.publish("gui/stage", payload, qos=2).wait_for_publish()
 
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
