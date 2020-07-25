@@ -812,7 +812,9 @@ class App(Gtk.Application):
         """Home the stage."""
         if (self.move_warning() == Gtk.ResponseType.OK):
             lg.info("Homing stage")
-            self.mqttc.publish("gui/stage", "home", qos=2).wait_for_publish()
+            msg = {'cmd':'home', 'pcb':self.config['controller']['address']}
+            pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+            self.mqttc.publish("gui/stage", pic_msg, qos=2).wait_for_publish()
 
     def on_halt_button(self, button):
         """Emergency stop"""
