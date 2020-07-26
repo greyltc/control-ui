@@ -261,6 +261,12 @@ Author: Greyson Christoforo
       </object>
     </child>
   </object>
+  <object class="GtkListStore" id="places_list">
+    <columns>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkAdjustment" id="source_delay_adj">
     <property name="upper">999999</property>
     <property name="value">3</property>
@@ -2140,13 +2146,58 @@ Performs the stage homing procedure.</property>
                             <property name="can_focus">False</property>
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkButton">
-                                <property name="label" translatable="yes">Read Stage Position</property>
+                              <object class="GtkBox">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">Reads the current stage position</property>
-                                <signal name="clicked" handler="on_stage_read_button" swapped="no"/>
+                                <property name="can_focus">False</property>
+                                <property name="halign">center</property>
+                                <child>
+                                  <object class="GtkButton">
+                                    <property name="label" translatable="yes">Read Stage Position</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                    <property name="tooltip_text" translatable="yes">Reads the current stage position</property>
+                                    <signal name="clicked" handler="on_stage_read_button" swapped="no"/>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Load Config Position:</property>
+                                    <property name="width_chars">18</property>
+                                    <property name="xalign">1</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkComboBox">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="model">places_list</property>
+                                    <signal name="changed" handler="on_load_pos" swapped="no"/>
+                                    <child>
+                                      <object class="GtkCellRendererText"/>
+                                      <attributes>
+                                        <attribute name="text">0</attribute>
+                                      </attributes>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">2</property>
+                                  </packing>
+                                </child>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -2246,7 +2297,6 @@ Performs the stage homing procedure.</property>
                                     <property name="tooltip_text" translatable="yes">Stage position Z [mm]</property>
                                     <property name="hexpand">True</property>
                                     <property name="width_chars">3</property>
-                                    <property name="text" translatable="yes">0</property>
                                     <property name="caps_lock_warning">False</property>
                                     <property name="input_purpose">number</property>
                                     <property name="adjustment">stage_z_adj</property>
@@ -2448,6 +2498,26 @@ Sends the stage to a position</property>
                             <property name="image_position">top</property>
                             <property name="always_show_image">True</property>
                             <signal name="clicked" handler="on_health_button" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="GtkButton">
+                            <property name="label" translatable="yes">Toggle Device Selection</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Toggles between closing the mux switches to connect the first device selected in the I-V device bitmask and opening all switches</property>
+                            <property name="image_position">top</property>
+                            <property name="always_show_image">True</property>
+                            <signal name="clicked" handler="on_device_toggle" swapped="no"/>
                           </object>
                         </child>
                       </object>

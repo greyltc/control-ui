@@ -103,13 +103,20 @@ class App(Gtk.Application):
                 msg = None
 
             if msg is not None:
-                if 'log' in msg:
+                if 'log' in msg: # log update message
                     lg.log(msg['log']['level'], msg['log']['text'])
+                if 'pos' in msg: # position update message
+                    pos = msg['pos']
+                    if len(pos) != self.num_axes:
+                        lg.warning(f"Stage dimension mismatch")
+                    else:
+                        for i,val in enumerate(pos):
+                            try:
+                                self.gotos[i].set_value(val)
+                            except:
+                                 self.gotos[i].set_text('')
+                                 lg.warning(f"Failed to read axis {i+1} position")
 
-
-            if (subtopic := msg.topic.split("/")[-1]) == "stage_pos":
-                self.b.get_object("goto_x").set_text(m[0])
-                self.b.get_object("goto_y").set_text(m[0])
 
         try:
             # connect to mqtt broker
@@ -508,7 +515,7 @@ class App(Gtk.Application):
 
             lg.info(f"Using configuration file: {self.config_file.resolve()}")
             if self.config_warn == True:
-                lg.warning(f"You're running with the example configuration file. That's likely not what you want.")
+                lg.warning(f"Running with the example configuration file.")
 
             try:
                 with open(self.config_file, "r") as f:
@@ -542,12 +549,12 @@ class App(Gtk.Application):
             movement_res_oom = abs(math.floor(math.log10(movement_res)))
             goto_field_width = length_oom + 1 + movement_res_oom
 
-            entries = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
+            self.gotos = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
             adjusters = [self.b.get_object("stage_x_adj"), self.b.get_object("stage_y_adj"), self.b.get_object("stage_z_adj")]
             end_buffer_in_mm = 5 # don't allow the user to go less than this from the ends
             for i, axlen in enumerate(esl):
-                entries[i].set_width_chars(goto_field_width)
-                entries[i].set_digits(movement_res_oom)
+                self.gotos[i].set_width_chars(goto_field_width)
+                self.gotos[i].set_digits(movement_res_oom)
                 adjusters[i].set_value(axlen/2)
                 adjusters[i].set_lower(end_buffer_in_mm)
                 adjusters[i].set_upper(axlen-end_buffer_in_mm)
@@ -564,6 +571,17 @@ class App(Gtk.Application):
                 o.set_visible(False)
                 o = self.b.get_object("goto_y")
                 o.set_visible(False)
+            
+            # handle custom locations
+            location_names = [conf for conf in self.config["stage"]]
+            location_names.remove('uri')
+            pl = self.b.get_object("places_list")
+            self.custom_coords = []
+            for name in location_names:
+                coord = self.config["stage"][name].split(',')
+                coord = [float(v) for v in coord]
+                self.custom_coords.append(coord)
+                pl.append([name])
 
             # list that shadows the device label names
             self.label_shadow = ['']*self.num_substrates
@@ -634,6 +652,15 @@ class App(Gtk.Application):
             self.main_win.set_application(self)
 
         self.main_win.present()
+
+
+    # gets called when the user selects a custom position
+    def on_load_pos(self, cb):
+        j = cb.get_active()
+        pos = self.custom_coords[j]
+        for i,coord in enumerate(pos):
+            self.gotos[i].set_value(coord)
+
 
     def do_command_line(self, command_line):
         lg.debug("Doing command line things")
@@ -750,7 +777,7 @@ class App(Gtk.Application):
         # self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
 
     def on_pd_button(self, button):
-        lg.info("Measuring photodiodes")
+        lg.info("Measuring currents")
         # TODO: generate photodiode message
 
     def harvest_gui_data(self):
@@ -855,6 +882,14 @@ class App(Gtk.Application):
         lg.info("Measuring RTD(s)")
         # TODO: generate rtd measurement message
 
+
+    def on_device_toggle(self, button):
+        # TODO: figure out device
+        msg = {'cmd':'toggle_switch', 'pcb':self.config['controller']['address']}
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+
+
     def on_health_button(self, button):
         lg.info("HEALTH CHECK INITIATED")
         msg = {'cmd':'check_health',
@@ -910,11 +945,11 @@ class App(Gtk.Application):
         """Goto stage position."""
         if (self.move_warning() == Gtk.ResponseType.OK):
             lg.debug("Sending the stage some place")
-            pos = [self.b.get_object("goto_x").get_value()]
+            pos = [self.gotos[0].get_value()]
             if self.num_axes >= 2:
-                pos += [self.b.get_object("goto_y").get_value()]
+                pos += [self.gotos[1].get_value()]
             if self.num_axes >= 3:
-                pos += [self.b.get_object("goto_z").get_value()]
+                pos += [self.gotos[2].get_value()]
             msg = {'cmd':'goto', 'pos':pos, 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
             pic_msg = pickle.dumps(msg)
             self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
