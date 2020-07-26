@@ -511,7 +511,7 @@ class App(Gtk.Application):
             )
             self.live_data_uri = self.config["network"]["live_data_uri"]
 
-            # parse axes info needed for gui
+            # stage specific stuff
             esl = self.config["stage"]["uri"].split('://')[1].split('/')[0]
             if ',' in esl:
                 esl = [float(x) for x in esl.split(',')]
@@ -525,7 +525,7 @@ class App(Gtk.Application):
 
             entries = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
             adjusters = [self.b.get_object("stage_x_adj"), self.b.get_object("stage_y_adj"), self.b.get_object("stage_z_adj")]
-            end_buffer_in_mm = 3 # can't got less than this from the ends
+            end_buffer_in_mm = 5 # don't allow the user to go less than this from the ends
             for i, axlen in enumerate(esl):
                 entries[i].set_width_chars(goto_field_width)
                 entries[i].set_digits(movement_res_oom)
@@ -533,7 +533,7 @@ class App(Gtk.Application):
                 adjusters[i].set_lower(end_buffer_in_mm)
                 adjusters[i].set_upper(axlen-end_buffer_in_mm)
 
-
+            # hide unused axes
             self.num_axes = len(esl)
             if self.num_axes < 3:
                 o = self.b.get_object("gtzl")
@@ -865,19 +865,22 @@ class App(Gtk.Application):
         """Read the current stage position."""
         msg = {'cmd':'read_stage', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
-        self.mqttc.publish("cmd/util", "read_stage", qos=2).wait_for_publish()
+        self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
 
     def on_goto_button(self, button):
         """Goto stage position."""
         if (self.move_warning() == Gtk.ResponseType.OK):
-            
             lg.debug("Sending the stage some place")
-            ax1_pos = self.b.get_object("goto_x").get_value()
-            ax2_pos = self.b.get_object("goto_y").get_value()
-            msg = {'cmd':'home', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
-            payload = json.dumps([ax1_pos, ax2_pos])
-            self.mqttc.publish("cmd/util", payload, qos=2).wait_for_publish()
+            pos = [self.b.get_object("goto_x").get_value()]
+            if self.num_axes >= 2:
+                pos += [self.b.get_object("goto_y").get_value()]
+            if self.num_axes >= 3:
+                pos += [self.b.get_object("goto_z").get_value()]
+            msg = {'cmd':'goto', 'pos':pos, 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
+            pic_msg = pickle.dumps(msg)
+            self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
+
 
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
