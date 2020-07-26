@@ -511,6 +511,41 @@ class App(Gtk.Application):
             )
             self.live_data_uri = self.config["network"]["live_data_uri"]
 
+            # parse axes info needed for gui
+            esl = self.config["stage"]["uri"].split('://')[1].split('/')[0]
+            if ',' in esl:
+                esl = [float(x) for x in esl.split(',')]
+            else:
+                esl = [float(esl)]
+            length_oom = max([math.ceil(math.log10(x)) for x in esl])
+            steps_per_mm = int(self.config["stage"]["uri"].split('://')[1].split('/')[1])
+            movement_res = 1/steps_per_mm
+            movement_res_oom = abs(math.floor(math.log10(movement_res)))
+            goto_field_width = length_oom + 1 + movement_res_oom
+
+            entries = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
+            adjusters = [self.b.get_object("stage_x_adj"), self.b.get_object("stage_y_adj"), self.b.get_object("stage_z_adj")]
+            end_buffer_in_mm = 3 # can't got less than this from the ends
+            for i, axlen in enumerate(esl):
+                entries[i].set_width_chars(goto_field_width)
+                entries[i].set_digits(movement_res_oom)
+                adjusters[i].set_value(axlen/2)
+                adjusters[i].set_lower(end_buffer_in_mm)
+                adjusters[i].set_upper(axlen-end_buffer_in_mm)
+
+
+            self.num_axes = len(esl)
+            if self.num_axes < 3:
+                o = self.b.get_object("gtzl")
+                o.set_visible(False)
+                o = self.b.get_object("goto_z")
+                o.set_visible(False)
+            if self.num_axes < 2:
+                o = self.b.get_object("gtyl")
+                o.set_visible(False)
+                o = self.b.get_object("goto_y")
+                o.set_visible(False)
+
             # list that shadows the device label names
             self.label_shadow = ['']*self.num_substrates
 
@@ -808,32 +843,41 @@ class App(Gtk.Application):
         message_dialog.destroy()
         return(result)
 
+
     def on_home_button(self, button):
         """Home the stage."""
         if (self.move_warning() == Gtk.ResponseType.OK):
             lg.info("Homing stage")
-            msg = {'cmd':'home', 'pcb':self.config['controller']['address']}
+            msg = {'cmd':'home', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
-            self.mqttc.publish("gui/stage", pic_msg, qos=2).wait_for_publish()
+            self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
+
 
     def on_halt_button(self, button):
         """Emergency stop"""
         lg.warning("Powering down the stage motor drivers")
-        self.mqttc.publish("gui/stage", "halt", qos=2).wait_for_publish()
+        msg = {'cmd':'estop', 'pcb':self.config['controller']['address']}
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+
 
     def on_stage_read_button(self, button):
         """Read the current stage position."""
-        lg.debug("Getting stage position")
-        self.mqttc.publish("gui/stage", "read_stage", qos=2).wait_for_publish()
+        msg = {'cmd':'read_stage', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/util", "read_stage", qos=2).wait_for_publish()
+
 
     def on_goto_button(self, button):
         """Goto stage position."""
         if (self.move_warning() == Gtk.ResponseType.OK):
+            
             lg.debug("Sending the stage some place")
-            ax1_pos = self.b.get_object("goto_x").get_text()
-            ax2_pos = self.b.get_object("goto_y").get_text()
+            ax1_pos = self.b.get_object("goto_x").get_value()
+            ax2_pos = self.b.get_object("goto_y").get_value()
+            msg = {'cmd':'home', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
             payload = json.dumps([ax1_pos, ax2_pos])
-            self.mqttc.publish("gui/stage", payload, qos=2).wait_for_publish()
+            self.mqttc.publish("cmd/util", payload, qos=2).wait_for_publish()
 
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
@@ -842,10 +886,11 @@ class App(Gtk.Application):
             run_name = self.b.get_object("run_name").get_text()
             lg.info(f"Starting new run: {run_name}")
 
-            to_send = {"gui_data": self.harvest_gui_data(), "config_data": self.config}
-            payload = pickle.dumps(to_send, protocol=pickle.HIGHEST_PROTOCOL)
+            msg = {"gui_data": self.harvest_gui_data(), "config_data": self.config}
+            pic_msg = pickle.dumps(to_send, protocol=pickle.HIGHEST_PROTOCOL)
 
-            self.mqttc.publish("gui", payload, qos=2).wait_for_publish()
+            self.mqttc.publish("cmd/run", pic_msg, qos=2).wait_for_publish()
+
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""
