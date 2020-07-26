@@ -95,8 +95,17 @@ class App(Gtk.Application):
 
         def on_message(mqttc, obj, msg):
             """Act on an MQTT message."""
-            m = json.loads(msg.payload)
-            lg.debug(f"New message: {m}")
+            try:
+                msg = pickle.loads(msg.payload)
+                #m = json.loads(msg.payload)
+                #lg.debug(f"New message: {msg}")
+            except:
+                msg = None
+
+            if msg is not None:
+                if 'log' in msg:
+                    lg.log(msg['log']['level'], msg['log']['text'])
+
 
             if (subtopic := msg.topic.split("/")[-1]) == "stage_pos":
                 self.b.get_object("goto_x").set_text(m[0])
@@ -109,7 +118,13 @@ class App(Gtk.Application):
             self.mqttc.on_message = on_message
             self.mqttc.connect(self.MQTTHOST)
             # subscribe to cli topic to report back on progress
-            self.mqttc.subscribe("cli/#", qos=2)
+            #self.mqttc.subscribe("cli/#", qos=2)
+
+            # a channel for progress messages
+            self.mqttc.subscribe("status/#", qos=2)
+
+            # a channel for results from completed commands
+            self.mqttc.subscribe("response/#", qos=2)  
             self.mqttc.loop_start()
             self.mqtt_setup = True
         except:
@@ -420,10 +435,14 @@ class App(Gtk.Application):
 
             self.logTB = self.b.get_object("tbLog")  # log text buffer
             self.ltv = self.b.get_object("ltv")  # log text view
+            self.log_win_adj = self.b.get_object("vert_log_win_scroll_adj")
+
 
             def myWrite(buf):
-                self.logTB.insert(self.logTB.get_end_iter(), str(buf))
-                self.ltv.scroll_to_mark(self.logTB.get_insert(), 0.0, True, 0.5, 0.5)
+                # the log update should not be done on the main gui thread
+                # or else segfault badness
+                GLib.idle_add(self.append_to_log_window, str(buf))
+
 
             def myFlush():
                 pass
@@ -636,9 +655,20 @@ class App(Gtk.Application):
         self.activate()
         return 0
 
+
+    # scrolls the log window to the bottom
+    # (called from GLib.idle_add or else segfault!)
+    def append_to_log_window(self, text):
+        ei = self.logTB.get_end_iter()
+        self.logTB.insert(ei, text)
+        adj = self.log_win_adj
+        adj.set_value(adj.get_upper())
+
+
     def on_about(self, action, param):
         about_dialog = Gtk.AboutDialog(transient_for=self.main_win, modal=True)
         about_dialog.show()
+
 
     def do_shutdown(self):
         # stop the ticker
@@ -654,6 +684,7 @@ class App(Gtk.Application):
                 lg.debug("Shutting down")
 
         Gtk.Application.do_shutdown(self)
+
 
     def on_debug_button(self, button):
         lg.debug("Hello World!")
@@ -825,8 +856,15 @@ class App(Gtk.Application):
         # TODO: generate rtd measurement message
 
     def on_health_button(self, button):
-        lg.info("Checking health")
-        # TODO: generate health check message
+        lg.info("HEALTH CHECK INITIATED")
+        msg = {'cmd':'check_health',
+        'pcb': self.config['controller']['address'],
+        'psu': self.config['psu']['address'],
+        'smu_address': self.config['smu']['address'],
+        'smu_baud': int(self.config['smu']['baud']),
+        }
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
     
     def move_warning(self):
         message_dialog = Gtk.MessageDialog(
@@ -847,7 +885,7 @@ class App(Gtk.Application):
     def on_home_button(self, button):
         """Home the stage."""
         if (self.move_warning() == Gtk.ResponseType.OK):
-            lg.info("Homing stage")
+            lg.info("Requesting stage home...")
             msg = {'cmd':'home', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
             self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
