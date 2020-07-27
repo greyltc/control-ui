@@ -84,11 +84,12 @@ class App(Gtk.Application):
 
         try:
             cs = range(number_list[1])
+            cs = [str(x+1) for x in cs]
         except IndexError:
-            # if number of columns not given, must be 1
-            cs = range(1)
+            # if number of columns not given, must be 0
+            cs = ['']
 
-        subdes = [f"{m}{n + 1}" for m in rs for n in cs]
+        subdes = [f"{n}{m}" for m in rs for n in cs]
 
         return subdes
 
@@ -311,6 +312,7 @@ class App(Gtk.Application):
         else:
             editable.set_icon_from_icon_name(0, "dialog-error")
 
+
     def on_devs_focus_out_event(self, widget, user_data=None):
         eqe = "eqe" in Gtk.Buildable.get_name(widget)
         text_is = widget.get_text()
@@ -326,6 +328,7 @@ class App(Gtk.Application):
             lg.warn(f"Bad device selection reverted")
         widget.set_icon_from_icon_name(0, "emblem-default")
 
+
     # log message printer for device selection change
     def measure_note(self, selection_bitmask, seconds_per):
         num_selected = sum([c == "1" for c in bin(selection_bitmask)])
@@ -333,6 +336,7 @@ class App(Gtk.Application):
             dt.timedelta(seconds=seconds_per * num_selected)
         )
         lg.info(f"{num_selected} devices selected for ~ {duration_string}")
+
 
     def setup_label_tree(self, labels, substrate_designators, cell_y_padding):
         labelTree = self.b.get_object("labelTree")
@@ -738,9 +742,7 @@ class App(Gtk.Application):
         siter = self.dev_store[eqe].get_iter("0")  # substrate iterator
         bit_location = 0
         while siter is not None:
-            num_enabled = (
-                0  # keeps track of number of enabled devices on this substrate
-            )
+            num_enabled = 0  # keeps track of number of enabled devices on this substrate
             diter = self.dev_store[eqe].iter_children(siter)  # device iterator
             while diter is not None:
                 if (bit_location + 1 <= len(bin_mask_rev)) and (
@@ -887,13 +889,74 @@ class App(Gtk.Application):
 
 
     def on_device_toggle(self, button):
-        # TODO: figure out device
-        msg = {'cmd':'toggle_switch', 'pcb':self.config['controller']['address']}
-        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
-        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+        """
+        allows the user to connect anyone pixel, or disconnect them all
+        toggels between connecting the first selected IV device and selecting nothing
+        """
+        if self.all_mux_switches_open == True:
+            self.all_mux_switches_open = False
+            some_lists = self.bitmask_to_some_lists(self.b.get_object("iv_devs").get_text(),maximum=1)
+            if len(some_lists['dev_nums']) == 0:
+                lg.info("No devices selected for connection")
+            else:
+                user_label = some_lists['user_labels'][0]
+                if user_label == '':
+                    user_label = some_lists['subs_names'][0]
+                lg.info(f"Connecting device: {user_label}-{some_lists['sub_dev_nums'][0]}")
+                msg = {'cmd':'for_pcb', 'pcb_cmd':some_lists['selections'][0], 'pcb':self.config['controller']['address']}
+                pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+                self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+        else:
+            self.all_mux_switches_open = True
+            lg.info("Disconnecting all devices")
+            msg = {'cmd':'for_pcb', 'pcb_cmd':'s', 'pcb':self.config['controller']['address']}
+            pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+            self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+
+
+    def bitmask_to_some_lists(self, bitmask, maximum=float("inf")):
+        """
+        input: takes a hex bitmask device selection string, and a maximum number of devices to find, starting with the LSB
+        outputs a dict consisting of:
+        list of selected device numbers
+        list of substrate numbers those are on
+        list of device numbers relative to that substrate
+        list of substrate designators the devices are on
+        list of substrate labels the devices are on
+        list of device selection strings for the mux
+        """
+        selection_bitmask = int(bitmask, 16)
+        bin_mask = bin(selection_bitmask)[2::]
+        bin_mask_rev = bin_mask[::-1]
+        dev_nums = []
+        subs_nums = []
+        sub_dev_nums = []
+        subs_names = []
+        user_labels = []
+        selections = []
+        for i,c in enumerate(bin_mask_rev):
+            if c == '1':
+                dev_num = i
+                dev_nums += [dev_num]
+                subs_num = math.floor(i/self.num_pix)
+                subs_nums += [subs_num]
+                sub_dev_num = dev_num%self.num_pix + 1  # we'll count these from 1 here
+                sub_dev_nums += [sub_dev_num]
+                subs_name = self.substrate_designators[subs_num]
+                subs_names += [subs_name]
+                user_label = self.label_shadow[subs_num]
+                user_labels += [user_label]
+                selection = f"s{subs_name}{sub_dev_num}".lower()
+                selections += [selection]
+                if len(dev_nums) >= maximum:
+                    break
+        return({'dev_nums':dev_nums, 'subs_nums':subs_nums, 'sub_dev_nums':sub_dev_nums, 'subs_names':subs_names, 'user_labels':user_labels, 'selections':selections})
 
 
     def on_mode_toggle_button(self, button):
+        """
+        toggles the EQE/IV realys in the control box
+        """
         if (self.in_iv_mode == True):
             self.in_iv_mode = False
             pcb_cmd = 'iv'
