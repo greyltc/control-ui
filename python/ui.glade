@@ -2106,6 +2106,7 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Checks if all devices selected for measurement are loaded properly</property>
                             <signal name="clicked" handler="on_connectivity_button" swapped="no"/>
                           </object>
                         </child>
@@ -2345,7 +2346,7 @@ Sends the stage to a position</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
-                            <property name="label" translatable="yes">Measure RTD Temperatures</property>
+                            <property name="label" translatable="yes">Measure RTD Temperature(s)</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -2510,7 +2511,7 @@ Sends the stage to a position</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
-                            <property name="label" translatable="yes">Toggle Device Selection</property>
+                            <property name="label" translatable="yes">Toggle Mux Device Selection</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -2537,6 +2538,24 @@ Sends the stage to a position</property>
                             <property name="image_position">top</property>
                             <property name="always_show_image">True</property>
                             <signal name="clicked" handler="on_debug_button" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="GtkButton">
+                            <property name="label" translatable="yes">Toggle EQE/I-V Relays</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Toggles the system between EQE and I-V configuration modes</property>
+                            <signal name="clicked" handler="on_mode_toggle_button" swapped="no"/>
                           </object>
                         </child>
                       </object>

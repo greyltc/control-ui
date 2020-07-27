@@ -57,6 +57,9 @@ class App(Gtk.Application):
         self.main_win = None
         self.mqtt_setup = False
         self.mqtt_connecting = False
+        # to keep track of the two toggle buttons in the utility panel
+        self.all_mux_switches_open = True
+        self.in_iv_mode = True
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -683,7 +686,7 @@ class App(Gtk.Application):
         return 0
 
 
-    # scrolls the log window to the bottom
+    # adds text, then scrolls the log window to the bottom
     # (called from GLib.idle_add or else segfault!)
     def append_to_log_window(self, text):
         ei = self.logTB.get_end_iter()
@@ -774,7 +777,7 @@ class App(Gtk.Application):
     def on_stop_button(self, button):
         """Stop experiment operation."""
         lg.info("Stopping run")
-        # self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
+        self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
 
     def on_pd_button(self, button):
         lg.info("Measuring currents")
@@ -890,6 +893,21 @@ class App(Gtk.Application):
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
 
+    def on_mode_toggle_button(self, button):
+        if (self.in_iv_mode == True):
+            self.in_iv_mode = False
+            pcb_cmd = 'iv'
+            notice = "Entering I-V mode"
+        else:
+            self.in_iv_mode = True
+            pcb_cmd = 'eqe'
+            notice = "Entering EQE mode"
+        lg.info(notice)
+        msg = {'cmd':'for_pcb', 'pcb_cmd':pcb_cmd, 'pcb':self.config['controller']['address']}
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+
+
     def on_health_button(self, button):
         lg.info("HEALTH CHECK INITIATED")
         msg = {'cmd':'check_health',
@@ -932,6 +950,7 @@ class App(Gtk.Application):
         msg = {'cmd':'estop', 'pcb':self.config['controller']['address']}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+        self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
 
 
     def on_stage_read_button(self, button):
@@ -962,8 +981,8 @@ class App(Gtk.Application):
             run_name = self.b.get_object("run_name").get_text()
             lg.info(f"Starting new run: {run_name}")
 
-            msg = {"gui_data": self.harvest_gui_data(), "config_data": self.config}
-            pic_msg = pickle.dumps(to_send, protocol=pickle.HIGHEST_PROTOCOL)
+            msg = {"cmd":"run", "gui_data": self.harvest_gui_data(), "config_data": self.config}
+            pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
 
             self.mqttc.publish("cmd/run", pic_msg, qos=2).wait_for_publish()
 
