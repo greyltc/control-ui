@@ -154,6 +154,12 @@ Author: Greyson Christoforo
     <property name="can_focus">False</property>
     <property name="icon_name">media-playback-start-symbolic</property>
   </object>
+  <object class="GtkImage" id="image10">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">dialog-warning-symbolic</property>
+    <property name="icon_size">3</property>
+  </object>
   <object class="GtkImage" id="image2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -180,10 +186,21 @@ Author: Greyson Christoforo
     <property name="icon_name">dialog-warning-symbolic</property>
     <property name="icon_size">3</property>
   </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">dialog-warning-symbolic</property>
+  </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">process-stop-symbolic</property>
+  </object>
+  <object class="GtkImage" id="image9">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">dialog-warning-symbolic</property>
+    <property name="icon_size">3</property>
   </object>
   <object class="GtkAdjustment" id="iv_steps_adj">
     <property name="lower">3</property>
@@ -248,6 +265,8 @@ Author: Greyson Christoforo
             <property name="vscroll_policy">natural</property>
             <property name="rules_hint">True</property>
             <property name="enable_tree_lines">True</property>
+            <signal name="row-activated" handler="row_act" swapped="no"/>
+            <signal name="select-cursor-row" handler="cur_row" swapped="no"/>
             <child internal-child="selection">
               <object class="GtkTreeSelection"/>
             </child>
@@ -298,6 +317,9 @@ Author: Greyson Christoforo
     <data>
       <row>
         <col id="0" translatable="yes">Dark Then Light</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Light Then Dark</col>
       </row>
       <row>
         <col id="0" translatable="yes">Only Dark</col>
@@ -497,7 +519,7 @@ Author: Greyson Christoforo
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
                             <child>
-                              <object class="GtkTreeView" id="labelTree">
+                              <object class="GtkTreeView" id="label_tree">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="halign">start</property>
@@ -1242,7 +1264,7 @@ Author: Greyson Christoforo
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkComboBox">
+                                                  <object class="GtkComboBox" id="lit_sweep">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
                                                     <property name="tooltip_text" translatable="yes">Choose how the light source should behave during the I-V sweeps</property>
@@ -1287,6 +1309,139 @@ Author: Greyson Christoforo
                                         <property name="expand">False</property>
                                         <property name="fill">True</property>
                                         <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkFrame">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="label_xalign">0</property>
+                                        <child>
+                                          <object class="GtkBox">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="margin_bottom">2</property>
+                                            <property name="orientation">vertical</property>
+                                            <child>
+                                              <object class="GtkBox">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="spacing">5</property>
+                                                <child>
+                                                  <object class="GtkLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">Duration:</property>
+                                                    <property name="width_chars">14</property>
+                                                    <property name="xalign">1</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">0</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkSpinButton" id="mppt_dwell">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="tooltip_text" translatable="yes">Amount of time to track max power point for</property>
+                                                    <property name="invisible_char">-</property>
+                                                    <property name="width_chars">7</property>
+                                                    <property name="text" translatable="yes">30.0</property>
+                                                    <property name="caps_lock_warning">False</property>
+                                                    <property name="input_purpose">number</property>
+                                                    <property name="adjustment">mppt_adj</property>
+                                                    <property name="digits">1</property>
+                                                    <property name="numeric">True</property>
+                                                    <property name="value">30</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">1</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="halign">start</property>
+                                                    <property name="label" translatable="yes">[s]</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">2</property>
+                                                  </packing>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkBox">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="spacing">5</property>
+                                                <child>
+                                                  <object class="GtkLabel">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="label" translatable="yes">Parameters:</property>
+                                                    <property name="width_chars">14</property>
+                                                    <property name="xalign">1</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">False</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">0</property>
+                                                  </packing>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkEntry" id="mppt_params">
+                                                    <property name="visible">True</property>
+                                                    <property name="can_focus">True</property>
+                                                    <property name="tooltip_markup" translatable="yes">Advanced parameters to control the max power point tracker's algorithm. The default is &lt;tt&gt;basic://&lt;/tt&gt;</property>
+                                                    <property name="margin_end">2</property>
+                                                    <property name="invisible_char">-</property>
+                                                    <property name="text" translatable="yes">basic://</property>
+                                                  </object>
+                                                  <packing>
+                                                    <property name="expand">True</property>
+                                                    <property name="fill">True</property>
+                                                    <property name="position">1</property>
+                                                  </packing>
+                                                </child>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">1</property>
+                                              </packing>
+                                            </child>
+                                          </object>
+                                        </child>
+                                        <child type="label">
+                                          <object class="GtkCheckButton" id="mppt_check">
+                                            <property name="label" translatable="yes">Step 3: Maximum Power Point Tracking</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">False</property>
+                                            <property name="tooltip_text" translatable="yes">Enable measurement routine step 3, continuous tracking of maximum power point</property>
+                                            <property name="active">True</property>
+                                            <property name="draw_indicator">True</property>
+                                            <signal name="toggled" handler="update_gui" swapped="no"/>
+                                          </object>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">2</property>
                                       </packing>
                                     </child>
                                     <child>
@@ -1423,144 +1578,11 @@ Author: Greyson Christoforo
                                         </child>
                                         <child type="label">
                                           <object class="GtkCheckButton" id="v_dwell_check">
-                                            <property name="label" translatable="yes">Step 3: Constant Voltage Dwell</property>
+                                            <property name="label" translatable="yes">Step 4: Constant Voltage Dwell</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
-                                            <property name="tooltip_markup" translatable="yes">Enable measurement routine step 3 (typically a steady state I&lt;sub&gt;SC&lt;/sub&gt; measurement)</property>
-                                            <property name="active">True</property>
-                                            <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="update_gui" swapped="no"/>
-                                          </object>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkFrame">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">False</property>
-                                        <property name="label_xalign">0</property>
-                                        <child>
-                                          <object class="GtkBox">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="margin_bottom">2</property>
-                                            <property name="orientation">vertical</property>
-                                            <child>
-                                              <object class="GtkBox">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="spacing">5</property>
-                                                <child>
-                                                  <object class="GtkLabel">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">Duration:</property>
-                                                    <property name="width_chars">14</property>
-                                                    <property name="xalign">1</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">0</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkSpinButton" id="mppt_dwell">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">True</property>
-                                                    <property name="tooltip_text" translatable="yes">Amount of time to track max power point for</property>
-                                                    <property name="invisible_char">-</property>
-                                                    <property name="width_chars">7</property>
-                                                    <property name="text" translatable="yes">30.0</property>
-                                                    <property name="caps_lock_warning">False</property>
-                                                    <property name="input_purpose">number</property>
-                                                    <property name="adjustment">mppt_adj</property>
-                                                    <property name="digits">1</property>
-                                                    <property name="numeric">True</property>
-                                                    <property name="value">30</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">1</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkLabel">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">False</property>
-                                                    <property name="halign">start</property>
-                                                    <property name="label" translatable="yes">[s]</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">2</property>
-                                                  </packing>
-                                                </child>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkBox">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="spacing">5</property>
-                                                <child>
-                                                  <object class="GtkLabel">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">Parameters:</property>
-                                                    <property name="width_chars">14</property>
-                                                    <property name="xalign">1</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">False</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">0</property>
-                                                  </packing>
-                                                </child>
-                                                <child>
-                                                  <object class="GtkEntry" id="mppt_params">
-                                                    <property name="visible">True</property>
-                                                    <property name="can_focus">True</property>
-                                                    <property name="tooltip_markup" translatable="yes">Advanced parameters to control the max power point tracker's algorithm. The default is &lt;tt&gt;basic://&lt;/tt&gt;</property>
-                                                    <property name="margin_end">2</property>
-                                                    <property name="invisible_char">-</property>
-                                                    <property name="text" translatable="yes">basic://</property>
-                                                  </object>
-                                                  <packing>
-                                                    <property name="expand">True</property>
-                                                    <property name="fill">True</property>
-                                                    <property name="position">1</property>
-                                                  </packing>
-                                                </child>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                        </child>
-                                        <child type="label">
-                                          <object class="GtkCheckButton" id="mppt_check">
-                                            <property name="label" translatable="yes">Step 4: Maximum Power Point Tracking</property>
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="receives_default">False</property>
-                                            <property name="tooltip_text" translatable="yes">Enable measurement routine step 4, continuous tracking of maximum power point</property>
+                                            <property name="tooltip_markup" translatable="yes">Enable measurement routine step 4, (typically a steady state I&lt;sub&gt;SC&lt;/sub&gt; measurement)</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
                                             <signal name="toggled" handler="update_gui" swapped="no"/>
@@ -2308,6 +2330,7 @@ Performs the stage homing procedure.</property>
                                     <property name="receives_default">True</property>
                                     <property name="tooltip_text" translatable="yes">WARNING! Pressing this will cause immediate stage movement
 Sends the stage to a position</property>
+                                    <property name="image">image7</property>
                                     <property name="always_show_image">True</property>
                                     <signal name="clicked" handler="on_goto_button" swapped="no"/>
                                   </object>
@@ -2333,99 +2356,15 @@ Sends the stage to a position</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
-                          <object class="GtkFrame">
+                          <object class="GtkButton">
+                            <property name="label" translatable="yes">Calibrate EQE Bias Light LEDs</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label_xalign">0</property>
-                            <property name="shadow_type">etched-out</property>
-                            <child>
-                              <object class="GtkBox">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="halign">center</property>
-                                <property name="valign">center</property>
-                                <property name="orientation">vertical</property>
-                                <property name="homogeneous">True</property>
-                                <child>
-                                  <object class="GtkLabel">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">EQE Bias Light LED Calibration</property>
-                                    <attributes>
-                                      <attribute name="underline" value="True"/>
-                                    </attributes>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkBox">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="halign">center</property>
-                                    <property name="valign">center</property>
-                                    <property name="spacing">5</property>
-                                    <child>
-                                      <object class="GtkButton">
-                                        <property name="label" translatable="yes">Channel 1</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">True</property>
-                                        <property name="image_position">top</property>
-                                        <property name="always_show_image">True</property>
-                                        <signal name="clicked" handler="on_cal_ch1_button" swapped="no"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton">
-                                        <property name="label" translatable="yes">Channel 2</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">True</property>
-                                        <property name="image_position">top</property>
-                                        <property name="always_show_image">True</property>
-                                        <signal name="clicked" handler="on_cal_ch2_button" swapped="no"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton">
-                                        <property name="label" translatable="yes">Channel 3</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">True</property>
-                                        <signal name="clicked" handler="on_cal_ch3_button" swapped="no"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                              </object>
-                            </child>
-                            <child type="label_item">
-                              <placeholder/>
-                            </child>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="image">image10</property>
+                            <property name="image_position">top</property>
+                            <property name="always_show_image">True</property>
+                            <signal name="clicked" handler="on_cal_psu_button" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -2442,6 +2381,7 @@ Sends the stage to a position</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="image">image9</property>
                             <property name="image_position">top</property>
                             <property name="always_show_image">True</property>
                             <signal name="clicked" handler="on_cal_eqe_button" swapped="no"/>

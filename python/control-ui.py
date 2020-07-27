@@ -339,7 +339,7 @@ class App(Gtk.Application):
 
 
     def setup_label_tree(self, labels, substrate_designators, cell_y_padding):
-        labelTree = self.b.get_object("labelTree")
+        labelTree = self.b.get_object("label_tree")
         labelStore = Gtk.ListStore(str, str, int)
 
         for i in range(self.num_substrates):
@@ -723,7 +723,7 @@ class App(Gtk.Application):
     def on_debug_button(self, button):
         lg.debug("Hello World!")
         self.b.get_object("run_but").set_sensitive(True)
-        
+
 
     def on_devs_icon_release(self, entry, icon, user_data=None):
         eqe = "eqe" in Gtk.Buildable.get_name(entry)
@@ -802,7 +802,7 @@ class App(Gtk.Application):
                 elif isinstance(this_obj, gi.repository.Gtk.Entry):
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
                 elif isinstance(this_obj, gi.overrides.Gtk.TreeView):  # the TreeViews are unfortunately not pickalble
-                    if id_str == "labelTree":
+                    if id_str == "label_tree":
                         gui_data[id_str] = {"type": str(type(this_obj)), "value": self.label_shadow, "call_to_set": None}
         return gui_data
 
@@ -837,6 +837,7 @@ class App(Gtk.Application):
         else:
             lg.info(f"Save aborted.")
 
+
     def on_open_button(self, button):
         """Populate widget entries from data saved in a file."""
         open_dialog = Gtk.FileChooserNative(
@@ -863,7 +864,7 @@ class App(Gtk.Application):
                 load_data = pickle.load(f)
 
             for id_str, obj_info in load_data.items():
-                if id_str == 'labelTree':  # load and apply the device labels
+                if id_str == 'label_tree':  # load and apply the device labels
                     # NOTE: loading will likely crash if loading into a setup with the wrong number of pixels/devices
                     try:
                         self.label_shadow = obj_info['value']
@@ -1082,111 +1083,65 @@ class App(Gtk.Application):
             run_name = self.b.get_object("run_name").get_text()
             lg.info(f"Starting new run: {run_name}")
 
-            msg = {"cmd":"run", "gui_data": self.harvest_gui_data(), "config_data": self.config}
+            msg = {"cmd":"run", "args": self.gui_to_args(self.harvest_gui_data()), "config": self.config}
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+            self.mqttc.publish("measurement/run", pic_msg, qos=2).wait_for_publish()
 
-            self.mqttc.publish("cmd/run", pic_msg, qos=2).wait_for_publish()
+
+    # makes the gui dict more consumable for a backend
+    def gui_to_args(self, gui_dict):
+        args = {}
+        for key, val in gui_dict.items():
+            args[key] = val['value']
+        if args['v_dwell_check'] == False:
+            args['v_dwell'] = 0
+        if args['mppt_check'] == False:
+            args['mppt_dwell'] = 0
+        if args['i_dwell_check'] == False:
+            args['i_dwell'] = 0
+        for i, lab in enumerate(args['label_tree']):
+            if lab == '':
+                args['label_tree'][i] = self.substrate_designators[i]
+        return(args)
 
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""
-        pass
-        """ save_folder = pathlib.Path(self.config["paths"]["save_folder"])
-        run_name = self.b.get_object("run_name").get_text()
-        destination = str(save_folder.joinpath(run_name))
+        """Send run info to experiment orchestrator via MQTT."""
+        if (self.move_warning() == Gtk.ResponseType.OK):
+            self.b.get_object("run_but").set_sensitive(False)  # prevent run
+            lg.info(f"Starting EQE calibration")
 
-        # Arbitrary dummy bitmask containing a single pixel.
-        bitmask_value = 1
-        eqe_pixel_address = f"0x{bitmask_value:{self.def_fmt_str}}"
+            msg = {"cmd":"run", "args": self.gui_to_args(self.harvest_gui_data()), "config": self.config}
+            pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
 
-        motion_address = self.config["motion"]["address"]
-        sm_terminator = self.config["smu"]["terminator"]
-        sm_baud = int(self.config["smu"]["baud"])
-        sm_address = self.config["smu"]["address"]
-        pcb_address = motion_address
-        ignore_diodes = True
-        lia_address = self.config["lia"]["address"]
-        mono_address = self.config["monochromator"]["address"]
-        psu_address = self.config["psu"]["address"]
-        psu_vs = [
-            float(self.config["psu"]["ch1_voltage"]),
-            float(self.config["psu"]["ch2_voltage"]),
-            float(self.config["psu"]["ch3_voltage"]),
-        ]
-        psu_is = [
-            float(self.b.get_object("gblc").get_text()),
-            float(self.b.get_object("rblc").get_text()),
-            0,
-        ]
-        eqe_smu_v = float(self.b.get_object("eqedevbias").get_text())
-        eqe_ref_meas_path = "TODO: what's this?"  # TODO
-        eqe_ref_cal_path = self.config["paths"]["eqe_ref_cal_path"]
-        eqe_ref_spec_path = self.config["paths"]["eqe_ref_spec_path"]
-        eqe_start_wl = float(self.b.get_object("nmStart").get_text())
-        eqe_end_wl = float(self.b.get_object("nmStop").get_text())
-        eqe_step = float(self.b.get_object("nmStep").get_text())
-        eqe_num_wls = int(np.absolute(eqe_end_wl - eqe_start_wl) / eqe_step) + 1
-        eqe_integration_time = self.b.get_object("eqe_int").get_text()
-        eqe_grating_change_wls = self.config["monochromator"]["grating_change_wls"]
-        eqe_grating_change_wls = [int(x) for x in eqe_grating_change_wls.split(",")]
-        eqe_filter_change_wls = self.config["monochromator"]["filter_change_wls"]
-        eqe_filter_change_wls = [int(x) for x in eqe_filter_change_wls.split(",")]
+            self.mqttc.publish("measurement/calibrate_eqe", pic_msg, qos=2).wait_for_publish()
+            # check for calibration/eqe timestamp
 
-        # TODO: this looks a bit fragile. I wonder if we can automate it...
-        settings = {
-            "destination": destination,
-            "operator": "",
-            "run_description": "",
-            "experimental_parameter": "",
-            "mqtt_host": self.MQTTHOST,
-            "eqe_pixel_address": eqe_pixel_address,
-            "calibrate_eqe": True,
-            "position_override": self.config["stage"]["photodiode_offset"],
-            "motion_address": motion_address,
-            "sm_terminator": sm_terminator,
-            "sm_baud": sm_baud,
-            "sm_address": sm_address,
-            "pcb_address": pcb_address,
-            "ignore_diodes": ignore_diodes,
-            "lia_address": lia_address,
-            "mono_address": mono_address,
-            "psu_address": psu_address,
-            "psu_vs": psu_vs,
-            "psu_is": psu_is,
-            "eqe_smu_v": eqe_smu_v,
-            "eqe_ref_meas_path": eqe_ref_meas_path,
-            "eqe_ref_cal_path": eqe_ref_cal_path,
-            "eqe_ref_spec_path": eqe_ref_spec_path,
-            "eqe_start_wl": eqe_start_wl,
-            "eqe_end_wl": eqe_end_wl,
-            "eqe_num_wls": eqe_num_wls,
-            "eqe_integration_time": eqe_integration_time,
-            "eqe_grating_change_wls": eqe_grating_change_wls,
-            # "eqe_grating_change_wls": eqe_filter_change_wls,
-        }
 
-        # send settings dict over mqtt
-        payload = json.dumps(
-            settings
-        )  # TODO: could also use pickle here, which might be more general
-        self.mqttc.publish(
-            "gui", payload, qos=2
-        ).wait_for_publish() """
+    # TODO: combine buttons
+    def on_cal_psu_button(self, button):
+        """Measure EQE calibration photodiode."""
+        """Send run info to experiment orchestrator via MQTT."""
+        if (self.move_warning() == Gtk.ResponseType.OK):
+            self.b.get_object("run_but").set_sensitive(False)  # prevent run
+            lg.info(f"Starting bias light LED calibration")
 
-    def on_cal_ch3_button(self, button):
-        pass
-        #self.calibrate_psu(3)
+            msg = {"cmd":"run", "args": self.gui_to_args(self.harvest_gui_data()), "config": self.config}
+            pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def on_cal_ch2_button(self, button):
-        pass
-        #self.calibrate_psu(2)
+            self.mqttc.publish("measurement/calibrate_psu", pic_msg, qos=2).wait_for_publish()
 
-    def on_cal_ch1_button(self, button):
-        pass
-        #self.calibrate_psu(1)
 
     def on_smart_mode_activate(self, button):
         self.update_gui()
+
+
+    def row_act(self, a):
+        pass
+
+    def cur_row(self, a):
+        pass
 
     def update_gui(self, *args):
         # lg.debug("Updating gui...")
@@ -1245,72 +1200,6 @@ class App(Gtk.Application):
             for sib in parent.get_children():
                 sib.set_sensitive(False)
             me.set_sensitive(True)
-
-    # def on_ad_switch_state_set(self, switch, state):
-    #    self.update_gui()
-
-    # def on_return_switch_state_set(self, switch, state):
-    #    self.update_gui()
-
-    def calibrate_psu(self, channel):
-        """Measure psu calibration photodiode."""
-        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
-        run_name = self.b.get_object("run_name").get_text()
-        destination = str(save_folder.joinpath(run_name))
-
-        motion_address = self.config["motion"]["address"]
-        sm_terminator = self.config["smu"]["terminator"]
-        sm_baud = int(self.config["smu"]["baud"])
-        sm_address = self.config["smu"]["address"]
-        pcb_address = motion_address
-        ignore_diodes = True
-        psu_address = self.config["psu"]["address"]
-
-        # TODO: this looks a bit fragile. I wonder if we can automate it...
-        settings = {
-            "destination": destination,
-            "operator": "",
-            "run_description": "",
-            "experimental_parameter": "",
-            "mqtt_host": self.MQTTHOST,
-            "position_override": self.config["stage"]["photodiode_offset"],
-            "motion_address": motion_address,
-            "sm_terminator": sm_terminator,
-            "sm_baud": sm_baud,
-            "sm_address": sm_address,
-            "pcb_address": pcb_address,
-            "ignore_diodes": ignore_diodes,
-            "psu_address": psu_address,
-            "calibrate_psu": True,
-            "calibrate_psu_ch": channel,
-        }
-
-        # send settings dict over mqtt
-        payload = json.dumps(
-            settings
-        )  # TODO: could also use pickle here, which might be more general
-        self.mqttc.publish(
-            "gui", payload, qos=2
-        ).wait_for_publish()  # TODO: probably we don't wait for this
-
-    # TODO: I think this function isn't needed if we pickle the objects we send over MQTT
-    # def _get_layouts_str(self):
-    #     """Read and format layouts from config file.
-
-    #     This function strips the comments from layout sections of the config file so
-    #     they can be sent more efficiently over MQTT.
-    #     """
-    #     layout_names = self.config["substrates"]["layout_names"].split(",")
-
-    #     layouts_str = f""
-    #     for name in layout_names:
-    #         layouts_str += f"""
-    #         [{name}]
-    #         positions={self.config[name]["positions"]}
-    #         areas={self.config[name]["areas"]}
-    #         """
-
-    #     return layouts_str
 
 
 if __name__ == "__main__":
