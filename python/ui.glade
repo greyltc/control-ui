@@ -180,11 +180,6 @@ Author: Greyson Christoforo
     <property name="icon_name">dialog-warning-symbolic</property>
     <property name="icon_size">3</property>
   </object>
-  <object class="GtkImage" id="image7">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">dialog-warning-symbolic</property>
-  </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -2099,23 +2094,6 @@ Author: Greyson Christoforo
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <object class="GtkButton">
-                            <property name="label" translatable="yes">Check Device Connectivity</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Checks if all devices selected for measurement are loaded properly</property>
-                            <signal name="clicked" handler="on_connectivity_button" swapped="no"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
@@ -2142,102 +2120,179 @@ Performs the stage homing procedure.</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
-                          <object class="GtkBox">
+                          <object class="GtkFrame">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="orientation">vertical</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
                             <child>
                               <object class="GtkBox">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="halign">center</property>
+                                <property name="orientation">vertical</property>
                                 <child>
-                                  <object class="GtkButton">
-                                    <property name="label" translatable="yes">Read Stage Position</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="tooltip_text" translatable="yes">Reads the current stage position</property>
-                                    <signal name="clicked" handler="on_stage_read_button" swapped="no"/>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel">
+                                  <object class="GtkBox">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">Load Config Position:</property>
-                                    <property name="width_chars">18</property>
-                                    <property name="xalign">1</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkComboBox">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="model">places_list</property>
-                                    <signal name="changed" handler="on_load_pos" swapped="no"/>
+                                    <property name="halign">center</property>
                                     <child>
-                                      <object class="GtkCellRendererText"/>
-                                      <attributes>
-                                        <attribute name="text">0</attribute>
-                                      </attributes>
+                                      <object class="GtkButton">
+                                        <property name="label" translatable="yes">Read Stage Position</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="tooltip_text" translatable="yes">Reads the current stage position</property>
+                                        <signal name="clicked" handler="on_stage_read_button" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="label" translatable="yes">Load Config Position:</property>
+                                        <property name="width_chars">18</property>
+                                        <property name="xalign">1</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkComboBox">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="model">places_list</property>
+                                        <signal name="changed" handler="on_load_pos" swapped="no"/>
+                                        <child>
+                                          <object class="GtkCellRendererText"/>
+                                          <attributes>
+                                            <attribute name="text">0</attribute>
+                                          </attributes>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">2</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
                                     <property name="fill">True</property>
-                                    <property name="position">2</property>
-                                  </packing>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkBox">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="halign">center</property>
-                                <property name="valign">center</property>
-                                <property name="hexpand">True</property>
-                                <child>
-                                  <object class="GtkLabel" id="gtxl">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">X:</property>
-                                    <property name="width_chars">3</property>
-                                    <property name="xalign">1</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
                                     <property name="position">0</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton" id="goto_x">
+                                  <object class="GtkBox">
                                     <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="tooltip_text" translatable="yes">Stage position X [mm]</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="halign">center</property>
+                                    <property name="valign">center</property>
                                     <property name="hexpand">True</property>
-                                    <property name="width_chars">3</property>
-                                    <property name="caps_lock_warning">False</property>
-                                    <property name="input_purpose">number</property>
-                                    <property name="adjustment">stage_x_adj</property>
-                                    <property name="numeric">True</property>
+                                    <child>
+                                      <object class="GtkLabel" id="gtxl">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="label" translatable="yes">X:</property>
+                                        <property name="width_chars">3</property>
+                                        <property name="xalign">1</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="goto_x">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">Stage position X [mm]</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="width_chars">3</property>
+                                        <property name="caps_lock_warning">False</property>
+                                        <property name="input_purpose">number</property>
+                                        <property name="adjustment">stage_x_adj</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">True</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="gtyl">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="label" translatable="yes">Y:</property>
+                                        <property name="width_chars">3</property>
+                                        <property name="xalign">1</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="goto_y">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">Stage position Y [mm]</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="width_chars">3</property>
+                                        <property name="caps_lock_warning">False</property>
+                                        <property name="input_purpose">number</property>
+                                        <property name="adjustment">stage_y_adj</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">True</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">3</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="gtzl">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="label" translatable="yes">Z:</property>
+                                        <property name="width_chars">3</property>
+                                        <property name="xalign">1</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">4</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkSpinButton" id="goto_z">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">Stage position Z [mm]</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="width_chars">3</property>
+                                        <property name="caps_lock_warning">False</property>
+                                        <property name="input_purpose">number</property>
+                                        <property name="adjustment">stage_z_adj</property>
+                                        <property name="numeric">True</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">True</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">5</property>
+                                      </packing>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>
@@ -2246,12 +2301,15 @@ Performs the stage homing procedure.</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="gtyl">
+                                  <object class="GtkButton">
+                                    <property name="label" translatable="yes">GoTo</property>
                                     <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">Y:</property>
-                                    <property name="width_chars">3</property>
-                                    <property name="xalign">1</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                    <property name="tooltip_text" translatable="yes">WARNING! Pressing this will cause immediate stage movement
+Sends the stage to a position</property>
+                                    <property name="always_show_image">True</property>
+                                    <signal name="clicked" handler="on_goto_button" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -2259,80 +2317,10 @@ Performs the stage homing procedure.</property>
                                     <property name="position">2</property>
                                   </packing>
                                 </child>
-                                <child>
-                                  <object class="GtkSpinButton" id="goto_y">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="tooltip_text" translatable="yes">Stage position Y [mm]</property>
-                                    <property name="hexpand">True</property>
-                                    <property name="width_chars">3</property>
-                                    <property name="caps_lock_warning">False</property>
-                                    <property name="input_purpose">number</property>
-                                    <property name="adjustment">stage_y_adj</property>
-                                    <property name="numeric">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">3</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="gtzl">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">Z:</property>
-                                    <property name="width_chars">3</property>
-                                    <property name="xalign">1</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">4</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkSpinButton" id="goto_z">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="tooltip_text" translatable="yes">Stage position Z [mm]</property>
-                                    <property name="hexpand">True</property>
-                                    <property name="width_chars">3</property>
-                                    <property name="caps_lock_warning">False</property>
-                                    <property name="input_purpose">number</property>
-                                    <property name="adjustment">stage_z_adj</property>
-                                    <property name="numeric">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">5</property>
-                                  </packing>
-                                </child>
                               </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
-                              </packing>
                             </child>
-                            <child>
-                              <object class="GtkButton">
-                                <property name="label" translatable="yes">GoTo</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">WARNING! Pressing this will cause immediate stage movement
-Sends the stage to a position</property>
-                                <property name="image">image7</property>
-                                <property name="always_show_image">True</property>
-                                <signal name="clicked" handler="on_goto_button" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">2</property>
-                              </packing>
+                            <child type="label_item">
+                              <placeholder/>
                             </child>
                           </object>
                         </child>
@@ -2345,59 +2333,27 @@ Sends the stage to a position</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
-                          <object class="GtkButton">
-                            <property name="label" translatable="yes">Measure RTD Temperature(s)</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Assumes there's an RTD loaded in each of the I-V bitmask devices, measures the temperature of each of those.</property>
-                            <property name="image_position">top</property>
-                            <signal name="clicked" handler="on_RTD_button" swapped="no"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <object class="GtkBox">
+                          <object class="GtkFrame">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="halign">center</property>
-                            <property name="valign">center</property>
-                            <property name="orientation">vertical</property>
-                            <property name="homogeneous">True</property>
-                            <child>
-                              <object class="GtkLabel">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">EQE Bias Light LED Calibration</property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
                             <child>
                               <object class="GtkBox">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="halign">center</property>
                                 <property name="valign">center</property>
-                                <property name="spacing">5</property>
+                                <property name="orientation">vertical</property>
+                                <property name="homogeneous">True</property>
                                 <child>
-                                  <object class="GtkButton">
-                                    <property name="label" translatable="yes">Channel 1</property>
+                                  <object class="GtkLabel">
                                     <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="image_position">top</property>
-                                    <property name="always_show_image">True</property>
-                                    <signal name="clicked" handler="on_cal_ch1_button" swapped="no"/>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">EQE Bias Light LED Calibration</property>
+                                    <attributes>
+                                      <attribute name="underline" value="True"/>
+                                    </attributes>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -2406,14 +2362,58 @@ Sends the stage to a position</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkButton">
-                                    <property name="label" translatable="yes">Channel 2</property>
+                                  <object class="GtkBox">
                                     <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="image_position">top</property>
-                                    <property name="always_show_image">True</property>
-                                    <signal name="clicked" handler="on_cal_ch2_button" swapped="no"/>
+                                    <property name="can_focus">False</property>
+                                    <property name="halign">center</property>
+                                    <property name="valign">center</property>
+                                    <property name="spacing">5</property>
+                                    <child>
+                                      <object class="GtkButton">
+                                        <property name="label" translatable="yes">Channel 1</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="image_position">top</property>
+                                        <property name="always_show_image">True</property>
+                                        <signal name="clicked" handler="on_cal_ch1_button" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton">
+                                        <property name="label" translatable="yes">Channel 2</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="image_position">top</property>
+                                        <property name="always_show_image">True</property>
+                                        <signal name="clicked" handler="on_cal_ch2_button" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton">
+                                        <property name="label" translatable="yes">Channel 3</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <signal name="clicked" handler="on_cal_ch3_button" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">2</property>
+                                      </packing>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -2421,26 +2421,10 @@ Sends the stage to a position</property>
                                     <property name="position">1</property>
                                   </packing>
                                 </child>
-                                <child>
-                                  <object class="GtkButton">
-                                    <property name="label" translatable="yes">Channel 3</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="clicked" handler="on_cal_ch3_button" swapped="no"/>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">2</property>
-                                  </packing>
-                                </child>
                               </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
-                              </packing>
+                            </child>
+                            <child type="label_item">
+                              <placeholder/>
                             </child>
                           </object>
                         </child>
@@ -2451,25 +2435,6 @@ Sends the stage to a position</property>
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <object class="GtkButton">
-                            <property name="label" translatable="yes">Make Current Measurement(s)</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Instructs the sourcemeter to make a current measurement with all switches open, then cycles through all the I-V bitmask devices and does the same for each.</property>
-                            <property name="image_position">top</property>
-                            <property name="always_show_image">True</property>
-                            <signal name="clicked" handler="on_pd_button" swapped="no"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkButton">
@@ -2556,6 +2521,112 @@ Sends the stage to a position</property>
                             <property name="receives_default">True</property>
                             <property name="tooltip_text" translatable="yes">Toggles the system between EQE and I-V configuration modes</property>
                             <signal name="clicked" handler="on_mode_toggle_button" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="GtkFrame">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="halign">center</property>
+                                <property name="valign">center</property>
+                                <property name="orientation">vertical</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Round Robin Tasks</property>
+                                    <attributes>
+                                      <attribute name="underline" value="True"/>
+                                    </attributes>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="halign">center</property>
+                                    <property name="valign">center</property>
+                                    <property name="spacing">5</property>
+                                    <child>
+                                      <object class="GtkButton">
+                                        <property name="label" translatable="yes">Connectivity</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="tooltip_text" translatable="yes">Checks if all devices selected for measurement are loaded properly</property>
+                                        <signal name="clicked" handler="on_connectivity_button" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton">
+                                        <property name="label" translatable="yes">RTD Temps</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="tooltip_text" translatable="yes">Assumes there's an RTD loaded in each of the I-V bitmask devices, measures the temperature of each of those.</property>
+                                        <property name="image_position">top</property>
+                                        <signal name="clicked" handler="on_RTD_button" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton">
+                                        <property name="label" translatable="yes">Currents</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="tooltip_text" translatable="yes">Instructs the sourcemeter to make a current measurement with all switches open, then cycles through all the I-V bitmask devices and does the same for each.</property>
+                                        <property name="image_position">top</property>
+                                        <property name="always_show_image">True</property>
+                                        <signal name="clicked" handler="on_current_button" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">2</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
+                            <child type="label_item">
+                              <placeholder/>
+                            </child>
                           </object>
                         </child>
                       </object>

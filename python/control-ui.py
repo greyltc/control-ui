@@ -771,19 +771,20 @@ class App(Gtk.Application):
         # lg.debug(sw.get_allocated_height())
         return True
 
+
     def on_pause_button(self, button):
         """Pause experiment operation."""
         lg.info("Pausing run")
+        # TODO: consider implimenting this
         # self.mqttc.publish("gui/pause", "pause", qos=2).wait_for_publish()
+
 
     def on_stop_button(self, button):
         """Stop experiment operation."""
         lg.info("Stopping run")
+        # TODO not sure where to send this
         self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
 
-    def on_pd_button(self, button):
-        lg.info("Measuring currents")
-        # TODO: generate photodiode message
 
     def harvest_gui_data(self):
         """
@@ -804,6 +805,7 @@ class App(Gtk.Application):
                     if id_str == "labelTree":
                         gui_data[id_str] = {"type": str(type(this_obj)), "value": self.label_shadow, "call_to_set": None}
         return gui_data
+
 
     def on_save_button(self, button):
         """Save current state of widget entries to a file."""
@@ -879,13 +881,49 @@ class App(Gtk.Application):
         else:
             lg.info(f"Load aborted.")
 
+
     def on_connectivity_button(self, button):
-        lg.info("Checking connectivity")
-        # TODO: generate connectivity check routine message
+        lg.info("Connectivity check started")
+        iv_dev_txt = self.b.get_object("iv_devs").get_text()
+        iv_dev_num = int(iv_dev_txt, 16)
+        eqe_dev_txt = self.b.get_object("eqe_devs").get_text()
+        eqe_dev_num = int(eqe_dev_txt, 16)
+        any_dev_num = iv_dev_num|eqe_dev_num # combine the selections for the connectivity check
+        msg = {'cmd':'round_robin',
+        'type': 'connectivity',
+        'devices': self.bitmask_to_some_lists(hex(any_dev_num))['selections'],
+        'pcb': self.config['controller']['address'],
+        'smu_address': self.config['smu']['address'],
+        'smu_baud': int(self.config['smu']['baud']),
+        }
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+
 
     def on_RTD_button(self, button):
-        lg.info("Measuring RTD(s)")
-        # TODO: generate rtd measurement message
+        lg.info("RTD temperature measurement started")
+        msg = {'cmd':'round_robin',
+        'type': 'rtd',
+        'devices': self.bitmask_to_some_lists(self.b.get_object("iv_devs").get_text())['selections'],
+        'pcb': self.config['controller']['address'],
+        'smu_address': self.config['smu']['address'],
+        'smu_baud': int(self.config['smu']['baud']),
+        }
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+
+
+    def on_current_button(self, button):
+        lg.info("Current measurement started")
+        msg = {'cmd':'round_robin',
+        'type': 'current',
+        'devices': self.bitmask_to_some_lists(self.b.get_object("iv_devs").get_text())['selections'],
+        'pcb': self.config['controller']['address'],
+        'smu_address': self.config['smu']['address'],
+        'smu_baud': int(self.config['smu']['baud']),
+        }
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
 
     def on_device_toggle(self, button):
@@ -1052,7 +1090,8 @@ class App(Gtk.Application):
 
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""
-        save_folder = pathlib.Path(self.config["paths"]["save_folder"])
+        pass
+        """ save_folder = pathlib.Path(self.config["paths"]["save_folder"])
         run_name = self.b.get_object("run_name").get_text()
         destination = str(save_folder.joinpath(run_name))
 
@@ -1132,16 +1171,19 @@ class App(Gtk.Application):
         )  # TODO: could also use pickle here, which might be more general
         self.mqttc.publish(
             "gui", payload, qos=2
-        ).wait_for_publish()  # TODO: probably we don't wait for this
+        ).wait_for_publish() """
 
     def on_cal_ch3_button(self, button):
-        self.calibrate_psu(3)
+        pass
+        #self.calibrate_psu(3)
 
     def on_cal_ch2_button(self, button):
-        self.calibrate_psu(2)
+        pass
+        #self.calibrate_psu(2)
 
     def on_cal_ch1_button(self, button):
-        self.calibrate_psu(1)
+        pass
+        #self.calibrate_psu(1)
 
     def on_smart_mode_activate(self, button):
         self.update_gui()
