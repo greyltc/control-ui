@@ -795,8 +795,7 @@ class App(Gtk.Application):
     def on_stop_button(self, button):
         """Stop experiment operation."""
         lg.info("Stopping run")
-        # TODO not sure where to send this
-        self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
+        self.mqttc.publish("measurement/stop", "stop", qos=2).wait_for_publish()
 
 
     def harvest_gui_data(self):
@@ -1033,7 +1032,8 @@ class App(Gtk.Application):
         }
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
-    
+
+
     def move_warning(self):
         message_dialog = Gtk.MessageDialog(
             modal=True,
@@ -1065,7 +1065,7 @@ class App(Gtk.Application):
         msg = {'cmd':'estop', 'pcb':self.config['controller']['address']}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
-        self.mqttc.publish("gui/stop", "stop", qos=2).wait_for_publish()
+        self.mqttc.publish("measurement/stop", "stop", qos=2).wait_for_publish()
 
 
     def on_stage_read_button(self, button):
