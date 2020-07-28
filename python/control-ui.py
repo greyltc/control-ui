@@ -1106,8 +1106,6 @@ class App(Gtk.Application):
         for i, lab in enumerate(args['label_tree']):
             if lab == '':
                 args['label_tree'][i] = self.substrate_designators[i]
-        import pprint
-        pprint.pprint(args)
         return(args)
 
 
