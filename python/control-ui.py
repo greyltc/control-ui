@@ -99,27 +99,31 @@ class App(Gtk.Application):
 
         def on_message(mqttc, obj, msg):
             """Act on an MQTT message."""
-            try:
-                msg = pickle.loads(msg.payload)
-                #m = json.loads(msg.payload)
-                #lg.debug(f"New message: {msg}")
-            except:
-                msg = None
+            if (msg.topic) == "measurement/status":
+                self.b.get_object("goto_x").set_text(m[0])
+                self.b.get_object("goto_y").set_text(m[0])
+            else:
+                try:
+                    m = pickle.loads(msg.payload)
+                    #m = json.loads(msg.payload)
+                    #lg.debug(f"New message: {m}")
+                except:
+                    m = None
 
-            if msg is not None:
-                if 'log' in msg: # log update message
-                    lg.log(msg['log']['level'], msg['log']['text'])
-                if 'pos' in msg: # position update message
-                    pos = msg['pos']
-                    if len(pos) != self.num_axes:
-                        lg.warning(f"Stage dimension mismatch")
-                    else:
-                        for i,val in enumerate(pos):
-                            try:
-                                self.gotos[i].set_value(val)
-                            except:
-                                 self.gotos[i].set_text('')
-                                 lg.warning(f"Failed to read axis {i+1} position")
+                if m is not None:
+                    if 'log' in m:  # log update message
+                        lg.log(m['log']['level'], m['log']['text'])
+                    if 'pos' in msg:  # position update message
+                        pos = m['pos']
+                        if len(pos) != self.num_axes:
+                            lg.warning(f"Stage dimension mismatch")
+                        else:
+                            for i,val in enumerate(pos):
+                                try:
+                                    self.gotos[i].set_value(val)
+                                except:
+                                    self.gotos[i].set_text('')
+                                    lg.warning(f"Failed to read axis {i+1} position")
 
 
         try:
@@ -133,6 +137,9 @@ class App(Gtk.Application):
 
             # a channel for progress messages
             self.mqttc.subscribe("status/#", qos=2)
+
+            # what state the measurement backend is in
+            self.mqttc.subscribe("measurement/status/#", qos=2)
 
             # a channel for results from completed commands
             self.mqttc.subscribe("response/#", qos=2)  
@@ -335,7 +342,9 @@ class App(Gtk.Application):
         duration_string = humanize.naturaldelta(
             dt.timedelta(seconds=seconds_per * num_selected)
         )
-        lg.info(f"{num_selected} devices selected for ~ {duration_string}")
+        # TODO: look at making this easier to maintain
+        # This report is probably too annoying to maintain properly in its current state
+        #lg.info(f"{num_selected} devices selected for ~ {duration_string}")
 
 
     def setup_label_tree(self, labels, substrate_designators, cell_y_padding):
@@ -372,6 +381,7 @@ class App(Gtk.Application):
                 path, focus_column=col, focus_cell=None, start_editing=True
             )
 
+
     # handles keystroke in the device selection tree
     def handle_dev_key(self, tv, event):
         # eqe = 'eqe' in Gtk.Buildable.get_name(self.po.get_relative_to())
@@ -383,6 +393,7 @@ class App(Gtk.Application):
             else:
                 self.dev_tree.expand_row(path, False)
 
+
     def store_substrate_label(self, widget, path, text):
         self.label_store[path][0] = text
         if text == "": # if it's empty use the default
@@ -392,6 +403,7 @@ class App(Gtk.Application):
             self.label_shadow[int(path)] = text
             self.dev_store[0][path][0] = self.label_store[path][0]
             self.dev_store[1][path][0] = self.label_store[path][0]
+
 
     # handle the auto iv toggle
     def on_autoiv_toggled(self, button, user_data=None):
@@ -410,17 +422,18 @@ class App(Gtk.Application):
             for grandchild in child.get_children():
                 grandchild.set_sensitive(sensitivity)
 
+
     # runs once per second
     def tick(self, user_data=None):
         # lg.debug("tick")
         if self.mqtt_setup == True:
+            hb = self.b.get_object("headerBar")
             if self.mqttc.is_connected():
                 status = "Connected"
                 self.mqtt_connected = True
             else:
                 status = "Disconnected"
                 self.mqtt_connected = False
-            self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
         else:
             self.mqtt_connected = False
             status = "Disconnected"
@@ -1106,6 +1119,26 @@ class App(Gtk.Application):
         for i, lab in enumerate(args['label_tree']):
             if lab == '':
                 args['label_tree'][i] = self.substrate_designators[i]
+        import pprint
+
+        args['iv_subs_names'] = self.bitmask_to_some_lists(args['iv_devs'])['subs_names']
+        args['iv_subs_dev_nums'] = self.bitmask_to_some_lists(args['iv_devs'])['sub_dev_nums']
+        args['iv_selections'] = self.bitmask_to_some_lists(args['iv_devs'])['selections']
+        args['iv_subs_labels'] = self.bitmask_to_some_lists(args['iv_devs'])['user_labels']
+        for i, lab in enumerate(args['iv_subs_labels']):
+            if lab == '':
+                args['iv_subs_labels'][i] = args['iv_subs_names'][i]
+
+        args['eqe_subs_names'] = self.bitmask_to_some_lists(args['eqe_devs'])['subs_names']
+        args['eqe_subs_dev_nums'] = self.bitmask_to_some_lists(args['eqe_devs'])['sub_dev_nums']
+        args['eqe_selections'] = self.bitmask_to_some_lists(args['eqe_devs'])['selections']
+        args['eqe_subs_labels'] = self.bitmask_to_some_lists(args['eqe_devs'])['user_labels']
+        for i, lab in enumerate(args['eqe_subs_labels']):
+            if lab == '':
+                args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
+        
+        args['subs_names'] = self.substrate_designators
+        pprint.pprint(args)
         return(args)
 
 
