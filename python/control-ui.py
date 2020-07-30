@@ -434,6 +434,7 @@ class App(Gtk.Application):
             else:
                 status = "Disconnected"
                 self.mqtt_connected = False
+            hb.set_subtitle(status)
         else:
             self.mqtt_connected = False
             status = "Disconnected"
@@ -1119,7 +1120,6 @@ class App(Gtk.Application):
         for i, lab in enumerate(args['label_tree']):
             if lab == '':
                 args['label_tree'][i] = self.substrate_designators[i]
-        import pprint
 
         args['iv_subs_names'] = self.bitmask_to_some_lists(args['iv_devs'])['subs_names']
         args['iv_subs_dev_nums'] = self.bitmask_to_some_lists(args['iv_devs'])['sub_dev_nums']
@@ -1138,7 +1138,6 @@ class App(Gtk.Application):
                 args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
         
         args['subs_names'] = self.substrate_designators
-        pprint.pprint(args)
         return(args)
 
 
@@ -1174,7 +1173,7 @@ class App(Gtk.Application):
         self.update_gui()
 
 
-    def row_act(self, a):
+    def row_act(self, a, c, d):
         pass
 
     def cur_row(self, a):
