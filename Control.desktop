@@ -12,13 +12,8 @@ Name=Measurement Control
 # A comment which can/will be used as a tooltip
 Comment=Solar cell measurement system controller
 
-# The path to the folder in which the executable is run
-# doesn't need a path because we assume this is on the PYTHONPATH
-#Path=${HOME}/git/control-ui
-
 # The executable of the application, possibly with arguments.
-Exec=bash -c "PYTHONPATH=${HOME}/python python -m control-ui"
-#Exec=python -m control-ui
+Exec=python -m control-ui
 
 # The name of the icon that will be used to display this entry
 Icon=applications-engineering
