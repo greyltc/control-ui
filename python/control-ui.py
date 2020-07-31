@@ -535,6 +535,7 @@ class App(Gtk.Application):
                 with open(self.config_file, "r") as f:
                     for line in f:
                         lg.debug(line.rstrip())
+                with open(self.config_file, "r") as f:
                     self.config = yaml.load(f, Loader=yaml.FullLoader)
             except:
                 lg.error("Unexpected error parsing config file.")
@@ -549,7 +550,9 @@ class App(Gtk.Application):
             self.num_substrates = len(self.substrate_designators)
 
             self.active_layout = self.config["substrates"]["active_layout"]
-            self.num_pix = len(self.config["substrates"][self.active_layout]["pixels"])
+            self.num_pix = len(
+                self.config["substrates"]["layouts"][self.active_layout]["pixels"]
+            )
             self.live_data_uri = self.config["network"]["live_data_uri"]
 
             # stage specific stuff
@@ -605,7 +608,6 @@ class App(Gtk.Application):
             self.custom_coords = []
             for name in location_names:
                 coord = self.config["stage"]["custom_positions"][name]
-                coord = [float(v) for v in coord]
                 self.custom_coords.append(coord)
                 pl.append([name])
 
