@@ -1030,6 +1030,8 @@ class App(Gtk.Application):
         'psu': self.config['psu']['address'],
         'smu_address': self.config['smu']['address'],
         'smu_baud': int(self.config['smu']['baud']),
+        'lia_address': int(self.config['lia']['address']),
+        'mono_address': int(self.config['monochromator']['address'])
         }
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
