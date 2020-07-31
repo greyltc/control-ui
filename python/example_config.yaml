@@ -1,0 +1,148 @@
+# configuration settings not settable in gui
+#
+# Can make use of an !include tag with a file path to load additional config settings
+# from other yaml files. If using the tag, load this file with PyYAML as follows:
+#
+# import yaml
+# 
+# def yaml_include(loader, node):
+#     with file(node.value) as f:
+#         return yaml.load(f)
+#
+# yaml.add_constructor("!include", yaml_include)  
+# 
+# with open("example_config.yaml", "r") as f:
+#     config = yaml.load(f, Loader=yaml.FullLoader)  
+
+
+network:
+    MQTTHOST: "127.0.0.1"
+    live_data_uri: "127.0.0.1"
+
+visa:
+    visa_lib: '@py'
+
+# stage and mux controller
+controller:
+    address: "10.46.0.239"
+
+# source-measure unit(s)
+smu:
+    address: ASRL/dev/ttyUSB0::INSTR
+    baud: 57600
+    terminator: '\r\n'
+    # if front terminals is false, use rear terminals
+    front_terminals: false
+    # if 2 wire is false, use 4 wire
+    two_wire: false
+
+solarsim:
+    uri: wavelabs://127.0.0.1:3334
+#    spectral_calibration: !include example_solarsim_cal.yaml
+
+# lock-in amplifier
+lia:
+    address: ASRL/dev/ttyUSB1::INSTR
+    terminator: '\r'
+    baud: 9600
+    output_interface: 0
+
+monochromator:
+    address: ASRL/dev/ttyUSB2::INSTR
+    terminator: '\r'
+    baud: 9600
+    grating_change_wls: [1200]
+    filter_change_wls: [370, 640, 715, 765]
+
+# LED power supply unit
+psu:
+    address: TCPIP0::10.46.0.190::INSTR
+    terminator: '\r'
+    baud: 9600
+    ch1_voltage: 30
+    ch2_voltage: 30
+    ch3_voltage: 5
+    calibration:
+        # currents in amps
+        max_current: 1
+        current_step: 0.1
+
+stage:
+    # stage lengths in mm along each available axis.
+    # parsed as a list where indices reference axes as: 0: x-axis, 1: y-aixs, 2: z-axis.
+    # comment out or leave blank if no stage is connected.
+    uri: us://125/6400
+    # approx mm/s
+    speed: 29
+    experiment_positions:
+        solarsim: [200, 250]
+        eqe: [800, 250]
+    custom_positions: {"Load Position": 23, "Test spot A": 88.54241, "Midway": 62.5, "Offline Position": 120}
+
+# i-v-t measurement settings
+ivt:
+    # when using smart mode, start scan 1 and end scan 2 this many percent higher than Voc
+    # bigger numbers here give better fitting for series resistance at an incresed danger of pushing too much current through the device
+    percent_beyond_voc: 25
+    # when using smart mode, end scan 1 and start scan 2 this much into reverse bias
+    # bigger numbers here give better fitting for shunt resistance at an incresed danger of pulling too much current from the device
+    # this is an absolute number whose sign is set depending on the sign of Voc
+    voltage_beyond_isc: 0.1
+
+substrates:
+    # list of number of substrates along each available axis e.g. rows,cols
+    number: [5, 4]
+    # spacing in mm between substrate centers along each available axis
+    spacing: [35, 29]
+    # List of available pixel layout names. Additional info about each layout is given
+    # it's named sub-section in the "layouts" sub-section below.
+    layout_names: [6px_1in]
+    # for clients that only accept one layout, use this layout
+    active_layout: 6px_1in
+
+    # pixel layout info
+    layouts:
+        # layout name
+        6px_1in:
+            # pcb adapter name
+            pcb_name: 6px_1in_pcb
+            # pcb pin numbers to use
+            pixels: [1, 2, 3, 4, 5, 6]
+            # List of position vectors of each pixel in use on each substrate.
+            # Positions are given in mm relative to the substrate center.
+            # If the positions are multi-axis, the positions of each pixel in the list are given as
+            # vectors, e.g. for an x,y stage the list would be formatted as:
+            # [[pixel1_x, pixel1_y], [pixel2_x, pixel2_y], ...]
+            # There should be a pixel position vector for every force pin on the adpater pcb, even
+            # for pixels that are unused. Unused pixels can set to [0, ...].
+            positions: [[-5, -5], [-5, 5], [0, -5], [0, 5], [5, -5], [5, 5]]
+            # list of areas in cm^2 of each pixel on a substrate
+            areas: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+
+        4px_30mm:
+            pcb_name: 6px_30mm_pcb
+            pixels: [1, 3, 4, 5]
+            positions: [[-6, -6], [0, 0], [0, -6], [0, 6], [6, -6], [0, 0]]
+            areas: [0.15, 0, 1.0, 0.15, 0.15, 0]
+        
+    # pcb adapter info
+    adapters:
+        6px_1in_pcb:
+            # number of available pixels per pcb
+            pcb_contact_pads: 6
+            # pcb adapter board idn resistor in Ohms
+            pcb_resistor: 0
+
+        6px_30mm_pcb:
+            pcb_contact_pads: 6
+            pcb_resistor: 0    
+
+# miscellaneous reference data
+reference:
+    # spectral irradiance data
+    spectra: null
+    # device calibration data
+    calibration:
+        eqe:
+          wls: [350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100]
+          eqe: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
