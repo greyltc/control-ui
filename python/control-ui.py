@@ -803,7 +803,9 @@ class App(Gtk.Application):
     def on_stop_button(self, button):
         """Stop experiment operation."""
         lg.info("Stopping run")
-        self.mqttc.publish("measurement/stop", "stop", qos=2).wait_for_publish()
+        self.mqttc.publish(
+            "measurement/stop", pickle.dump("stop"), qos=2
+        ).wait_for_publish()
 
     def harvest_gui_data(self):
         """
