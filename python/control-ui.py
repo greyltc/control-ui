@@ -579,11 +579,11 @@ class App(Gtk.Application):
                 self.config["substrates"]["layouts"][self.active_layout]["pixels"]
             )
             self.live_data_uri = []
-            self.live_data_uri.append([self.config["network"]["live_data_uri_1"]])
-            self.live_data_uri.append([self.config["network"]["live_data_uri_2"]])
-            self.live_data_uri.append([self.config["network"]["live_data_uri_3"]])
-            self.live_data_uri.append([self.config["network"]["live_data_uri_4"]])
-            self.live_data_uri.append([self.config["network"]["live_data_uri_5"]])
+            self.live_data_uri.append(self.config["network"]["live_data_uri_1"])
+            self.live_data_uri.append(self.config["network"]["live_data_uri_2"])
+            self.live_data_uri.append(self.config["network"]["live_data_uri_3"])
+            self.live_data_uri.append(self.config["network"]["live_data_uri_4"])
+            self.live_data_uri.append(self.config["network"]["live_data_uri_5"])
 
             # stage specific stuff
             esl = self.config["stage"]["uri"].split('://')[1].split('/')[0]
@@ -676,9 +676,16 @@ class App(Gtk.Application):
             self.approx_seconds_per_iv = 50
             self.approx_seconds_per_eqe = 150
 
-            wv = self.b.get_object("wv")
-            if self.live_data_uri != "":
-                wv.load_uri(self.live_data_uri)
+            wvs = []
+            wvs.append(self.b.get_object("wv1"))
+            wvs.append(self.b.get_object("wv2"))
+            wvs.append(self.b.get_object("wv3"))
+            wvs.append(self.b.get_object("wv4"))
+            wvs.append(self.b.get_object("wv5"))
+
+            for i,wv in enumerate(wvs):
+                if self.live_data_uri[i] != "":
+                    wv.load_uri(self.live_data_uri[i])
 
             # start MQTT client
             self._start_mqtt()

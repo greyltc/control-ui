@@ -2584,8 +2584,6 @@ Sends the stage to a position</property>
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
@@ -2603,8 +2601,6 @@ Sends the stage to a position</property>
                     </child>
                     <child>
                       <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
@@ -2622,8 +2618,6 @@ Sends the stage to a position</property>
                     </child>
                     <child>
                       <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
@@ -2641,8 +2635,6 @@ Sends the stage to a position</property>
                     </child>
                     <child>
                       <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
@@ -2660,8 +2652,6 @@ Sends the stage to a position</property>
                     </child>
                     <child>
                       <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
@@ -2679,16 +2669,41 @@ Sends the stage to a position</property>
                     </child>
                     <child>
                       <object class="GtkFlowBoxChild">
-                        <property name="width_request">100</property>
-                        <property name="height_request">80</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
-                          <object class="GtkSwitch">
+                          <object class="GtkBox">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="halign">center</property>
+                            <property name="can_focus">False</property>
                             <property name="valign">center</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Update Plots</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSwitch">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="tooltip_text" translatable="yes">Switch off to pause live updates</property>
+                                <property name="halign">center</property>
+                                <property name="valign">center</property>
+                                <property name="active">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                           </object>
                         </child>
                       </object>
