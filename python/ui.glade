@@ -506,6 +506,7 @@ Author: Greyson Christoforo
                       <object class="GtkBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="halign">center</property>
                         <property name="margin_start">5</property>
                         <property name="margin_end">5</property>
                         <property name="margin_top">5</property>
@@ -516,6 +517,7 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="tooltip_text" translatable="yes">Enter custom labels for individual substrates here</property>
+                            <property name="valign">start</property>
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
                             <child>
@@ -2577,12 +2579,119 @@ Sends the stage to a position</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv">
-                    <property name="height_request">400</property>
+                  <object class="GtkFlowBox">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
+                    <property name="can_focus">False</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
+                            <property name="width_request">200</property>
+                            <property name="height_request">200</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
+                            <property name="width_request">200</property>
+                            <property name="height_request">200</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv3">
+                            <property name="width_request">200</property>
+                            <property name="height_request">200</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
+                            <property name="width_request">200</property>
+                            <property name="height_request">200</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
+                            <property name="width_request">200</property>
+                            <property name="height_request">200</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="GtkSwitch">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="halign">center</property>
+                            <property name="valign">center</property>
+                          </object>
+                        </child>
+                      </object>
                     </child>
                   </object>
                   <packing>
