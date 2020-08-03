@@ -20,6 +20,8 @@ import configparser
 import json
 import pickle
 
+import yaml
+
 # os.environ["DEBUSSY"] = "1"
 
 gi.require_version("WebKit2", "4.0")
@@ -99,32 +101,46 @@ class App(Gtk.Application):
 
         def on_message(mqttc, obj, msg):
             """Act on an MQTT message."""
-            if (msg.topic) == "measurement/status":
-                self.b.get_object("goto_x").set_text(m[0])
-                self.b.get_object("goto_y").set_text(m[0])
-            else:
-                try:
-                    m = pickle.loads(msg.payload)
-                    #m = json.loads(msg.payload)
-                    #lg.debug(f"New message: {m}")
-                except:
-                    m = None
+            try:
+                m = pickle.loads(msg.payload)
+            except:
+                m = None
 
-                if m is not None:
-                    if 'log' in m:  # log update message
-                        lg.log(m['log']['level'], m['log']['text'])
-                    if 'pos' in msg:  # position update message
-                        pos = m['pos']
-                        if len(pos) != self.num_axes:
-                            lg.warning(f"Stage dimension mismatch")
-                        else:
-                            for i,val in enumerate(pos):
-                                try:
-                                    self.gotos[i].set_value(val)
-                                except:
-                                    self.gotos[i].set_text('')
-                                    lg.warning(f"Failed to read axis {i+1} position")
+            # examine by message topic
+            if m is not None:
+                if (msg.topic) == "measurement/status":
+                    lg.debug(f"A message in measurement/status: {m}")
+                    #TODO: handle backend status
+                elif (msg.topic) == "measurement/log":
+                    lg.debug(f"A message in measurement/log: {m}")
+                    #TODO: display log message
+                elif (msg.topic) == "calibration/eqe_calibration":
+                    lg.debug(f"A message in calibration/eqe_calibration: {m}")
+                    #TODO: get last cal message
+                elif (msg.topic) == "calibration/spectrum":
+                    lg.debug(f"A message in calibration/spectrum: {m}")
+                    #TODO: get last cal message
+                elif "calibration/psu" in msg.topic:
+                    pass
+                    #TODO: get last cal message
+                #else:
+                #    lg.debug(f"Unknown topic: {msg.topic}")
 
+                # examine by message content
+                if 'log' in m:  # log update message
+                    lg.log(m['log']['level'], m['log']['text'])
+                if 'pos' in msg:  # position update message
+                    lg.debug(f"Position message: {m}")
+                    pos = m['pos']
+                    if len(pos) != self.num_axes:
+                        lg.warning(f"Stage dimension mismatch")
+                    else:
+                        for i,val in enumerate(pos):
+                            try:
+                                self.gotos[i].set_value(val)
+                            except:
+                                self.gotos[i].set_text('')
+                                lg.warning(f"Failed to read axis {i+1} position")
 
         try:
             # connect to mqtt broker
@@ -140,6 +156,12 @@ class App(Gtk.Application):
 
             # what state the measurement backend is in
             self.mqttc.subscribe("measurement/status/#", qos=2)
+
+            # log messages from the measurement backend
+            self.mqttc.subscribe("measurement/log/#", qos=2)
+
+            # log messages from the calibration backend
+            self.mqttc.subscribe("calibration/#", qos=2)
 
             # a channel for results from completed commands
             self.mqttc.subscribe("response/#", qos=2)  
@@ -484,12 +506,8 @@ class App(Gtk.Application):
             lg.addHandler(uiLog)
             lg.debug("Gui logging setup.")
 
-            self.config = configparser.ConfigParser(
-                interpolation=configparser.ExtendedInterpolation()
-            )
-            
-            example_config_file_name = "example_config.ini"
-            config_file_name = "measurement_config.ini"
+            example_config_file_name = "example_config.yaml"
+            config_file_name = "measurement_config.yaml"
             self.config_file = pathlib.Path(config_file_name)
 
             # let's figure out where the configuration file is
@@ -542,19 +560,23 @@ class App(Gtk.Application):
                 with open(self.config_file, "r") as f:
                     for line in f:
                         lg.debug(line.rstrip())
-                self.config.read(str(self.config_file))
+                with open(self.config_file, "r") as f:
+                    self.config = yaml.load(f, Loader=yaml.FullLoader)
             except:
                 lg.error("Unexpected error parsing config file.")
                 lg.error(sys.exc_info()[0])
                 raise
 
             # get dimentions of substrate array to generate designators
-            number_list = [int(x) for x in self.config["substrates"]["number"].split(",")]
-            self.substrate_designators = self._generate_substrate_designators(number_list)
+            number_list = self.config["substrates"]["number"]
+            self.substrate_designators = self._generate_substrate_designators(
+                number_list
+            )
             self.num_substrates = len(self.substrate_designators)
 
+            self.active_layout = self.config["substrates"]["active_layout"]
             self.num_pix = len(
-                self.config[self.config["substrates"]["active_layout"]]["pixels"].split(",")
+                self.config["substrates"]["layouts"][self.active_layout]["pixels"]
             )
             self.live_data_uri = self.config["network"]["live_data_uri"]
 
@@ -592,15 +614,13 @@ class App(Gtk.Application):
                 o.set_visible(False)
                 o = self.b.get_object("goto_y")
                 o.set_visible(False)
-            
+
             # handle custom locations
-            location_names = [conf for conf in self.config["stage"]]
-            location_names.remove('uri')
+            location_names = self.config["stage"]["custom_positions"].keys()
             pl = self.b.get_object("places_list")
             self.custom_coords = []
             for name in location_names:
-                coord = self.config["stage"][name].split(',')
-                coord = [float(v) for v in coord]
+                coord = self.config["stage"]["custom_positions"][name]
                 self.custom_coords.append(coord)
                 pl.append([name])
 
@@ -796,8 +816,9 @@ class App(Gtk.Application):
     def on_stop_button(self, button):
         """Stop experiment operation."""
         lg.info("Stopping run")
-        self.mqttc.publish("measurement/stop", "stop", qos=2).wait_for_publish()
-
+        self.mqttc.publish(
+            "measurement/stop", pickle.dumps("stop"), qos=2
+        ).wait_for_publish()
 
     def harvest_gui_data(self):
         """
