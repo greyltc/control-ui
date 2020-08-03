@@ -95,36 +95,44 @@ class App(Gtk.Application):
         return subdes
 
     def _start_mqtt(self):
-        """Start the MQTT client and subscribe to the CLI topic."""
+        """Start the MQTT client and subscribe to measurement server and log topics."""
         self.mqtt_connecting = True
 
         def on_message(mqttc, obj, msg):
             """Act on an MQTT message."""
-            if (msg.topic) == "measurement/status":
-                self.b.get_object("goto_x").set_text(m[0])
-                self.b.get_object("goto_y").set_text(m[0])
-            else:
-                try:
-                    m = pickle.loads(msg.payload)
-                    # m = json.loads(msg.payload)
-                    # lg.debug(f"New message: {m}")
-                except:
-                    m = None
+            payload = pickle.load(msg.payload)
 
-                if m is not None:
-                    if "log" in m:  # log update message
-                        lg.log(m["log"]["level"], m["log"]["text"])
-                    if "pos" in msg:  # position update message
-                        pos = m["pos"]
-                        if len(pos) != self.num_axes:
-                            lg.warning(f"Stage dimension mismatch")
-                        else:
-                            for i, val in enumerate(pos):
-                                try:
-                                    self.gotos[i].set_value(val)
-                                except:
-                                    self.gotos[i].set_text("")
-                                    lg.warning(f"Failed to read axis {i+1} position")
+            if msg.topic == "measurement/status":
+                lg.info(f"Measurement server status: {payload}")
+            elif msg.topic == "log":
+                lg.log(payload["level"], payload["msg"])
+
+            # I don't understand this...
+            # if (msg.topic) == "measurement/status":
+            #     self.b.get_object("goto_x").set_text(m[0])
+            #     self.b.get_object("goto_y").set_text(m[0])
+            # else:
+            #     try:
+            #         m = pickle.loads(msg.payload)
+            #         # m = json.loads(msg.payload)
+            #         # lg.debug(f"New message: {m}")
+            #     except:
+            #         m = None
+
+            #     if m is not None:
+            #         if "log" in m:  # log update message
+            #             lg.log(m["log"]["level"], m["log"]["text"])
+            #         if "pos" in msg:  # position update message
+            #             pos = m["pos"]
+            #             if len(pos) != self.num_axes:
+            #                 lg.warning(f"Stage dimension mismatch")
+            #             else:
+            #                 for i, val in enumerate(pos):
+            #                     try:
+            #                         self.gotos[i].set_value(val)
+            #                     except:
+            #                         self.gotos[i].set_text("")
+            #                         lg.warning(f"Failed to read axis {i+1} position")
 
         try:
             # connect to mqtt broker
@@ -132,17 +140,13 @@ class App(Gtk.Application):
             self.mqttc = mqtt.Client()
             self.mqttc.on_message = on_message
             self.mqttc.connect(self.MQTTHOST)
-            # subscribe to cli topic to report back on progress
-            # self.mqttc.subscribe("cli/#", qos=2)
-
-            # a channel for progress messages
-            self.mqttc.subscribe("status/#", qos=2)
 
             # what state the measurement backend is in
-            self.mqttc.subscribe("measurement/status/#", qos=2)
+            self.mqttc.subscribe("measurement/status", qos=2)
 
-            # a channel for results from completed commands
-            self.mqttc.subscribe("response/#", qos=2)
+            # subscribe to logging channel
+            self.mqttc.subscribe("log", qos=2)
+
             self.mqttc.loop_start()
             self.mqtt_setup = True
         except:
