@@ -100,7 +100,7 @@ class App(Gtk.Application):
 
         def on_message(mqttc, obj, msg):
             """Act on an MQTT message."""
-            payload = pickle.load(msg.payload)
+            payload = pickle.loads(msg.payload)
 
             if msg.topic == "measurement/status":
                 lg.info(f"Measurement server status: {payload}")
