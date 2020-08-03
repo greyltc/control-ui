@@ -17,7 +17,7 @@
 
 network:
     MQTTHOST: "127.0.0.1"
-    live_data_uri: "http://127.0.0.1:8050"
+    live_data_uri: "http://127.0.0.1:8050/"
 
 visa:
     visa_lib: '@py'
