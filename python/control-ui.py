@@ -129,7 +129,7 @@ class App(Gtk.Application):
                 # examine by message content
                 if 'log' in m:  # log update message
                     lg.log(m['log']['level'], m['log']['text'])
-                if 'pos' in msg:  # position update message
+                if 'pos' in m:  # position update message
                     lg.debug(f"Position message: {m}")
                     pos = m['pos']
                     if len(pos) != self.num_axes:
