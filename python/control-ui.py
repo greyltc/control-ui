@@ -118,8 +118,8 @@ class App(Gtk.Application):
                 elif (msg.topic) == "measurement/log":
                     lg.debug(f"A message in measurement/log: {m}")
                     #TODO: display log message
-                elif (msg.topic) == "calibration/eqe_calibration":
-                    lg.debug(f"A message in calibration/eqe_calibration: {m}")
+                elif (msg.topic) == "calibration/eqe":
+                    lg.debug(f"A message in calibration/eqe: {m}")
                     #TODO: get last cal message
                 elif (msg.topic) == "calibration/spectrum":
                     lg.debug(f"A message in calibration/spectrum: {m}")
