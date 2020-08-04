@@ -116,8 +116,7 @@ class App(Gtk.Application):
                     if m == 'Offline' or m == 'Busy':
                         self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
                 elif (msg.topic) == "measurement/log":
-                    lg.debug(f"A message in measurement/log: {m}")
-                    #TODO: display log message
+                    lg.log(m["level"], m["msg"])
                 elif (msg.topic) == "calibration/eqe":
                     lg.debug(f"A message in calibration/eqe: {m}")
                     #TODO: get last cal message
