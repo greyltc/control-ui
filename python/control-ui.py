@@ -130,7 +130,6 @@ class App(Gtk.Application):
                 if 'log' in m:  # log update message
                     lg.log(m['log']['level'], m['log']['text'])
                 if 'pos' in m:  # position update message
-                    lg.debug(f"Position message: {m}")
                     pos = m['pos']
                     if len(pos) != self.num_axes:
                         lg.warning(f"Stage dimension mismatch")
