@@ -62,6 +62,7 @@ class App(Gtk.Application):
         # to keep track of the two toggle buttons in the utility panel
         self.all_mux_switches_open = True
         self.in_iv_mode = True
+        self.run_handler_status = 'Offline'
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -109,8 +110,11 @@ class App(Gtk.Application):
             # examine by message topic
             if m is not None:
                 if (msg.topic) == "measurement/status":
-                    lg.debug(f"A message in measurement/status: {m}")
-                    #TODO: handle backend status
+                    self.run_handler_status = m
+                    if m == 'Ready':
+                        self.b.get_object("run_but").set_sensitive(True)
+                    if m == 'Offline' or m == 'Busy':
+                        self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
                 elif (msg.topic) == "measurement/log":
                     lg.debug(f"A message in measurement/log: {m}")
                     #TODO: display log message
@@ -450,10 +454,10 @@ class App(Gtk.Application):
         if self.mqtt_setup == True:
             hb = self.b.get_object("headerBar")
             if self.mqttc.is_connected():
-                status = "Connected"
+                status = f"Connected & {self.run_handler_status}"
                 self.mqtt_connected = True
             else:
-                status = "Disconnected"
+                status = f"Disconnected & {self.run_handler_status}"
                 self.mqtt_connected = False
             hb.set_subtitle(status)
         else:
