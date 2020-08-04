@@ -2126,9 +2126,7 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">WARNING!
-Pressing this will immediately cause the stage to travel to its limits. Ensure everything is clear.
-Performs the stage homing procedure.</property>
+                            <property name="tooltip_text" translatable="yes">Performs the stage homing procedure.</property>
                             <property name="image">image6</property>
                             <property name="image_position">top</property>
                             <property name="always_show_image">True</property>
@@ -2330,8 +2328,7 @@ Performs the stage homing procedure.</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="tooltip_text" translatable="yes">WARNING! Pressing this will cause immediate stage movement
-Sends the stage to a position</property>
+                                    <property name="tooltip_text" translatable="yes">Sends the stage to a position</property>
                                     <property name="image">image7</property>
                                     <property name="always_show_image">True</property>
                                     <signal name="clicked" handler="on_goto_button" swapped="no"/>
