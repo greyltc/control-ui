@@ -2579,8 +2579,7 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
-                            <property name="width_request">310</property>
-                            <property name="height_request">310</property>
+                            <property name="width_request">250</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2596,8 +2595,7 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
-                            <property name="width_request">310</property>
-                            <property name="height_request">310</property>
+                            <property name="width_request">250</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2613,8 +2611,7 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv3">
-                            <property name="width_request">310</property>
-                            <property name="height_request">310</property>
+                            <property name="width_request">250</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2630,8 +2627,7 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
-                            <property name="width_request">310</property>
-                            <property name="height_request">310</property>
+                            <property name="width_request">250</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2647,8 +2643,7 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
-                            <property name="width_request">310</property>
-                            <property name="height_request">310</property>
+                            <property name="width_request">250</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
