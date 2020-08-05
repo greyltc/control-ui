@@ -444,12 +444,12 @@ class App(Gtk.Application):
 
     def store_substrate_label(self, widget, path, text):
         dev_path = f'0:{path}'
+        self.label_shadow[int(path)] = text
         self.label_store[path][0] = text
         if text == "": # if it's empty use the default
             self.dev_store[0][dev_path][0] = self.label_store[path][1]
             self.dev_store[1][dev_path][0] = self.label_store[path][1]
         else: # otherwise use the user's one
-            self.label_shadow[int(path)] = text
             self.dev_store[0][dev_path][0] = self.label_store[path][0]
             self.dev_store[1][dev_path][0] = self.label_store[path][0]
 
@@ -893,7 +893,7 @@ class App(Gtk.Application):
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_value(), "call_to_set": "set_value"}
                 elif isinstance(this_obj, gi.repository.Gtk.Entry):
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
-                elif isinstance(this_obj, gi.overrides.Gtk.TreeView):  # the TreeViews are unfortunately not pickalble
+                elif isinstance(this_obj, gi.overrides.Gtk.TreeView):  # the TreeViews are unfortunately not pickleable
                     if id_str == "label_tree":
                         gui_data[id_str] = {"type": str(type(this_obj)), "value": self.label_shadow, "call_to_set": None}
         return gui_data
@@ -1075,7 +1075,10 @@ class App(Gtk.Application):
                 sub_dev_nums += [sub_dev_num]
                 subs_name = self.substrate_designators[subs_num]
                 subs_names += [subs_name]
-                user_label = self.label_shadow[subs_num]
+                if self.label_shadow[subs_num] == "":
+                    user_label = subs_name
+                else:
+                    user_label = self.label_shadow[subs_num]
                 user_labels += [user_label]
                 selection = f"s{subs_name}{sub_dev_num}".lower()
                 selections += [selection]
