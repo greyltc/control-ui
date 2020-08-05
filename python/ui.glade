@@ -1804,7 +1804,6 @@ Author: Greyson Christoforo
                                       <object class="GtkLabel">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="tooltip_text" translatable="yes">Number of steps</property>
                                         <property name="halign">end</property>
                                         <property name="label" translatable="yes">Steps:</property>
                                       </object>
@@ -1817,13 +1816,13 @@ Author: Greyson Christoforo
                                       <object class="GtkSpinButton" id="eqe_step">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="tooltip_text" translatable="yes">EQE wavelength sweep step size</property>
+                                        <property name="tooltip_text" translatable="yes">Number of steps taken in the EQE wavelength sweep</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
                                         <property name="adjustment">nm_step_adj</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <property name="value">5</property>
+                                        <property name="value">161</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
