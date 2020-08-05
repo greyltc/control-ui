@@ -95,7 +95,7 @@ ivt:
 
 substrates:
     # list of number of substrates along each available axis e.g. rows,cols
-    number: [5, 4]
+    number: [4, 5]
     # spacing in mm between substrate centers along each available axis
     spacing: [35, 29]
     # List of available pixel layout names. Additional info about each layout is given
