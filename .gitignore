@@ -1,3 +1,4 @@
+*.dat
 .vagrant
 *.glade~
 # Byte-compiled / optimized / DLL files

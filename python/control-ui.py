@@ -443,14 +443,15 @@ class App(Gtk.Application):
 
 
     def store_substrate_label(self, widget, path, text):
+        dev_path = f'0:{path}'
         self.label_store[path][0] = text
         if text == "": # if it's empty use the default
-            self.dev_store[0][path][0] = self.label_store[path][1]
-            self.dev_store[1][path][0] = self.label_store[path][1]
+            self.dev_store[0][dev_path][0] = self.label_store[path][1]
+            self.dev_store[1][dev_path][0] = self.label_store[path][1]
         else: # otherwise use the user's one
             self.label_shadow[int(path)] = text
-            self.dev_store[0][path][0] = self.label_store[path][0]
-            self.dev_store[1][path][0] = self.label_store[path][0]
+            self.dev_store[0][dev_path][0] = self.label_store[path][0]
+            self.dev_store[1][dev_path][0] = self.label_store[path][0]
 
 
     # handle the auto iv toggle

@@ -215,13 +215,6 @@ Author: Greyson Christoforo
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="nm_size_adj">
-    <property name="lower">1</property>
-    <property name="upper">2000</property>
-    <property name="value">10</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
   <object class="GtkAdjustment" id="nm_start_adj">
     <property name="lower">300</property>
     <property name="upper">1500</property>
@@ -231,7 +224,7 @@ Author: Greyson Christoforo
   </object>
   <object class="GtkAdjustment" id="nm_step_adj">
     <property name="lower">1</property>
-    <property name="upper">100</property>
+    <property name="upper">2000</property>
     <property name="value">5</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
