@@ -58,20 +58,20 @@ Author: Greyson Christoforo
     </columns>
     <data>
       <row>
+        <col id="0">0.009999999776482582</col>
+        <col id="1" translatable="yes">10μs</col>
+      </row>
+      <row>
+        <col id="0">0.029999999329447746</col>
+        <col id="1" translatable="yes">30μs</col>
+      </row>
+      <row>
         <col id="0">0.10000000149011612</col>
         <col id="1" translatable="yes">100μs</col>
       </row>
       <row>
         <col id="0">0.30000001192092896</col>
         <col id="1" translatable="yes">300μs</col>
-      </row>
-      <row>
-        <col id="0">0.5</col>
-        <col id="1" translatable="yes">500μs</col>
-      </row>
-      <row>
-        <col id="0">0.699999988079071</col>
-        <col id="1" translatable="yes">700μs</col>
       </row>
       <row>
         <col id="0">1</col>
@@ -83,51 +83,59 @@ Author: Greyson Christoforo
       </row>
       <row>
         <col id="0">5</col>
-        <col id="1" translatable="yes">5ms</col>
-      </row>
-      <row>
-        <col id="0">7</col>
-        <col id="1" translatable="yes">7ms</col>
-      </row>
-      <row>
-        <col id="0">10</col>
         <col id="1" translatable="yes">10ms</col>
       </row>
       <row>
-        <col id="0">100</col>
+        <col id="0">7</col>
+        <col id="1" translatable="yes">30ms</col>
+      </row>
+      <row>
+        <col id="0">10</col>
         <col id="1" translatable="yes">100ms</col>
       </row>
       <row>
-        <col id="0">300</col>
+        <col id="0">100</col>
         <col id="1" translatable="yes">300ms</col>
       </row>
       <row>
-        <col id="0">500</col>
-        <col id="1" translatable="yes">500ms</col>
-      </row>
-      <row>
-        <col id="0">700</col>
-        <col id="1" translatable="yes">700ms</col>
-      </row>
-      <row>
-        <col id="0">1000</col>
+        <col id="0">300</col>
         <col id="1" translatable="yes">1s</col>
       </row>
       <row>
-        <col id="0">3000</col>
+        <col id="0">500</col>
         <col id="1" translatable="yes">3s</col>
       </row>
       <row>
+        <col id="0">700</col>
+        <col id="1" translatable="yes">10s</col>
+      </row>
+      <row>
+        <col id="0">1000</col>
+        <col id="1" translatable="yes">30s</col>
+      </row>
+      <row>
+        <col id="0">3000</col>
+        <col id="1" translatable="yes">100s</col>
+      </row>
+      <row>
         <col id="0">5000</col>
-        <col id="1" translatable="yes">5s</col>
+        <col id="1" translatable="yes">300s</col>
       </row>
       <row>
         <col id="0">7000</col>
-        <col id="1" translatable="yes">7s</col>
+        <col id="1" translatable="yes">1ks</col>
       </row>
       <row>
         <col id="0">10000</col>
-        <col id="1" translatable="yes">10s</col>
+        <col id="1" translatable="yes">3ks</col>
+      </row>
+      <row>
+        <col id="0">0</col>
+        <col id="1" translatable="yes">10ks</col>
+      </row>
+      <row>
+        <col id="0">0</col>
+        <col id="1" translatable="yes">30ks</col>
       </row>
     </data>
   </object>
@@ -2571,8 +2579,8 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
-                            <property name="width_request">200</property>
-                            <property name="height_request">200</property>
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2588,8 +2596,8 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
-                            <property name="width_request">200</property>
-                            <property name="height_request">200</property>
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2605,8 +2613,8 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv3">
-                            <property name="width_request">200</property>
-                            <property name="height_request">200</property>
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2622,8 +2630,8 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
-                            <property name="width_request">200</property>
-                            <property name="height_request">200</property>
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
@@ -2639,8 +2647,8 @@ Author: Greyson Christoforo
                         <property name="can_focus">True</property>
                         <child>
                           <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
-                            <property name="width_request">200</property>
-                            <property name="height_request">200</property>
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <child>
