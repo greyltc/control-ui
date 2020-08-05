@@ -74,6 +74,7 @@ class App(Gtk.Application):
             None,
         )
 
+
     def _generate_substrate_designators(self, number_list):
         """Generate a list of substrate designators.
 
@@ -95,6 +96,7 @@ class App(Gtk.Application):
         subdes = [f"{n}{m}" for m in rs for n in cs]
 
         return subdes
+
 
     def _start_mqtt(self):
         """Start the MQTT client and subscribe to the CLI topic."""
@@ -174,10 +176,12 @@ class App(Gtk.Application):
             self.mqtt_setup = False
         self.mqtt_connecting = False
 
+
     def _stop_mqtt(self):
         """Stop the MQTT client."""
         self.mqttc.loop_stop()
         self.mqttc.disconnect()
+
 
     def do_startup(self):
         lg.debug(f"Starting up app from {__file__}")
@@ -212,17 +216,19 @@ class App(Gtk.Application):
             except:
                 pass
 
+
     def setup_dev_stores(self, num_substrates, num_pix, dev_stores, label_store):
         for store in dev_stores:
             checked = True
             inconsistent = False
+            top = store.append(None, ['All', checked, inconsistent])
             # fill in the model
             for i in range(num_substrates):
                 if label_store[i][0] == "":
                     label = label_store[i][1]
                 else:
                     label = label_store[i][0]
-                piter = store.append(None, [label, checked, inconsistent])
+                piter = store.append(top, [label, checked, inconsistent])
                 j = 1
                 while j <= num_pix:
                     store.append(piter, [f"Device {j}", checked, inconsistent])
@@ -239,6 +245,8 @@ class App(Gtk.Application):
         renderCheck = Gtk.CellRendererToggle()
         # the second column is created
         colCheck = Gtk.TreeViewColumn("Measure?", renderCheck, active=1, inconsistent=2)
+        # colCheck.set_clickable(True)
+        # colCheck.connect("clicked", self.dev_col_click)
         deviceTree.append_column(colCheck)
 
         # connect the cellrenderertoggle with a callback function
@@ -246,67 +254,82 @@ class App(Gtk.Application):
 
         deviceTree.connect("key-release-event", self.handle_dev_key)
 
+    # handles clicks on the header cell in the device tree selector
+    #def dev_col_click(self, a):
+    #    lg.debug(f"Col Clicked! {a}")
+
+
     # callback function for select/deselect device/substrate
     def dev_toggle(self, toggle, path):
         eqe = "eqe" in Gtk.Buildable.get_name(self.po.get_relative_to())
+        this = self.dev_store[eqe].get_iter(path)
         path_split = path.split(":")
-        # the boolean value of the selected row
-        current_value = self.dev_store[eqe][path][1]
-        # change the boolean value of the selected row in the model
-        self.dev_store[eqe][path][1] = not current_value
-        # new current value!
-        current_value = not current_value
-        # if length of the path is 1 (that is, if we are selecting a substrate)
-        if len(path_split) == 1:
-            # get the iter associated with the path
-            piter = self.dev_store[eqe].get_iter(path)
-            self.dev_store[eqe][piter][2] = False
-            # get the iter associated with its first child
-            citer = self.dev_store[eqe].iter_children(piter)
-            # while there are children, change the state of their boolean value
-            # to the value of the substrate
+        old_value = self.dev_store[eqe][this][1] # what was the checkbox state when we clicked it?
+        current_value = not old_value  # compute what the new checkbox state should be
+        self.dev_store[eqe][this][1] = current_value  # update the checkbox state
+        self.dev_store[eqe][this][2] = False  # we just clicked it. so there's no way it can be inconsistent
+        if len(path_split) == 1:  # the toplevel checkbox was toggled
+            siter = self.dev_store[eqe].iter_children(this) # substrate iterator
+            while siter is not None:  # iterate through the substrates
+                self.dev_store[eqe][siter][1] = current_value
+                self.dev_store[eqe][siter][2] = False
+                diter = self.dev_store[eqe].iter_children(siter) # device iterator
+                while diter is not None:  # iterate through the devices
+                    self.dev_store[eqe][diter][1] = current_value
+                    self.dev_store[eqe][diter][2] = False
+                    diter = self.dev_store[eqe].iter_next(diter)
+                siter = self.dev_store[eqe].iter_next(siter)
+        if len(path_split) == 2:  # if length of the path is 2 (that is, if we are selecting a substrate)
+            citer = self.dev_store[eqe].iter_children(this) # get the iter associated with my first child
+            # change the state of all children to match this one
             while citer is not None:
                 self.dev_store[eqe][citer][1] = current_value
                 citer = self.dev_store[eqe].iter_next(citer)
-        # if the length of the path is not 1 (that is, if we are selecting a
-        # device)
-        elif len(path_split) != 1:
+        elif len(path_split) == 3: # a device toggle
             # get the first child of the parent of the substrate (device 1)
-            citer = self.dev_store[eqe].get_iter(path)
-            piter = self.dev_store[eqe].iter_parent(citer)
-            citer = self.dev_store[eqe].iter_children(piter)
+            piter = self.dev_store[eqe].iter_parent(this) # parent iterator
+            citer = self.dev_store[eqe].iter_children(piter) # iterator for the first sibling of my parent
             # check if all the children are selected
             num_selected = 0
             while citer is not None:
                 if self.dev_store[eqe][citer][1] is True:
                     num_selected = num_selected + 1
                 citer = self.dev_store[eqe].iter_next(citer)
-            # if they do, the device as well is selected; otherwise it is not
-            if num_selected == self.num_pix:
+            # if they are, the device as well is selected; otherwise it is not
+            if num_selected == self.num_pix: # all siblings selected, then substrate selected, consitent
                 self.dev_store[eqe][piter][2] = False
                 self.dev_store[eqe][piter][1] = True
-            elif num_selected == 0:
+            elif num_selected == 0:  # all siblings deselected, then substrate deselected, consitent
                 self.dev_store[eqe][piter][2] = False
                 self.dev_store[eqe][piter][1] = False
             else:
-                self.dev_store[eqe][piter][2] = True
+                self.dev_store[eqe][piter][2] = True  # not all selected, not all deselected, thus substrate is incosistent
 
-        # iterate through everything and build up the result
-        siter = self.dev_store[eqe].get_iter("0")  # substrate iterator
+        # iterate through everything and build up the resulting bitmask for the text field
+        siter = self.dev_store[eqe].get_iter("0:0")  # iterator for first substrate
         selection_bitmask = 0
         bit_location = 0
+        total_enabled = 0
         while siter is not None:
             diter = self.dev_store[eqe].iter_children(siter)  # device iterator
             while diter is not None:
                 if self.dev_store[eqe][diter][1] is True:
                     selection_bitmask = selection_bitmask + (1 << bit_location)
+                    total_enabled += 1
                 bit_location = bit_location + 1
-                diter = self.dev_store[eqe].iter_next(
-                    diter
-                )  # advance to the next device
-            siter = self.dev_store[eqe].iter_next(
-                siter
-            )  # advance to the next substrate
+                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
+            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
+
+        # figure out what to do with the All checkbox
+        top = self.dev_store[eqe].get_iter("0")
+        if total_enabled == 0:
+            self.dev_store[eqe][top][1] = False  # set top off
+            self.dev_store[eqe][top][2] = False  # set top consistent
+        elif total_enabled == self.num_pix*self.num_substrates:
+            self.dev_store[eqe][top][1] = True  # set top on
+            self.dev_store[eqe][top][2] = False  # set top consistent
+        else:
+            self.dev_store[eqe][top][2] = True  # set top inconsistant
 
         if eqe:
             self.eqe_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
@@ -395,6 +418,7 @@ class App(Gtk.Application):
 
         return (labelTree, labelStore)
 
+
     # handles keystroke in the label creation tree
     def handle_label_key(self, tv, event):
         keyname = Gdk.keyval_name(event.keyval)
@@ -453,12 +477,12 @@ class App(Gtk.Application):
         if self.mqtt_setup == True:
             hb = self.b.get_object("headerBar")
             if self.mqttc.is_connected():
-                status = f"Connected & {self.run_handler_status}"
+                status = f"Connected | {self.run_handler_status}"
                 self.mqtt_connected = True
             else:
-                status = f"Disconnected & {self.run_handler_status}"
+                status = f"Disconnected"
                 self.mqtt_connected = False
-            hb.set_subtitle(status)
+            hb.set_subtitle(f"Status: {status}")
         else:
             self.mqtt_connected = False
             status = "Disconnected"
@@ -636,6 +660,8 @@ class App(Gtk.Application):
 
             self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, self.substrate_designators, 0)
 
+            # one for EQE, one for iv
+            # [str, bool, bool] is for [label, checked, inconsistent]
             self.dev_store = [
                 Gtk.TreeStore(str, bool, bool),
                 Gtk.TreeStore(str, bool, bool),
@@ -773,6 +799,7 @@ class App(Gtk.Application):
         self.b.get_object("run_but").set_sensitive(True)
 
 
+    # sets up the device selection tree based on the text in the selection box
     def on_devs_icon_release(self, entry, icon, user_data=None):
         eqe = "eqe" in Gtk.Buildable.get_name(entry)
         self.dev_tree.set_model(self.dev_store[eqe])
@@ -787,8 +814,9 @@ class App(Gtk.Application):
         bin_mask_rev = bin_mask[::-1]
 
         # iterate through everything and build up the result
-        siter = self.dev_store[eqe].get_iter("0")  # substrate iterator
+        siter = self.dev_store[eqe].get_iter("0:0")  # first substrate iterator
         bit_location = 0
+        total_enabled = 0
         while siter is not None:
             num_enabled = 0  # keeps track of number of enabled devices on this substrate
             diter = self.dev_store[eqe].iter_children(siter)  # device iterator
@@ -806,13 +834,28 @@ class App(Gtk.Application):
                 )  # advance to the next device
             if num_enabled == 0:
                 self.dev_store[eqe][siter][1] = False  # set substrate off
+                self.dev_store[eqe][siter][2] = False  # set substrate consistent
             elif num_enabled == self.num_pix:
                 self.dev_store[eqe][siter][1] = True  # set substrate on
+                self.dev_store[eqe][siter][2] = False  # set substrate consistent
             else:
                 self.dev_store[eqe][siter][2] = True  # set substrate inconsistant
             siter = self.dev_store[eqe].iter_next(
                 siter
             )  # advance to the next substrate
+            total_enabled += num_enabled
+        
+        # figure out what to do with the All checkbox
+        top = self.dev_store[eqe].get_iter("0")
+        self.dev_tree.expand_row(Gtk.TreePath("0"), False)  # top is always expanded
+        if total_enabled == 0:
+            self.dev_store[eqe][top][1] = False  # set top off
+            self.dev_store[eqe][top][2] = False  # set top consistent
+        elif total_enabled == self.num_pix*self.num_substrates:
+            self.dev_store[eqe][top][1] = True  # set top on
+            self.dev_store[eqe][top][2] = False  # set top consistent
+        else:
+            self.dev_store[eqe][top][2] = True  # set top inconsistant
 
         self.po.set_relative_to(entry)
         self.po.show_all()

@@ -217,7 +217,7 @@ Author: Greyson Christoforo
   </object>
   <object class="GtkAdjustment" id="nm_size_adj">
     <property name="lower">1</property>
-    <property name="upper">100</property>
+    <property name="upper">2000</property>
     <property name="value">10</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
@@ -264,11 +264,12 @@ Author: Greyson Christoforo
             <property name="can_focus">True</property>
             <property name="vscroll_policy">natural</property>
             <property name="rules_hint">True</property>
+            <property name="enable_grid_lines">both</property>
             <property name="enable_tree_lines">True</property>
-            <signal name="row-activated" handler="row_act" swapped="no"/>
-            <signal name="select-cursor-row" handler="cur_row" swapped="no"/>
             <child internal-child="selection">
-              <object class="GtkTreeSelection"/>
+              <object class="GtkTreeSelection">
+                <property name="mode">none</property>
+              </object>
             </child>
           </object>
         </child>
@@ -2114,6 +2115,7 @@ Author: Greyson Christoforo
                   <object class="GtkFlowBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="selection_mode">none</property>
                     <child>
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
@@ -2140,11 +2142,11 @@ Author: Greyson Christoforo
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
                         <child>
                           <object class="GtkFrame">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can_focus">True</property>
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
                             <child>
