@@ -1155,6 +1155,13 @@ class App(Gtk.Application):
         self.mqttc.publish("measurement/stop", "stop", qos=2).wait_for_publish()
 
 
+    def on_mono_zero_button(self, button):
+        """Sends monochrometer to 0nm"""
+        msg = {'cmd':'mono_zero', 'mono_address': self.config['monochromator']['address'],}
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
+
+
     def on_stage_read_button(self, button):
         """Read the current stage position."""
         msg = {'cmd':'read_stage', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}

@@ -2563,6 +2563,24 @@ Author: Greyson Christoforo
                         </child>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width_request">100</property>
+                        <property name="height_request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <child>
+                          <object class="GtkButton">
+                            <property name="label" translatable="yes">Zero Monochrometer</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Tell the monochrometer to go to 0 nm (pass all light)</property>
+                            <signal name="clicked" handler="on_mono_zero_button" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="title" translatable="yes">Maintenance</property>
