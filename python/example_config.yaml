@@ -28,7 +28,7 @@ visa:
 
 # stage and mux controller
 controller:
-    address: "10.46.0.239"
+    address: "10.42.0.239"
 
 # source-measure unit(s)
 smu:
