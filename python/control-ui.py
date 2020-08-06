@@ -63,6 +63,9 @@ class App(Gtk.Application):
         self.all_mux_switches_open = True
         self.in_iv_mode = True
         self.run_handler_status = 'Offline'
+        self.eqe_cal_time = None
+        self.psu_cal_time = None
+        self.iv_cal_time = None
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -120,15 +123,11 @@ class App(Gtk.Application):
                 elif (msg.topic) == "measurement/log":
                     lg.log(m["level"], m["msg"])
                 elif (msg.topic) == "calibration/eqe":
-                    lg.debug(f"A message in calibration/eqe: {m['timestamp']}")
-                    cal_time = m['timestamp']
-                    human_string = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(cal_time))
-                    self.b.get_object("eqe_cal_label").set_text(f"EQE Cal. Age: {human_string}")
+                    self.eqe_cal_time = m['timestamp']
                 elif (msg.topic) == "calibration/spectrum":
-                    lg.debug(f"A message in calibration/spectrum: {m['timestamp']}")
+                    self.iv_cal_time = m['timestamp']
                 elif "calibration/psu" in msg.topic:
-                    lg.debug(f"A message in calibration/psu: {m['timestamp']}")
-
+                    self.psu_cal_time = m['timestamp']
 
                 # examine by message content
                 if 'log' in m:  # log update message
@@ -489,6 +488,21 @@ class App(Gtk.Application):
             self.b.get_object("headerBar").set_subtitle(f"Status: {status}")
             if self.mqtt_connecting == False: # don't spam connections
                 self._start_mqtt()
+        if self.eqe_cal_time is None:
+            human_dt = 'Never'
+        else:
+            human_dt = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(self.eqe_cal_time))
+        self.b.get_object("eqe_cal_label").set_text(f"EQE Cal. Age: {human_dt}")
+        if self.iv_cal_time is None:
+            human_dt = 'Never'
+        else:
+            human_dt = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(self.iv_cal_time))
+        self.b.get_object("iv_cal_label").set_text(f"Solar Sim Intensity Cal. Age: {human_dt}")
+        if self.psu_cal_time is None:
+            human_dt = 'Never'
+        else:
+            human_dt = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(self.psu_cal_time))
+        self.b.get_object("psu_cal_label").set_text(f"EQE Bias Light Cal. Age: {human_dt}")
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))

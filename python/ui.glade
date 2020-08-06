@@ -2817,7 +2817,7 @@ Author: Greyson Christoforo
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="led_cal_label">
+              <object class="GtkLabel" id="psu_cal_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">How long it's been since EQE light bias LED intensities have been calibrated</property>
@@ -2830,7 +2830,7 @@ Author: Greyson Christoforo
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="led2_cal_label">
+              <object class="GtkLabel" id="iv_cal_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">How long it's been since the solar sim's intensity has been calibrated</property>
