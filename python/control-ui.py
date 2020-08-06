@@ -122,7 +122,7 @@ class App(Gtk.Application):
                 elif (msg.topic) == "calibration/eqe":
                     lg.debug(f"A message in calibration/eqe: {m['timestamp']}")
                     cal_time = m['timestamp']
-                    human_string = humanize.naturaltime(dt.datetime.now() - dt.fromtimestamp(cal_time))
+                    human_string = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(cal_time))
                     self.b.get_object("eqe_cal_label").set_text(f"EQE Cal. Age: {human_string}")
                 elif (msg.topic) == "calibration/spectrum":
                     lg.debug(f"A message in calibration/spectrum: {m['timestamp']}")
