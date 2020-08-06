@@ -84,13 +84,13 @@ class App(Gtk.Application):
             List of numbers of substrates along each available axis. Length must be
             1 or 2.
         """
-        rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[1]]
-
         try:
+            rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[1]]
             cs = range(number_list[0])
             cs = [str(x+1) for x in cs]
         except IndexError:
             # if number of columns not given, must be 0
+            rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[0]]
             cs = ['']
 
         subdes = [f"{n}{m}" for m in rs for n in cs]

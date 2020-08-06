@@ -28,40 +28,46 @@ visa:
 
 # stage and mux controller
 controller:
-    address: "10.46.0.239"
+    address: "10.42.0.239"
 
 # source-measure unit(s)
 smu:
-    address: ASRL/dev/ttyUSB0::INSTR
+    address: ASRL/dev/ttyS0::INSTR
+    #address: GPIB::24::INSTR
     baud: 57600
-    terminator: '\r\n'
+    # "\r" = <CR>, "\r\n" = <CR+LF>, "\n" = <LF>, "\n\r" = <LF+CR>
+    terminator: "\r"
     # if front terminals is false, use rear terminals
     front_terminals: false
     # if 2 wire is false, use 4 wire
     two_wire: false
 
 solarsim:
-    uri: wavelabs://127.0.0.1:3334
+    #uri: wavelabs://0.0.0.0:3334
+    uri: wavelabs-relay://127.0.0.1:3335 
 #    spectral_calibration: !include example_solarsim_cal.yaml
 
 # lock-in amplifier
 lia:
-    address: ASRL/dev/ttyUSB1::INSTR
-    terminator: '\r'
+    address: none
+    #address: ASRL/dev/ttyUSB1::INSTR
+    terminator: "\r"
     baud: 9600
     output_interface: 0
 
 monochromator:
-    address: ASRL/dev/ttyUSB2::INSTR
-    terminator: '\r'
+    address: none
+    #address: ASRL/dev/ttyUSB2::INSTR
+    terminator: "\r"
     baud: 9600
     grating_change_wls: [1200]
     filter_change_wls: [370, 640, 715, 765]
 
 # LED power supply unit
 psu:
-    address: TCPIP0::10.46.0.190::INSTR
-    terminator: '\r'
+    address: none
+    #address: TCPIP0::10.46.0.190::INSTR
+    terminator: "\r"
     baud: 9600
     ch1_voltage: 30
     ch2_voltage: 30
@@ -72,15 +78,21 @@ psu:
         current_step: 0.1
 
 stage:
-    # stage lengths in mm along each available axis.
-    # parsed as a list where indices reference axes as: 0: x-axis, 1: y-aixs, 2: z-axis.
-    # comment out or leave blank if no stage is connected.
+    # stage connection URI
+    # tells the system how to talk to the stage.
+    # format = controller-type://list,of,expected,travel,lengths,in,mm/steps_per_mm/list of lists of keepout zones per axis/extra_info
+    # typical travel lengths might be X = 1000mm (stage length) - 125 (gantry width) = 875 and Y = 500mm (stage length) - 125 (gantry width) = 375
+    # typical steps per mm might be 256[uSteps/step] (microstepping driver property) * 200[steps/rev] (motor property) / 8[mm/rev] (leadscrew property) = 6400 [uSteps/mm]
+    # the keepout zone list is a list (with of length matching the expected travel lengths), each item in the list is a list of length two specifying the regions along an axis that are not allowed
+    # for example: [[],[62.5,Infinity]] means all values in X are okay, but anyplace beyond 62.5mm in Y is invalid
+    # [[],[]] means no limits for either axis
+    # the final field contains extra info for controlling the stage, for example "otter" tells the system to use a special homing procedure specific to one hardware setup
     uri: us://125/6400
     # approx mm/s
     speed: 29
     experiment_positions:
-        solarsim: [200, 250]
-        eqe: [800, 250]
+        solarsim: [200]
+#        eqe: [800, 250]
     custom_positions: {"Load Position": [23], "Test spot A": [88.54241], "Midway": [62.5], "Offline Position": [120]}
 
 # i-v-t measurement settings
@@ -94,10 +106,12 @@ ivt:
     voltage_beyond_isc: 0.1
 
 substrates:
-    # list of number of substrates along each available axis e.g. rows,cols
-    number: [4, 5]
+  # list of number of substrates along each available axis: [x-direction, y-direction]
+    #number: [4, 5]
+    number: [8]
     # spacing in mm between substrate centers along each available axis
-    spacing: [35, 29]
+    #spacing: [35, 29]
+    spacing: [40]
     # List of available pixel layout names. Additional info about each layout is given
     # it's named sub-section in the "layouts" sub-section below.
     layout_names: [6px_1in]
