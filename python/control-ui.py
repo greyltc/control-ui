@@ -1266,11 +1266,15 @@ class App(Gtk.Application):
         self.update_gui()
 
 
-    def row_act(self, a, c, d):
-        pass
-
-    def cur_row(self, a):
-        pass
+    def on_plotter_switch(self, switch):
+        mode = switch.get_active()
+        if mode == True:
+            m = False
+        else:
+            m = True
+        msg = {m}
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("plotter/pause", pic_msg, qos=2).wait_for_publish()
 
     def update_gui(self, *args):
         # lg.debug("Updating gui...")
