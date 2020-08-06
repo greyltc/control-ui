@@ -120,16 +120,12 @@ class App(Gtk.Application):
                 elif (msg.topic) == "measurement/log":
                     lg.log(m["level"], m["msg"])
                 elif (msg.topic) == "calibration/eqe":
-                    lg.debug(f"A message in calibration/eqe: {m}")
-                    #TODO: get last cal message
+                    lg.debug(f"A calibration/eqe timestamp: {m['timestamp']}")
                 elif (msg.topic) == "calibration/spectrum":
-                    lg.debug(f"A message in calibration/spectrum: {m}")
-                    #TODO: get last cal message
+                    lg.debug(f"A message in calibration/spectrum: {m['timestamp']}")
                 elif "calibration/psu" in msg.topic:
-                    pass
-                    #TODO: get last cal message
-                #else:
-                #    lg.debug(f"Unknown topic: {msg.topic}")
+                    lg.debug(f"A message in calibration/psu: {m['timestamp']}")
+
 
                 # examine by message content
                 if 'log' in m:  # log update message
