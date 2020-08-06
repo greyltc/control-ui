@@ -1266,9 +1266,9 @@ class App(Gtk.Application):
         self.update_gui()
 
 
-    def on_plotter_switch(self, switch):
+    def on_plotter_switch(self, switch, state):
         mode = switch.get_active()
-        if mode == True:
+        if state == True:
             m = False
         else:
             m = True

@@ -2698,7 +2698,7 @@ Author: Greyson Christoforo
                             <property name="halign">center</property>
                             <property name="valign">center</property>
                             <property name="active">True</property>
-                            <signal name="activate" handler="on_plotter_switch" swapped="no"/>
+                            <signal name="state-set" handler="on_plotter_switch" swapped="no"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
