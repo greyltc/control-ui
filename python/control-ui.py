@@ -1157,7 +1157,7 @@ class App(Gtk.Application):
 
     def on_mono_zero_button(self, button):
         """Sends Monochromator to 0nm"""
-        msg = {'cmd':'mono_zero', 'mono_address': self.config['monochromator']['address'],}
+        msg = {'cmd':'mono_zero', 'mono_address': self.config['monochromator']['address']}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
