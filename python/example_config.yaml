@@ -32,8 +32,8 @@ controller:
 
 # source-measure unit(s)
 smu:
-    #address: ASRL/dev/ttyS0::INSTR
-    address: GPIB::24::INSTR
+    address: ASRL/dev/ttyS0::INSTR
+    #address: GPIB::24::INSTR
     baud: 57600
     # "\r" = <CR>, "\r\n" = <CR+LF>, "\n" = <LF>, "\n\r" = <LF+CR>
     terminator: "\r"
@@ -87,13 +87,14 @@ stage:
     # for example: [[],[62.5,Infinity]] means all values in X are okay, but anyplace beyond 62.5mm in Y is invalid
     # [[],[]] means no limits for either axis
     # the final field contains extra info for controlling the stage, for example "otter" tells the system to use a special homing procedure specific to one hardware setup
-    uri: us://125/6400
+    uri: us://375/6400
+    #uri: us://125/6400
     # approx mm/s
     speed: 29
     experiment_positions:
-        solarsim: [200]
+        solarsim: [174]
 #        eqe: [800, 250]
-    custom_positions: {"Load Position": [23], "Test spot A": [88.54241], "Midway": [62.5], "Offline Position": [120]}
+    custom_positions: {"Load Position": [355], "Grey's fav spot": [88.54241], "Midway": [187.5], "Light center": [174], "Offline Position": [20]}
 
 # i-v-t measurement settings
 ivt:
@@ -116,7 +117,7 @@ substrates:
     # it's named sub-section in the "layouts" sub-section below.
     layout_names: [6px_1in]
     # for clients that only accept one layout, use this layout
-    active_layout: 6px_1in
+    active_layout: 6xbpw34_30mm
 
     # pixel layout info
     layouts:
@@ -142,6 +143,13 @@ substrates:
             pixels: [1, 3, 4, 5]
             positions: [[-6, -6], [0, 0], [0, -6], [0, 6], [6, -6], [0, 0]]
             areas: [0.15, 0, 1.0, 0.15, 0.15, 0]
+            
+        # oxford photodiode boards
+        6xbpw34_30mm:
+            pcb_name: 6px_30mm_pcb
+            pixels: [1, 2, 3, 4, 5, 6]
+            positions: [[-7.5], [-7.5], [0], [0], [7.5], [7.5]]
+            areas: [0.0702, 0.0702, 0.0702, 0.0702, 0.0702, 0.0702]
         
     # pcb adapter info
     adapters:
