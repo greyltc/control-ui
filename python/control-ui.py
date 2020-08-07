@@ -355,15 +355,20 @@ class App(Gtk.Application):
                 pass
 
         if valid is True:
-            self.last_valid_devs[eqe] = text_is
-            editable.set_icon_from_icon_name(0, "emblem-default")
+            #self.last_valid_devs[eqe] = text_is
+            #editable.set_icon_from_icon_name(0, "emblem-default")
+            #num_selected = sum([c == "1" for c in bin(selection_bitmask)])
+            #txt = f'Device Selection Bitmask ({num_selected} selected)'
             if eqe:
-                self.measure_note(selection_bitmask, self.approx_seconds_per_eqe)
+                self.update_measure_count(True)
+                #self.b.get_object("eqe_dsb_lab").set_text(txt)
+                #self.measure_note(selection_bitmask, self.approx_seconds_per_eqe)
             else:
-                self.measure_note(selection_bitmask, self.approx_seconds_per_iv)
+                self.update_measure_count(False)
+                #self.b.get_object("iv_dsb_lab").set_text(txt)
+                #self.measure_note(selection_bitmask, self.approx_seconds_per_iv)
         else:
             editable.set_icon_from_icon_name(0, "dialog-error")
-
 
     def on_devs_focus_out_event(self, widget, user_data=None):
         eqe = "eqe" in Gtk.Buildable.get_name(widget)
@@ -380,13 +385,28 @@ class App(Gtk.Application):
             lg.warn(f"Bad device selection reverted")
         widget.set_icon_from_icon_name(0, "emblem-default")
 
+    def update_measure_count(self, eqe):
+        if eqe == True:
+            thing = "eqe"
+        else:
+            thing = "iv"
+        text_is = self.b.get_object(f"{thing}_devs").get_text()
+        selection_bitmask = int(text_is, 16)
+        num_selected = sum([c == "1" for c in bin(selection_bitmask)])
+        txt = f'Device Selection Bitmask ({num_selected} selected)'
+        self.b.get_object(f"{thing}_dsb_lab").set_text(txt)
 
     # log message printer for device selection change
     def measure_note(self, selection_bitmask, seconds_per):
-        num_selected = sum([c == "1" for c in bin(selection_bitmask)])
-        duration_string = humanize.naturaldelta(
-            dt.timedelta(seconds=seconds_per * num_selected)
-        )
+        pass
+        #num_selected = sum([c == "1" for c in bin(selection_bitmask)])
+        #eqe_dsb_lab = self.b.get_object("eqe_dsb_lab")
+        #eqe_dsb_lab.set_text(f'Device Selection Bitmask ({num_selected} selected)')
+
+        #duration_string = humanize.naturaldelta(
+        #    dt.timedelta(seconds=seconds_per * num_selected)
+        #)
+
         # TODO: look at making this easier to maintain
         # This report is probably too annoying to maintain properly in its current state
         #lg.info(f"{num_selected} devices selected for ~ {duration_string}")
@@ -745,6 +765,9 @@ class App(Gtk.Application):
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
+
+            self.update_measure_count(True)
+            self.update_measure_count(False)
 
         self.main_win.present()
 
@@ -1289,6 +1312,8 @@ class App(Gtk.Application):
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("plotter/pause", pic_msg, qos=2).wait_for_publish()
 
+    # reads various gui item states and sets others accordingly
+    # def needs to be called after loading a gui state file
     def update_gui(self, *args):
         # lg.debug("Updating gui...")
         if self.b.get_object("ad_switch").get_active():
@@ -1346,6 +1371,8 @@ class App(Gtk.Application):
             for sib in parent.get_children():
                 sib.set_sensitive(False)
             me.set_sensitive(True)
+        self.update_measure_count(True)
+        self.update_measure_count(False)
 
 
 if __name__ == "__main__":
