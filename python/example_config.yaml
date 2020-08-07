@@ -32,8 +32,8 @@ controller:
 
 # source-measure unit(s)
 smu:
-    address: ASRL/dev/ttyS0::INSTR
-    #address: GPIB::24::INSTR
+    #address: ASRL/dev/ttyS0::INSTR
+    address: GPIB::24::INSTR
     baud: 57600
     # "\r" = <CR>, "\r\n" = <CR+LF>, "\n" = <LF>, "\n\r" = <LF+CR>
     terminator: "\r"

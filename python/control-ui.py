@@ -1148,6 +1148,7 @@ class App(Gtk.Application):
         'psu': self.config['psu']['address'],
         'smu_address': self.config['smu']['address'],
         'smu_baud': int(self.config['smu']['baud']),
+        'smu_le': self.config['smu']['terminator'],
         'lia_address': self.config['lia']['address'],
         'mono_address': self.config['monochromator']['address'],
         'le_address': self.config['solarsim']['uri'],
@@ -1267,6 +1268,11 @@ class App(Gtk.Application):
                 args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
         
         args['subs_names'] = self.substrate_designators
+        if int(args['eqe_devs'], 16) == 0:
+            args['eqe_devs'] = None
+
+        if int(args['iv_devs'], 16) == 0:
+            args['iv_devs'] = None
         return(args)
 
 
