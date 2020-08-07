@@ -17,11 +17,11 @@
 
 network:
     MQTTHOST: "127.0.0.1"
-    live_data_uri_1: "http://127.0.0.1:8050/"
-    live_data_uri_2: "http://127.0.0.1:8051/"
-    live_data_uri_3: "http://127.0.0.1:8052/"
-    live_data_uri_4: "http://127.0.0.1:8053/"
-    live_data_uri_5: "http://127.0.0.1:8054/"
+    live_data_uri_1: "http://127.0.0.1:8051/"
+    live_data_uri_2: "http://127.0.0.1:8052/"
+    live_data_uri_3: "http://127.0.0.1:8053/"
+    live_data_uri_4: "http://127.0.0.1:8054/"
+    live_data_uri_5: "http://127.0.0.1:8055/"
 
 visa:
     visa_lib: '@py'
