@@ -489,17 +489,17 @@ class App(Gtk.Application):
             if self.mqtt_connecting == False: # don't spam connections
                 self._start_mqtt()
         if self.eqe_cal_time is None:
-            human_dt = 'Never'
+            human_dt = 'No record'
         else:
             human_dt = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(self.eqe_cal_time))
         self.b.get_object("eqe_cal_label").set_text(f"EQE Cal. Age: {human_dt}")
         if self.iv_cal_time is None:
-            human_dt = 'Never'
+            human_dt = 'No record'
         else:
             human_dt = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(self.iv_cal_time))
         self.b.get_object("iv_cal_label").set_text(f"Solar Sim Intensity Cal. Age: {human_dt}")
         if self.psu_cal_time is None:
-            human_dt = 'Never'
+            human_dt = 'No Record'
         else:
             human_dt = humanize.naturaltime(dt.datetime.now() - dt.datetime.fromtimestamp(self.psu_cal_time))
         self.b.get_object("psu_cal_label").set_text(f"EQE Bias Light Cal. Age: {human_dt}")

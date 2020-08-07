@@ -647,7 +647,7 @@ Author: Greyson Christoforo
                                             <property name="can_focus">True</property>
                                             <property name="tooltip_text" translatable="yes">This must match the name of a recipe in the solar sim's control software</property>
                                             <property name="margin_end">2</property>
-                                            <property name="text" translatable="yes">AM1.5_1.0SUN</property>
+                                            <property name="text" translatable="yes">am1_5_1_sun</property>
                                             <property name="caps_lock_warning">False</property>
                                           </object>
                                           <packing>
@@ -1103,7 +1103,7 @@ Author: Greyson Christoforo
                                                   <object class="GtkLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">Start Point:</property>
+                                                    <property name="label" translatable="yes">Start:</property>
                                                     <property name="width_chars">14</property>
                                                     <property name="xalign">1</property>
                                                   </object>
@@ -1117,7 +1117,7 @@ Author: Greyson Christoforo
                                                   <object class="GtkSpinButton" id="sweep_start">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
-                                                    <property name="tooltip_text" translatable="yes">The start voltage value for the first I-V sweep</property>
+                                                    <property name="tooltip_text" translatable="yes">The first voltage sweep starts at this value</property>
                                                     <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">1.200</property>
@@ -1163,7 +1163,7 @@ Author: Greyson Christoforo
                                                   <object class="GtkLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">End Point:</property>
+                                                    <property name="label" translatable="yes">End:</property>
                                                     <property name="width_chars">14</property>
                                                     <property name="xalign">1</property>
                                                   </object>
@@ -1177,7 +1177,7 @@ Author: Greyson Christoforo
                                                   <object class="GtkSpinButton" id="sweep_end">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
-                                                    <property name="tooltip_text" translatable="yes">The end voltage value for the first I-V sweep</property>
+                                                    <property name="tooltip_text" translatable="yes">The first voltage sweep ends at this value</property>
                                                     <property name="invisible_char">-</property>
                                                     <property name="width_chars">7</property>
                                                     <property name="text" translatable="yes">-0.200</property>
@@ -1308,7 +1308,7 @@ Author: Greyson Christoforo
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
-                                            <property name="tooltip_text" translatable="yes">Enable measurement routine step 2, I-V sweep(s)</property>
+                                            <property name="tooltip_text" translatable="yes">Enable measurement routine step 2, I-V sweep(s). Current through the device is measured as a function of applied voltage.</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
                                             <signal name="toggled" handler="update_gui" swapped="no"/>
@@ -1701,7 +1701,7 @@ Author: Greyson Christoforo
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="halign">end</property>
-                                        <property name="label" translatable="yes">Start Wavelength:</property>
+                                        <property name="label" translatable="yes">Start:</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -1737,7 +1737,7 @@ Author: Greyson Christoforo
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="halign">end</property>
-                                        <property name="label" translatable="yes">End Wavelength:</property>
+                                        <property name="label" translatable="yes">End:</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -1748,6 +1748,7 @@ Author: Greyson Christoforo
                                       <object class="GtkSpinButton" id="eqe_start">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">The wavelength sweep starts at this value</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="adjustment">nm_start_adj</property>
                                         <property name="snap_to_ticks">True</property>
@@ -1763,6 +1764,7 @@ Author: Greyson Christoforo
                                       <object class="GtkSpinButton" id="eqe_end">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">The wavelength sweep ends at this value</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="input_purpose">number</property>
                                         <property name="adjustment">nm_stop</property>
@@ -1819,7 +1821,7 @@ Author: Greyson Christoforo
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="halign">end</property>
-                                        <property name="label" translatable="yes">Steps:</property>
+                                        <property name="label" translatable="yes">Sweep Steps:</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -2803,7 +2805,7 @@ Author: Greyson Christoforo
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">How long it's been since the EQE reference device has been measured</property>
-                <property name="label" translatable="yes">EQE Cal. Age: NEVER</property>
+                <property name="label" translatable="yes">EQE Cal. Age: No record</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -2816,7 +2818,7 @@ Author: Greyson Christoforo
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">How long it's been since EQE light bias LED intensities have been calibrated</property>
-                <property name="label" translatable="yes">EQE Bias Light Cal. Age: NEVER</property>
+                <property name="label" translatable="yes">EQE Bias Light Cal. Age: No record</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -2829,7 +2831,7 @@ Author: Greyson Christoforo
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">How long it's been since the solar sim's intensity has been calibrated</property>
-                <property name="label" translatable="yes">Solar Sim Intensity Cal. Age: NEVER</property>
+                <property name="label" translatable="yes">Solar Sim Intensity Cal. Age: No record</property>
               </object>
               <packing>
                 <property name="expand">False</property>
