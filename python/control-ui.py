@@ -1273,6 +1273,9 @@ class App(Gtk.Application):
 
         if int(args['iv_devs'], 16) == 0:
             args['iv_devs'] = None
+
+        # TODO: ad_switch sets delay to -1
+
         return(args)
 
 
