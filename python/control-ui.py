@@ -1243,6 +1243,8 @@ class App(Gtk.Application):
             args['mppt_dwell'] = 0
         if args['i_dwell_check'] == False:
             args['i_dwell'] = 0
+        if args['ad_switch'] == True:
+            args['source_delay'] = -1
         args['chan1'] = args['chan1_ma']/1000
         args['chan2'] = args['chan2_ma']/1000
         args['chan3'] = args['chan3_ma']/1000
@@ -1267,6 +1269,7 @@ class App(Gtk.Application):
             if lab == '':
                 args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
         
+        if ['ad_switch'] 
         args['subs_names'] = self.substrate_designators
         if int(args['eqe_devs'], 16) == 0:
             args['eqe_devs'] = None
