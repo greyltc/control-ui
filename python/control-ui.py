@@ -1269,15 +1269,12 @@ class App(Gtk.Application):
             if lab == '':
                 args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
         
-        if ['ad_switch'] 
         args['subs_names'] = self.substrate_designators
         if int(args['eqe_devs'], 16) == 0:
             args['eqe_devs'] = None
 
         if int(args['iv_devs'], 16) == 0:
             args['iv_devs'] = None
-
-        # TODO: ad_switch sets delay to -1
 
         return(args)
 
