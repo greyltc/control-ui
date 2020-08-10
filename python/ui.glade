@@ -365,8 +365,6 @@ Author: Greyson Christoforo
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="hexpand">True</property>
-        <property name="vexpand">True</property>
         <property name="orientation">vertical</property>
         <property name="baseline_position">top</property>
         <child>
@@ -374,8 +372,6 @@ Author: Greyson Christoforo
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="valign">start</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">False</property>
             <property name="orientation">vertical</property>
             <property name="baseline_position">top</property>
             <child>
@@ -397,13 +393,11 @@ Author: Greyson Christoforo
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="valign">start</property>
-                <property name="hexpand">True</property>
                 <property name="hhomogeneous">False</property>
                 <property name="vhomogeneous">False</property>
                 <property name="interpolate_size">True</property>
                 <child>
                   <object class="GtkBox">
-                    <property name="height_request">-1</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="valign">start</property>
@@ -2597,116 +2591,180 @@ Author: Greyson Christoforo
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkGrid">
-                    <property name="height_request">500</property>
+                  <object class="GtkBox">
+                    <property name="height_request">600</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="row_homogeneous">True</property>
-                    <property name="column_homogeneous">True</property>
+                    <property name="valign">start</property>
+                    <property name="orientation">vertical</property>
+                    <property name="baseline_position">top</property>
                     <child>
-                      <object class="GtkBox">
+                      <object class="GtkFixed">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="hexpand">True</property>
-                        <property name="vexpand">True</property>
-                        <property name="orientation">vertical</property>
+                        <property name="halign">center</property>
+                        <property name="valign">start</property>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkAspectFrame">
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Update Plots</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
+                            <property name="obey_child">False</property>
+                            <child>
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                            </child>
                           </object>
                           <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
+                            <property name="x">600</property>
+                            <property name="y">300</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkSwitch">
+                          <object class="GtkAspectFrame">
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="tooltip_text" translatable="yes">Switch off to pause live updates</property>
+                            <property name="can_focus">False</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
+                            <property name="obey_child">False</property>
+                            <child>
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="y">300</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkAspectFrame">
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
+                            <property name="obey_child">False</property>
+                            <child>
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv3">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="x">600</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkAspectFrame">
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
+                            <property name="obey_child">False</property>
+                            <child>
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="x">300</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkAspectFrame">
+                            <property name="width_request">300</property>
+                            <property name="height_request">300</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label_xalign">0</property>
+                            <property name="shadow_type">etched-out</property>
+                            <property name="obey_child">False</property>
+                            <child>
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="width_request">150</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
                             <property name="halign">center</property>
                             <property name="valign">center</property>
-                            <property name="active">True</property>
-                            <signal name="state-set" handler="on_plotter_switch" swapped="no"/>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="valign">center</property>
+                                <property name="label" translatable="yes">Update Plots</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSwitch">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="tooltip_text" translatable="yes">Switch off to pause live updates</property>
+                                <property name="halign">center</property>
+                                <property name="valign">center</property>
+                                <property name="active">True</property>
+                                <signal name="state-set" handler="on_plotter_switch" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
+                            <property name="x">375</property>
+                            <property name="y">300</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv3">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">2</property>
-                        <property name="top_attach">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">2</property>
-                        <property name="top_attach">1</property>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">0</property>
                       </packing>
                     </child>
                   </object>
@@ -2733,54 +2791,65 @@ Author: Greyson Christoforo
                 </child>
               </object>
               <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
                 <property name="position">1</property>
               </packing>
             </child>
           </object>
           <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
             <property name="position">0</property>
           </packing>
         </child>
         <child>
-          <object class="GtkFrame">
+          <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_start">5</property>
-            <property name="margin_end">5</property>
-            <property name="margin_top">5</property>
-            <property name="margin_bottom">5</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">False</property>
-            <property name="label_xalign">0</property>
-            <property name="shadow_type">etched-out</property>
+            <property name="orientation">vertical</property>
+            <property name="baseline_position">top</property>
             <child>
-              <object class="GtkScrolledWindow">
+              <object class="GtkFrame">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="vexpand">True</property>
-                <property name="vadjustment">vert_log_win_scroll_adj</property>
+                <property name="can_focus">False</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
                 <child>
-                  <object class="GtkTextView" id="ltv">
+                  <object class="GtkScrolledWindow">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="vexpand">True</property>
-                    <property name="editable">False</property>
-                    <property name="buffer">tbLog</property>
-                    <property name="monospace">True</property>
+                    <property name="vadjustment">vert_log_win_scroll_adj</property>
+                    <child>
+                      <object class="GtkTextView" id="ltv">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="editable">False</property>
+                        <property name="buffer">tbLog</property>
+                        <property name="monospace">True</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="valign">start</property>
+                    <property name="label" translatable="yes">Log</property>
                   </object>
                 </child>
               </object>
-            </child>
-            <child type="label">
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Log</property>
-              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
             </child>
           </object>
           <packing>
@@ -2796,10 +2865,9 @@ Author: Greyson Christoforo
             <property name="valign">end</property>
             <property name="margin_start">5</property>
             <property name="margin_end">5</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">False</property>
             <property name="spacing">5</property>
             <property name="homogeneous">True</property>
+            <property name="baseline_position">top</property>
             <child>
               <object class="GtkLabel" id="eqe_cal_label">
                 <property name="visible">True</property>
@@ -2841,8 +2909,8 @@ Author: Greyson Christoforo
             </child>
           </object>
           <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
             <property name="pack_type">end</property>
             <property name="position">2</property>
           </packing>
