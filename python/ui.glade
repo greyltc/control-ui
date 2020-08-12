@@ -2607,6 +2607,7 @@ Author: Greyson Christoforo
                         <child>
                           <object class="GtkBox">
                             <property name="width_request">150</property>
+                            <property name="height_request">46</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="halign">center</property>
@@ -2644,7 +2645,7 @@ Author: Greyson Christoforo
                           </object>
                           <packing>
                             <property name="x">525</property>
-                            <property name="y">300</property>
+                            <property name="y">277</property>
                           </packing>
                         </child>
                         <child>
@@ -2667,7 +2668,7 @@ Author: Greyson Christoforo
                         <child>
                           <object class="GtkViewport">
                             <property name="width_request">400</property>
-                            <property name="height_request">300</property>
+                            <property name="height_request">277</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
@@ -2687,7 +2688,7 @@ Author: Greyson Christoforo
                         <child>
                           <object class="GtkViewport">
                             <property name="width_request">400</property>
-                            <property name="height_request">300</property>
+                            <property name="height_request">600</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
@@ -2727,7 +2728,7 @@ Author: Greyson Christoforo
                         <child>
                           <object class="GtkViewport">
                             <property name="width_request">400</property>
-                            <property name="height_request">300</property>
+                            <property name="height_request">277</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
@@ -2741,8 +2742,8 @@ Author: Greyson Christoforo
                             </child>
                           </object>
                           <packing>
-                            <property name="x">800</property>
-                            <property name="y">300</property>
+                            <property name="x">400</property>
+                            <property name="y">323</property>
                           </packing>
                         </child>
                       </object>
