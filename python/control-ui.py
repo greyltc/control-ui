@@ -1317,7 +1317,7 @@ class App(Gtk.Application):
             m = False
         else:
             m = True
-        msg = {m}
+        msg = m
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("plotter/pause", pic_msg, qos=2).wait_for_publish()
 
