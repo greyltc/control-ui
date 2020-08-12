@@ -2655,7 +2655,7 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <child>
@@ -2672,7 +2672,7 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <child>
@@ -2712,7 +2712,7 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <child>
@@ -2732,7 +2732,7 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
+                              <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <child>
