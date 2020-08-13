@@ -1270,11 +1270,11 @@ class App(Gtk.Application):
                 args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
         
         args['subs_names'] = self.substrate_designators
-        if int(args['eqe_devs'], 16) == 0:
-            args['eqe_devs'] = None
+        #if int(args['eqe_devs'], 16) == 0:
+        #    args['eqe_devs'] = None
 
-        if int(args['iv_devs'], 16) == 0:
-            args['iv_devs'] = None
+        #if int(args['iv_devs'], 16) == 0:
+        #    args['iv_devs'] = None
 
         return(args)
 
@@ -1306,10 +1306,15 @@ class App(Gtk.Application):
 
             self.mqttc.publish("measurement/calibrate_psu", pic_msg, qos=2).wait_for_publish()
 
+    def on_log_button(self, widget, event):
+        pass
+        #print(event)
+
+    def on_log_clear(self, widget, event):
+        print("Log clear")
 
     def on_smart_mode_activate(self, button):
         self.update_gui()
-
 
     def on_plotter_switch(self, switch, state):
         mode = switch.get_active()
