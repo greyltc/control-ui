@@ -2783,12 +2783,13 @@ Author: Greyson Christoforo
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSwitch" id="invert_voltage_switch">
+                                  <object class="GtkSwitch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="halign">center</property>
                                     <property name="valign">center</property>
                                     <property name="active">True</property>
+                                    <signal name="state-set" handler="on_voltage_switch" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -2821,12 +2822,13 @@ Author: Greyson Christoforo
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSwitch" id="invert_current_switch">
+                                  <object class="GtkSwitch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="halign">center</property>
                                     <property name="valign">center</property>
                                     <property name="active">True</property>
+                                    <signal name="state-set" handler="on_current_switch" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>

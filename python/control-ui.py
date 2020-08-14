@@ -766,8 +766,14 @@ class App(Gtk.Application):
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
 
+            # update the devices to measure text for both eqe and iv
             self.update_measure_count(True)
             self.update_measure_count(False)
+
+            # make sure the plotter is in sync with us when we start
+            self.on_plotter_switch(None, True)
+            self.on_voltage_switch(None, True)
+            self.on_current_switch(None, True)
 
         self.main_win.present()
 
@@ -1316,8 +1322,8 @@ class App(Gtk.Application):
     def on_smart_mode_activate(self, button):
         self.update_gui()
 
+    # pause/unpause plots
     def on_plotter_switch(self, switch, state):
-        mode = switch.get_active()
         if state == True:
             m = False
         else:
@@ -1325,6 +1331,26 @@ class App(Gtk.Application):
         msg = m
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("plotter/pause", pic_msg, qos=2).wait_for_publish()
+
+    # invert voltage plots switch
+    def on_voltage_switch(self, switch, state):
+        if state == True:
+            m = False
+        else:
+            m = True
+        msg = m
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("plotter/invert_voltage", pic_msg, qos=2).wait_for_publish()
+
+    # invert current plots switch
+    def on_current_switch(self, switch, state):
+        if state == True:
+            m = False
+        else:
+            m = True
+        msg = m
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("plotter/invert_current", pic_msg, qos=2).wait_for_publish()
 
     # reads various gui item states and sets others accordingly
     # def needs to be called after loading a gui state file
