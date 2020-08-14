@@ -1307,8 +1307,8 @@ class App(Gtk.Application):
             self.mqttc.publish("measurement/calibrate_psu", pic_msg, qos=2).wait_for_publish()
 
     def on_log_button(self, widget, event):
-        pass
-        #print(event)
+        if event.button==3:
+            print(event)
 
     def on_log_clear(self, widget, event):
         print("Log clear")
