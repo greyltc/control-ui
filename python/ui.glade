@@ -2829,7 +2829,6 @@ Author: Greyson Christoforo
                                     <property name="tooltip_text" translatable="yes">Should the current values on these plots be multiplied by negative one?</property>
                                     <property name="halign">center</property>
                                     <property name="valign">center</property>
-                                    <property name="active">True</property>
                                     <signal name="state-set" handler="on_current_switch" swapped="no"/>
                                   </object>
                                   <packing>
