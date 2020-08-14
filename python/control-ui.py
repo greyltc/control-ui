@@ -1171,7 +1171,7 @@ class App(Gtk.Application):
             transient_for=self.b.get_object("mainWindow"),
             message_type=Gtk.MessageType.WARNING,
             buttons=Gtk.ButtonsType.OK_CANCEL,
-            text="This action will cause the stage to move."
+            text="This action may cause the stage to move."
         )
         message_dialog.format_secondary_text("Before clicking OK, check that all foreign objects are clear from the stage area and that it is safe to move.")
 
@@ -1324,32 +1324,17 @@ class App(Gtk.Application):
 
     # pause/unpause plots
     def on_plotter_switch(self, switch, state):
-        if state == True:
-            m = False
-        else:
-            m = True
-        msg = m
-        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        pic_msg = pickle.dumps(not state, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("plotter/pause", pic_msg, qos=2).wait_for_publish()
 
     # invert voltage plots switch
     def on_voltage_switch(self, switch, state):
-        if state == True:
-            m = False
-        else:
-            m = True
-        msg = m
-        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        pic_msg = pickle.dumps(state, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("plotter/invert_voltage", pic_msg, qos=2).wait_for_publish()
 
     # invert current plots switch
     def on_current_switch(self, switch, state):
-        if state == True:
-            m = False
-        else:
-            m = True
-        msg = m
-        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        pic_msg = pickle.dumps(state, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("plotter/invert_current", pic_msg, qos=2).wait_for_publish()
 
     # reads various gui item states and sets others accordingly
