@@ -2746,7 +2746,7 @@ Author: Greyson Christoforo
                                   <object class="GtkSwitch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="tooltip_text" translatable="yes">Switch off to pause live updates</property>
+                                    <property name="tooltip_text" translatable="yes">Do you want the plots to redraw themselves as new data is collected?</property>
                                     <property name="halign">center</property>
                                     <property name="valign">center</property>
                                     <property name="active">True</property>
@@ -2786,6 +2786,7 @@ Author: Greyson Christoforo
                                   <object class="GtkSwitch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="tooltip_text" translatable="yes">Should the voltage values on these plots be multiplied by negative one?</property>
                                     <property name="halign">center</property>
                                     <property name="valign">center</property>
                                     <property name="active">True</property>
@@ -2825,6 +2826,7 @@ Author: Greyson Christoforo
                                   <object class="GtkSwitch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="tooltip_text" translatable="yes">Should the current values on these plots be multiplied by negative one?</property>
                                     <property name="halign">center</property>
                                     <property name="valign">center</property>
                                     <property name="active">True</property>
