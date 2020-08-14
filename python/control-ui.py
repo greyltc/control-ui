@@ -778,13 +778,13 @@ class App(Gtk.Application):
             if 'psu' in self.config:
                 if 'ch1_ocp' in self.config['psu']:
                     c1bla = self.b.get_object('ch1_bias_light_adj')
-                    c1bla.set_upper(self.config['psu']['ch1_ocp'])
+                    c1bla.set_upper(self.config['psu']['ch1_ocp']*1000)
                 if 'ch2_ocp' in self.config['psu']:
                     c2bla = self.b.get_object('ch2_bias_light_adj')
-                    c2bla.set_upper(self.config['psu']['ch2_ocp'])
+                    c2bla.set_upper(self.config['psu']['ch2_ocp']*1000)
                 if 'ch3_ocp' in self.config['psu']:
                     c3bla = self.b.get_object('ch3_bias_light_adj')
-                    c3bla.set_upper(self.config['psu']['ch3_ocp'])
+                    c3bla.set_upper(self.config['psu']['ch3_ocp']*1000)
 
         self.main_win.present()
 
