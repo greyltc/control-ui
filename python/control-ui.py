@@ -978,14 +978,7 @@ class App(Gtk.Application):
                     if ls is not None:
                         n_cols = ls.get_n_columns()
                         for i in range(n_cols):
-                            col_type = ls.get_column_type(i).name
-                            if col_type == 'gint':
-                                col_types.append(int)
-                            elif  col_type == 'gchararray':
-                                col_types.append(str)
-                            else:
-                                print("WARNING: Unknown table column type encountered")
-
+                            col_types.append(ls.get_column_type(i).name)
                         for row in ls:
                             table_list.append(tuple(row))
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": {"col_types": col_types, "table_list": table_list}, "call_to_set": None}
