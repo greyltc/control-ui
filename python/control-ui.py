@@ -1308,6 +1308,11 @@ class App(Gtk.Application):
         args['chan3'] = args['chan3_ma']/1000
         args['i_dwell_value'] = args['i_dwell_value_ma']/1000
 
+        args['substrate_labels'] = self.label_shadow
+        for i, lab in enumerate(args['substrate_labels']):
+            if lab == "":  # change empty labels to ref des
+                args['substrate_labels'][i] = self.substrate_designators[i]
+
         args['iv_subs_names'] = self.bitmask_to_some_lists(args['iv_devs'])['subs_names']
         args['iv_subs_dev_nums'] = self.bitmask_to_some_lists(args['iv_devs'])['sub_dev_nums']
         args['iv_selections'] = self.bitmask_to_some_lists(args['iv_devs'])['selections']
