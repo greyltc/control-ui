@@ -215,17 +215,17 @@ class App(Gtk.Application):
                 pass
 
 
-    def setup_dev_stores(self, num_substrates, num_pix, dev_stores, label_store):
+    def setup_dev_stores(self, num_substrates, num_pix, dev_stores, substrate_store):
         for store in dev_stores:
             checked = True
             inconsistent = False
             top = store.append(None, ['All', checked, inconsistent])
             # fill in the model
             for i in range(num_substrates):
-                if label_store[i][0] == "":
-                    label = label_store[i][1]
+                if substrate_store[i][0] == "":
+                    label = substrate_store[i][1]
                 else:
-                    label = label_store[i][0]
+                    label = substrate_store[i][0]
                 piter = store.append(top, [label, checked, inconsistent])
                 j = 1
                 while j <= num_pix:
@@ -412,19 +412,20 @@ class App(Gtk.Application):
         #lg.info(f"{num_selected} devices selected for ~ {duration_string}")
 
 
-    def setup_label_tree(self, labels, substrate_designators, cell_y_padding):
-        label_tree = self.b.get_object("label_tree")
-        label_store = Gtk.ListStore(str, str, int)
+    def setup_substrate_tree(self, labels, substrate_designators, cell_y_padding):
+        substrate_tree = self.b.get_object("substrate_tree")
+        substrate_store = Gtk.ListStore(str, str, int)
+        self.label_shadow = labels
 
         for i in range(self.num_substrates):
-            label_store.append([labels[i], substrate_designators[i], cell_y_padding[i]])
-        label_tree.set_model(label_store)
+            substrate_store.append([labels[i], substrate_designators[i], cell_y_padding[i]])
+        substrate_tree.set_model(substrate_store)
 
         # ref des
         ref_des_cell = Gtk.CellRendererText()
         ref_des = Gtk.TreeViewColumn("Subs.", ref_des_cell, text=1, ypad=2)
-        if label_tree.get_columns() == []:
-            label_tree.append_column(ref_des)
+        if substrate_tree.get_columns() == []:
+            substrate_tree.append_column(ref_des)
 
         # the editable substrate label col
         label_cell = Gtk.CellRendererText()
@@ -432,13 +433,13 @@ class App(Gtk.Application):
         labels = Gtk.TreeViewColumn("Label", label_cell, text=0, ypad=2)
         # only append the col if it's not already there
         # fixes double col on file load
-        if len(label_tree.get_columns()) == 1:
-            label_tree.append_column(labels)
+        if len(substrate_tree.get_columns()) == 1:
+            substrate_tree.append_column(labels)
 
         label_cell.connect("edited", self.store_substrate_label)
-        #label_tree.connect("key-release-event", self.handle_label_key)
+        #substrate_tree.connect("key-release-event", self.handle_label_key)
 
-        return (label_tree, label_store)
+        return (substrate_tree, substrate_store)
 
 
     # handles keystroke in the label creation tree
@@ -467,13 +468,13 @@ class App(Gtk.Application):
     def store_substrate_label(self, widget, path, text):
         dev_path = f'0:{path}'
         self.label_shadow[int(path)] = text
-        self.label_store[path][0] = text
+        self.substrate_store[path][0] = text
         if text == "": # if it's empty use the default
-            self.dev_store[0][dev_path][0] = self.label_store[path][1]
-            self.dev_store[1][dev_path][0] = self.label_store[path][1]
+            self.dev_store[0][dev_path][0] = self.substrate_store[path][1]
+            self.dev_store[1][dev_path][0] = self.substrate_store[path][1]
         else: # otherwise use the user's one
-            self.dev_store[0][dev_path][0] = self.label_store[path][0]
-            self.dev_store[1][dev_path][0] = self.label_store[path][0]
+            self.dev_store[0][dev_path][0] = self.substrate_store[path][0]
+            self.dev_store[1][dev_path][0] = self.substrate_store[path][0]
 
 
     # handle the auto iv toggle
@@ -693,10 +694,7 @@ class App(Gtk.Application):
                 self.custom_coords.append(coord)
                 pl.append([name])
 
-            # list that shadows the device label names
-            self.label_shadow = ['']*self.num_substrates
-
-            self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, self.substrate_designators, [0]*self.num_substrates)
+            self.substrate_tree, self.substrate_store = self.setup_substrate_tree(['']*self.num_substrates, self.substrate_designators, [0]*self.num_substrates)
 
             # one for EQE, one for iv
             # [str, bool, bool] is for [label, checked, inconsistent]
@@ -704,7 +702,7 @@ class App(Gtk.Application):
                 Gtk.TreeStore(str, bool, bool),
                 Gtk.TreeStore(str, bool, bool),
             ]  # [iv devs, eqe devs]
-            self.setup_dev_stores(self.num_substrates, self.num_pix, self.dev_store, self.label_store)
+            self.setup_dev_stores(self.num_substrates, self.num_pix, self.dev_store, self.substrate_store)
 
             self.dev_tree = self.b.get_object("devTV")
             self.setup_dev_tree(self.dev_tree)
@@ -1032,12 +1030,12 @@ class App(Gtk.Application):
                     if len(tvd['col_types']) != 0:
                         cts = tvd['col_types']
                         data = tvd['table_list']
-                        if id_str == 'label_tree':
+                        if id_str == 'substrate_tree':
                             labels = [x[0] for x in data]
                             ref_des = [x[1] for x in data]
                             y_pad = [x[2] for x in data]
                             try:
-                                self.label_tree, self.label_store = self.setup_label_tree(labels, ref_des, y_pad)
+                                self.substrate_tree, self.substrate_store = self.setup_substrate_tree(labels, ref_des, y_pad)
                                 for i, lab in enumerate(labels):
                                     self.store_substrate_label(None, str(i), lab)
                             except:
@@ -1097,7 +1095,7 @@ class App(Gtk.Application):
 
     def on_device_toggle(self, button):
         """
-        allows the user to connect anyone pixel, or disconnect them all
+        allows the user to connect any one pixel, or disconnect them all
         toggels between connecting the first selected IV device and selecting nothing
         """
         if self.all_mux_switches_open == True:
@@ -1134,6 +1132,7 @@ class App(Gtk.Application):
         """
         selection_bitmask = int(bitmask, 16)
         bin_mask = bin(selection_bitmask)[2::]
+        bin_mask = bin_mask[:self.num_pix*self.num_substrates]  # prune to total pixel number
         bin_mask_rev = bin_mask[::-1]
         dev_nums = []
         subs_nums = []
@@ -1151,10 +1150,7 @@ class App(Gtk.Application):
                 sub_dev_nums += [sub_dev_num]
                 subs_name = self.substrate_designators[subs_num]
                 subs_names += [subs_name]
-                if self.label_shadow[subs_num] == "":
-                    user_label = subs_name
-                else:
-                    user_label = self.label_shadow[subs_num]
+                user_label = self.label_shadow[subs_num]
                 user_labels += [user_label]
                 selection = f"s{subs_name}{sub_dev_num}".lower()
                 selections += [selection]
@@ -1290,15 +1286,12 @@ class App(Gtk.Application):
         args['chan2'] = args['chan2_ma']/1000
         args['chan3'] = args['chan3_ma']/1000
         args['i_dwell_value'] = args['i_dwell_value_ma']/1000
-        for i, lab in enumerate(args['label_tree']):
-            if lab == '':
-                args['label_tree'][i] = self.substrate_designators[i]
 
         args['iv_subs_names'] = self.bitmask_to_some_lists(args['iv_devs'])['subs_names']
         args['iv_subs_dev_nums'] = self.bitmask_to_some_lists(args['iv_devs'])['sub_dev_nums']
         args['iv_selections'] = self.bitmask_to_some_lists(args['iv_devs'])['selections']
         args['iv_subs_labels'] = self.bitmask_to_some_lists(args['iv_devs'])['user_labels']
-        for i, lab in enumerate(args['iv_subs_labels']):
+        for i, lab in enumerate(args['iv_subs_labels']):  # change empty labels to ref des
             if lab == '':
                 args['iv_subs_labels'][i] = args['iv_subs_names'][i]
 
@@ -1306,7 +1299,7 @@ class App(Gtk.Application):
         args['eqe_subs_dev_nums'] = self.bitmask_to_some_lists(args['eqe_devs'])['sub_dev_nums']
         args['eqe_selections'] = self.bitmask_to_some_lists(args['eqe_devs'])['selections']
         args['eqe_subs_labels'] = self.bitmask_to_some_lists(args['eqe_devs'])['user_labels']
-        for i, lab in enumerate(args['eqe_subs_labels']):
+        for i, lab in enumerate(args['eqe_subs_labels']):  # change empty labels to ref des
             if lab == '':
                 args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
         
