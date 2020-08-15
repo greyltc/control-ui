@@ -413,39 +413,43 @@ class App(Gtk.Application):
 
 
     def setup_label_tree(self, labels, substrate_designators, cell_y_padding):
-        labelTree = self.b.get_object("label_tree")
-        labelStore = Gtk.ListStore(str, str, int)
+        label_tree = self.b.get_object("label_tree")
+        label_store = Gtk.ListStore(str, str, int)
 
         for i in range(self.num_substrates):
-            labelStore.append([labels[i], substrate_designators[i], cell_y_padding])
-        labelTree.set_model(labelStore)
+            label_store.append([labels[i], substrate_designators[i], cell_y_padding])
+        label_tree.set_model(label_store)
+
+        # ref des
+        ref_des_cell = Gtk.CellRendererText()
+        ref_des = Gtk.TreeViewColumn("Subs.", ref_des_cell, text=1, ypad=2)
+        if label_tree.get_columns() == []:
+            label_tree.append_column(ref_des)
 
         # the editable substrate label col
-        renderEdit = Gtk.CellRendererText()
-        renderEdit.set_property("editable", True)
-        labels = Gtk.TreeViewColumn(
-            "Substrate Label", renderEdit, text=0, placeholder_text=1, ypad=2
-        )
+        label_cell = Gtk.CellRendererText()
+        label_cell.set_property("editable", True)
+        labels = Gtk.TreeViewColumn("Label", label_cell, text=0, ypad=2)
         # only append the col if it's not already there
         # fixes double col on file load
-        if labelTree.get_columns() == []:
-            labelTree.append_column(labels)
+        if len(label_tree.get_columns()) == 1:
+            label_tree.append_column(labels)
 
-        renderEdit.connect("edited", self.store_substrate_label)
-        labelTree.connect("key-release-event", self.handle_label_key)
+        label_cell.connect("edited", self.store_substrate_label)
+        #label_tree.connect("key-release-event", self.handle_label_key)
 
-        return (labelTree, labelStore)
+        return (label_tree, label_store)
 
 
     # handles keystroke in the label creation tree
-    def handle_label_key(self, tv, event):
-        keyname = Gdk.keyval_name(event.keyval)
-        if keyname in ["Return", "Enter"]:
-            path, col = self.label_tree.get_cursor()
-            path.next()
-            self.label_tree.set_cursor_on_cell(
-                path, focus_column=col, focus_cell=None, start_editing=True
-            )
+    # def handle_label_key(self, tv, event):
+    #     keyname = Gdk.keyval_name(event.keyval)
+    #     if keyname in ["Return", "Enter"]:
+    #         path, col = self.label_tree.get_cursor()
+    #         path.next()
+    #         self.label_tree.set_cursor_on_cell(
+    #             path, focus_column=col, focus_cell=None, start_editing=True
+    #         )
 
 
     # handles keystroke in the device selection tree
@@ -859,7 +863,7 @@ class App(Gtk.Application):
         eqe = "eqe" in Gtk.Buildable.get_name(entry)
         self.dev_tree.set_model(self.dev_store[eqe])
         sw = self.dev_tree.get_parent()  # scroll window
-        sw.set_min_content_height((self.num_substrates + 2) * 25)
+        sw.set_min_content_height((self.num_substrates + 2) * 26)
         if entry.get_icon_name(0) != "emblem-default":
             entry.set_text(self.last_valid_devs[eqe])
         text_is = entry.get_text()

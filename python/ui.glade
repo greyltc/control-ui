@@ -518,7 +518,6 @@ Author: Greyson Christoforo
                           <object class="GtkFrame">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Enter custom labels for individual substrates here</property>
                             <property name="valign">start</property>
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
@@ -546,7 +545,8 @@ Author: Greyson Christoforo
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Substrate Labeling</property>
+                                <property name="tooltip_text" translatable="yes">Substrate info table</property>
+                                <property name="label" translatable="yes">Substrates</property>
                               </object>
                             </child>
                           </object>
