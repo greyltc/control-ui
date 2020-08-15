@@ -538,7 +538,7 @@ Author: Greyson Christoforo
                                 <property name="enable_tree_lines">True</property>
                                 <child internal-child="selection">
                                   <object class="GtkTreeSelection">
-                                    <property name="mode">none</property>
+                                    <property name="mode">browse</property>
                                   </object>
                                 </child>
                               </object>
