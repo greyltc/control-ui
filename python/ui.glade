@@ -537,7 +537,9 @@ Author: Greyson Christoforo
                                 <property name="enable_grid_lines">both</property>
                                 <property name="enable_tree_lines">True</property>
                                 <child internal-child="selection">
-                                  <object class="GtkTreeSelection"/>
+                                  <object class="GtkTreeSelection">
+                                    <property name="mode">none</property>
+                                  </object>
                                 </child>
                               </object>
                             </child>
