@@ -1058,7 +1058,10 @@ class App(Gtk.Application):
                             labels = [x[0] for x in data]
                             ref_des = [x[1] for x in data]
                             y_pad = [x[2] for x in data]
-                            layouts = [x[3] for x in data]
+                            if len(data[0]) > 3:
+                                layouts = [x[3] for x in data]
+                            else:
+                                layouts = ['Unknown' for x in data]
                             try:
                                 self.substrate_tree, self.substrate_store = self.setup_substrate_tree(labels, ref_des, y_pad, layouts)
                                 for i, lab in enumerate(labels):
