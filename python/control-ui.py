@@ -859,7 +859,7 @@ class App(Gtk.Application):
         eqe = "eqe" in Gtk.Buildable.get_name(entry)
         self.dev_tree.set_model(self.dev_store[eqe])
         sw = self.dev_tree.get_parent()  # scroll window
-        sw.set_min_content_height((self.num_substrates + 1) * 25)
+        sw.set_min_content_height((self.num_substrates + 2) * 25)
         if entry.get_icon_name(0) != "emblem-default":
             entry.set_text(self.last_valid_devs[eqe])
         text_is = entry.get_text()
@@ -1251,6 +1251,7 @@ class App(Gtk.Application):
     # makes the gui dict more consumable for a backend
     def gui_to_args(self, gui_dict):
         args = {}
+        #return(args)
         for key, val in gui_dict.items():
             args[key] = val['value']
         if args['v_dwell_check'] == False:
