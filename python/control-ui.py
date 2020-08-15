@@ -414,32 +414,56 @@ class App(Gtk.Application):
 
     def setup_substrate_tree(self, labels, substrate_designators, cell_y_padding):
         substrate_tree = self.b.get_object("substrate_tree")
-        substrate_store = Gtk.ListStore(str, str, int)
+        substrate_store = Gtk.ListStore(str, str, int, str)
         self.label_shadow = labels
 
-        for i in range(self.num_substrates):
-            substrate_store.append([labels[i], substrate_designators[i], cell_y_padding[i]])
-        substrate_tree.set_model(substrate_store)
-
-        # ref des
+        # the refrence designator column
         ref_des_cell = Gtk.CellRendererText()
-        ref_des = Gtk.TreeViewColumn("Subs.", ref_des_cell, text=1, ypad=2)
+        ref_des_col = Gtk.TreeViewColumn("Subs.", ref_des_cell, text=1, ypad=2)
         if substrate_tree.get_columns() == []:
-            substrate_tree.append_column(ref_des)
+            substrate_tree.append_column(ref_des_col)
 
-        # the editable substrate label col
+        # the editable substrate label column
         label_cell = Gtk.CellRendererText()
         label_cell.set_property("editable", True)
-        labels = Gtk.TreeViewColumn("Label", label_cell, text=0, ypad=2)
+        labels_col = Gtk.TreeViewColumn("Label", label_cell, text=0, ypad=2)
         # only append the col if it's not already there
         # fixes double col on file load
         if len(substrate_tree.get_columns()) == 1:
-            substrate_tree.append_column(labels)
+            substrate_tree.append_column(labels_col)
+
+        # the layout column
+        layouts = ['Unknown']
+        if 'substrates' in self.config:
+            if 'layout_names' in self.config['substrates']:
+                layouts = self.config['substrates']['layout_names']
+
+        layout_cell = Gtk.CellRendererCombo()
+        layouts_store = Gtk.ListStore(str)
+        for layout in layouts:
+            layouts_store.append([layout])
+        layout_cell.set_property("editable", True)
+        layout_cell.set_property("model", layouts_store)
+        layout_cell.set_property("has-entry", False)
+        layout_cell.set_property("text-column", 0)
+        layout_cell.connect("edited", self.on_layout_combo_changed)
+        layout_col = Gtk.TreeViewColumn("Layout", layout_cell, text=3, ypad=2)
+        if len(substrate_tree.get_columns()) == 2:
+            substrate_tree.append_column(layout_col)
+
+        default_layout_num = 0
+
+        for i in range(self.num_substrates):
+            substrate_store.append([labels[i], substrate_designators[i], cell_y_padding[i], layouts[default_layout_num]])
+        substrate_tree.set_model(substrate_store)
 
         label_cell.connect("edited", self.store_substrate_label)
         #substrate_tree.connect("key-release-event", self.handle_label_key)
 
         return (substrate_tree, substrate_store)
+
+    def on_layout_combo_changed(self, widget, path, text):
+        self.substrate_store[path][3] = text
 
 
     # handles keystroke in the label creation tree
