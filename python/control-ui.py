@@ -412,7 +412,7 @@ class App(Gtk.Application):
         #lg.info(f"{num_selected} devices selected for ~ {duration_string}")
 
 
-    def setup_substrate_tree(self, labels, substrate_designators, cell_y_padding):
+    def setup_substrate_tree(self, labels, substrate_designators, cell_y_padding, layouts):
         substrate_tree = self.b.get_object("substrate_tree")
         substrate_store = Gtk.ListStore(str, str, int, str)
         self.label_shadow = labels
@@ -433,14 +433,9 @@ class App(Gtk.Application):
             substrate_tree.append_column(labels_col)
 
         # the layout column
-        layouts = ['Unknown']
-        if 'substrates' in self.config:
-            if 'layout_names' in self.config['substrates']:
-                layouts = self.config['substrates']['layout_names']
-
         layout_cell = Gtk.CellRendererCombo()
         layouts_store = Gtk.ListStore(str)
-        for layout in layouts:
+        for layout in self.layouts:
             layouts_store.append([layout])
         layout_cell.set_property("editable", True)
         layout_cell.set_property("model", layouts_store)
@@ -451,10 +446,8 @@ class App(Gtk.Application):
         if len(substrate_tree.get_columns()) == 2:
             substrate_tree.append_column(layout_col)
 
-        default_layout_num = 0
-
         for i in range(self.num_substrates):
-            substrate_store.append([labels[i], substrate_designators[i], cell_y_padding[i], layouts[default_layout_num]])
+            substrate_store.append([labels[i], substrate_designators[i], cell_y_padding[i], layouts[i]])
         substrate_tree.set_model(substrate_store)
 
         label_cell.connect("edited", self.store_substrate_label)
@@ -717,8 +710,15 @@ class App(Gtk.Application):
                 coord = self.config["stage"]["custom_positions"][name]
                 self.custom_coords.append(coord)
                 pl.append([name])
+            
+            # do layout things
+            self.layouts = ['Unknown']
+            if 'substrates' in self.config:
+                if 'layout_names' in self.config['substrates']:
+                    self.layouts = self.config['substrates']['layout_names']
 
-            self.substrate_tree, self.substrate_store = self.setup_substrate_tree(['']*self.num_substrates, self.substrate_designators, [0]*self.num_substrates)
+            ns = self.num_substrates
+            self.substrate_tree, self.substrate_store = self.setup_substrate_tree(['']*ns, self.substrate_designators, [0]*ns, [self.layouts[0]]*ns)
 
             # one for EQE, one for iv
             # [str, bool, bool] is for [label, checked, inconsistent]
@@ -1058,8 +1058,9 @@ class App(Gtk.Application):
                             labels = [x[0] for x in data]
                             ref_des = [x[1] for x in data]
                             y_pad = [x[2] for x in data]
+                            layouts = [x[3] for x in data]
                             try:
-                                self.substrate_tree, self.substrate_store = self.setup_substrate_tree(labels, ref_des, y_pad)
+                                self.substrate_tree, self.substrate_store = self.setup_substrate_tree(labels, ref_des, y_pad, layouts)
                                 for i, lab in enumerate(labels):
                                     self.store_substrate_label(None, str(i), lab)
                             except:
