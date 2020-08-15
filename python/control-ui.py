@@ -417,7 +417,7 @@ class App(Gtk.Application):
         label_store = Gtk.ListStore(str, str, int)
 
         for i in range(self.num_substrates):
-            label_store.append([labels[i], substrate_designators[i], cell_y_padding])
+            label_store.append([labels[i], substrate_designators[i], cell_y_padding[i]])
         label_tree.set_model(label_store)
 
         # ref des
@@ -696,7 +696,7 @@ class App(Gtk.Application):
             # list that shadows the device label names
             self.label_shadow = ['']*self.num_substrates
 
-            self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, self.substrate_designators, 0)
+            self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, self.substrate_designators, [0]*self.num_substrates)
 
             # one for EQE, one for iv
             # [str, bool, bool] is for [label, checked, inconsistent]
@@ -950,8 +950,23 @@ class App(Gtk.Application):
                 elif isinstance(this_obj, gi.repository.Gtk.Entry):
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
                 elif isinstance(this_obj, gi.overrides.Gtk.TreeView):  # the TreeViews are unfortunately not pickleable
-                    if id_str == "label_tree":
-                        gui_data[id_str] = {"type": str(type(this_obj)), "value": self.label_shadow, "call_to_set": None}
+                    ls = this_obj.get_model()  # list store associated with the treeview
+                    table_list = []  # list we'll use to store the list store
+                    col_types = []
+                    if ls is not None:
+                        n_cols = ls.get_n_columns()
+                        for i in range(n_cols):
+                            col_type = ls.get_column_type(i).name
+                            if col_type == 'gint':
+                                col_types.append(int)
+                            elif  col_type == 'gchararray':
+                                col_types.append(str)
+                            else:
+                                print("WARNING: Unknown table column type encountered")
+
+                        for row in ls:
+                            table_list.append(tuple(row))
+                    gui_data[id_str] = {"type": str(type(this_obj)), "value": {"col_types": col_types, "table_list": table_list}, "call_to_set": None}
         return gui_data
 
 
@@ -1012,16 +1027,21 @@ class App(Gtk.Application):
                 load_data = pickle.load(f)
 
             for id_str, obj_info in load_data.items():
-                if id_str == 'label_tree':  # load and apply the device labels
-                    # NOTE: loading will likely crash if loading into a setup with the wrong number of pixels/devices
-                    try:
-                        self.label_shadow = obj_info['value']
-                        # i'm going to assume the substrate designators didn't change across loads...
-                        self.label_tree, self.label_store = self.setup_label_tree(self.label_shadow, self.substrate_designators, 0)
-                        for i, lab in enumerate(self.label_shadow):
-                            self.store_substrate_label(None, str(i), lab)
-                    except:
-                        lg.info(f"Loading substrate labels failed.")
+                if 'TreeView' in obj_info['type']:
+                    tvd = obj_info['value']
+                    if len(tvd['col_types']) != 0:
+                        cts = tvd['col_types']
+                        data = tvd['table_list']
+                        if id_str == 'label_tree':
+                            labels = [x[0] for x in data]
+                            ref_des = [x[1] for x in data]
+                            y_pad = [x[2] for x in data]
+                            try:
+                                self.label_tree, self.label_store = self.setup_label_tree(labels, ref_des, y_pad)
+                                for i, lab in enumerate(labels):
+                                    self.store_substrate_label(None, str(i), lab)
+                            except:
+                                lg.info(f"Loading substrate info failed.")
                 else:
                     this_obj = self.b.get_object(id_str)
                     call_to_set = getattr(this_obj, obj_info['call_to_set'])
