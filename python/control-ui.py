@@ -917,13 +917,11 @@ class App(Gtk.Application):
         # lg.debug(sw.get_allocated_height())
         return True
 
-
     def on_pause_button(self, button):
         """Pause experiment operation."""
         lg.info("Pausing run")
         # TODO: consider implimenting this
         # self.mqttc.publish("gui/pause", "pause", qos=2).wait_for_publish()
-
 
     def on_stop_button(self, button):
         """Stop experiment operation."""
