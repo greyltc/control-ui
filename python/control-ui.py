@@ -24,9 +24,9 @@ import yaml
 
 # os.environ["DEBUSSY"] = "1"
 
-gi.require_version("WebKit2", "4.0")
-gi.require_version("Gtk", "3.0")
-gi.require_version("Gdk", "3.0")
+#gi.require_version("WebKit2", "4.0")
+#gi.require_version("Gtk", "3.0")
+#gi.require_version("Gdk", "3.0")
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
 # Gdk.set_allowed_backends('broadway')  # for gui over web
@@ -1323,12 +1323,19 @@ class App(Gtk.Application):
 
             self.mqttc.publish("measurement/calibrate_psu", pic_msg, qos=2).wait_for_publish()
 
-    def on_log_button(self, widget, event):
-        if event.button==3:
-            print(event)
+    # called on right click to log before the menu is drawn
+    def on_log_pre_popup(self, text_view, menu):
+        sep = Gtk.SeparatorMenuItem()
+        sep.set_visible(True)
+        menu.prepend(sep)
+        clmi = Gtk.MenuItem()
+        clmi.set_label('Clear Log')
+        clmi.set_visible(True)
+        clmi.connect('activate',self.clear_log)
+        menu.prepend(clmi)
 
-    def on_log_clear(self, widget, event):
-        print("Log clear")
+    def clear_log(self, widget):
+        self.logTB.set_text("")
 
     def on_smart_mode_activate(self, button):
         self.update_gui()

@@ -28,19 +28,6 @@ Author: Greyson Christoforo
   <!-- interface-name control-ui -->
   <!-- interface-description Characterization Control Interface -->
   <!-- interface-authors Greyson Christoforo -->
-  <object class="GtkMenu">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <child>
-      <object class="GtkMenuItem">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Clear Log</property>
-        <property name="use_underline">True</property>
-        <signal name="activate" handler="on_log_clear" swapped="no"/>
-      </object>
-    </child>
-  </object>
   <object class="GtkAdjustment" id="ch1_bias_light_adj">
     <property name="upper">3000</property>
     <property name="step_increment">10</property>
@@ -2921,7 +2908,7 @@ Author: Greyson Christoforo
                         <property name="editable">False</property>
                         <property name="buffer">tbLog</property>
                         <property name="monospace">True</property>
-                        <signal name="button-press-event" handler="on_log_button" swapped="no"/>
+                        <signal name="populate-popup" handler="on_log_pre_popup" swapped="no"/>
                       </object>
                     </child>
                   </object>
