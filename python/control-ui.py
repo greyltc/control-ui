@@ -847,11 +847,12 @@ class App(Gtk.Application):
 
         Gtk.Application.do_shutdown(self)
 
-
     def on_debug_button(self, button):
         lg.debug("Hello World!")
         self.b.get_object("run_but").set_sensitive(True)
-
+        msg = {'cmd':'debug'}
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
     # sets up the device selection tree based on the text in the selection box
     def on_devs_icon_release(self, entry, icon, user_data=None):
@@ -1295,7 +1296,6 @@ class App(Gtk.Application):
 
         return(args)
 
-
     def on_cal_eqe_button(self, button):
         """Measure EQE calibration photodiode."""
         """Send run info to experiment orchestrator via MQTT."""
@@ -1309,8 +1309,6 @@ class App(Gtk.Application):
             self.mqttc.publish("measurement/calibrate_eqe", pic_msg, qos=2).wait_for_publish()
             # check for calibration/eqe timestamp
 
-
-    # TODO: combine buttons
     def on_cal_psu_button(self, button):
         """Measure EQE calibration photodiode."""
         """Send run info to experiment orchestrator via MQTT."""
