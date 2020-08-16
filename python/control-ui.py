@@ -784,23 +784,31 @@ class App(Gtk.Application):
             #     payload = json.dumps(f.read())
             # self.mqttc.publish("gui/config", payload, qos=2)
 
-            self.tick()
-            self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
-            self.b.connect_signals(self)  # maps all ui callbacks to functions here
-
-
-            self.main_win = self.b.get_object("mainWindow")
-            self.main_win.set_application(self)
-
             # update the devices to measure text for both eqe and iv
             self.update_measure_count(True)
             self.update_measure_count(False)
 
+            # read the default recipe from the config and set the gui box to that
+            if "solarsim" in self.config:
+                if "default_recipe" in config["solarsim"]:
+                    tb = self.b.get_object('light_recipe')
+                    tb.set_text(config["solarsim"]["default_recipe"])
+
+            # read the invert plot settings from the config and set the switches to that
+            if 'plots' in self.config:
+                if 'invert_voltage' in self.config['plots']:
+                    sw = self.b.get_object('inv_v_switch')
+                    sw.set_active(self.config['plots']['invert_voltage'])
+                if 'invert_current' in self.config['plots']:
+                    sw = self.b.get_object('inv_i_switch')
+                    sw.set_active(self.config['plots']['invert_current'])
+
             # make sure the plotter is in sync with us when we start
             self.on_plotter_switch(None, True)
-            self.on_voltage_switch(None, True)
-            self.on_current_switch(None, False)
+            self.on_voltage_switch(None, self.b.get_object('inv_v_switch').get_active())
+            self.on_current_switch(None, self.b.get_object('inv_v_switch').get_active())
 
+            # set bias led spinbox limits
             if 'psu' in self.config:
                 if 'ch1_ocp' in self.config['psu']:
                     c1bla = self.b.get_object('ch1_bias_light_adj')
@@ -811,6 +819,14 @@ class App(Gtk.Application):
                 if 'ch3_ocp' in self.config['psu']:
                     c3bla = self.b.get_object('ch3_bias_light_adj')
                     c3bla.set_upper(self.config['psu']['ch3_ocp']*1000)
+
+            self.tick()
+            self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
+            self.b.connect_signals(self)  # maps all ui callbacks to functions here
+
+            self.main_win = self.b.get_object("mainWindow")
+            self.main_win.set_application(self)
+
 
         self.main_win.present()
 

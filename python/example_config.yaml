@@ -14,6 +14,10 @@
 # with open("example_config.yaml", "r") as f:
 #     config = yaml.load(f, Loader=yaml.FullLoader)  
 
+# default start-up values for the plot inversion switches
+plots:
+    invert_voltage: false
+    invert_current: false
 
 network:
     MQTTHOST: "127.0.0.1"
@@ -44,7 +48,8 @@ smu:
 
 solarsim:
     #uri: wavelabs://0.0.0.0:3334
-    uri: wavelabs-relay://127.0.0.1:3335 
+    uri: wavelabs-relay://127.0.0.1:3335
+    default_recipe: am1_5_1_sun
 #    spectral_calibration: !include example_solarsim_cal.yaml
 
 # lock-in amplifier
