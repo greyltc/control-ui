@@ -818,7 +818,7 @@ class App(Gtk.Application):
             # make sure the plotter is in sync with us when we start
             self.on_plotter_switch(None, True)
             self.on_voltage_switch(None, self.b.get_object('inv_v_switch').get_active())
-            self.on_current_switch(None, self.b.get_object('inv_v_switch').get_active())
+            self.on_current_switch(None, self.b.get_object('inv_i_switch').get_active())
 
             # set bias led spinbox limits
             if 'psu' in self.config:
