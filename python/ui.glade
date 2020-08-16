@@ -638,16 +638,20 @@ Author: Greyson Christoforo
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkEntry" id="light_recipe">
+                                          <object class="GtkComboBoxText" id="light_recipe_combo">
                                             <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
+                                            <property name="can_focus">False</property>
                                             <property name="tooltip_text" translatable="yes">This must match the name of a recipe in the solar sim's control software</property>
-                                            <property name="margin_end">2</property>
-                                            <property name="text" translatable="yes">am1_5_1_sun</property>
-                                            <property name="caps_lock_warning">False</property>
+                                            <property name="has_entry">True</property>
+                                            <child internal-child="entry">
+                                              <object class="GtkEntry" id="light_recipe">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">True</property>
+                                              </object>
+                                            </child>
                                           </object>
                                           <packing>
-                                            <property name="expand">True</property>
+                                            <property name="expand">False</property>
                                             <property name="fill">True</property>
                                             <property name="position">1</property>
                                           </packing>
@@ -1408,16 +1412,20 @@ Author: Greyson Christoforo
                                                   </packing>
                                                 </child>
                                                 <child>
-                                                  <object class="GtkEntry" id="mppt_params">
+                                                  <object class="GtkComboBoxText" id="mppt_params_combo">
                                                     <property name="visible">True</property>
-                                                    <property name="can_focus">True</property>
-                                                    <property name="tooltip_markup" translatable="yes">Advanced parameters to control the max power point tracker's algorithm. The default is &lt;tt&gt;basic://&lt;/tt&gt;</property>
-                                                    <property name="margin_end">2</property>
-                                                    <property name="invisible_char">-</property>
-                                                    <property name="text" translatable="yes">basic://</property>
+                                                    <property name="can_focus">False</property>
+                                                    <property name="has_entry">True</property>
+                                                    <child internal-child="entry">
+                                                      <object class="GtkEntry" id="mppt_params">
+                                                        <property name="visible">True</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="tooltip_text" translatable="yes">Advanced parameter string to control the max power point tracker's algorithm.</property>
+                                                      </object>
+                                                    </child>
                                                   </object>
                                                   <packing>
-                                                    <property name="expand">True</property>
+                                                    <property name="expand">False</property>
                                                     <property name="fill">True</property>
                                                     <property name="position">1</property>
                                                   </packing>

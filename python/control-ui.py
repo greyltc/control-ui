@@ -24,9 +24,9 @@ import yaml
 
 # os.environ["DEBUSSY"] = "1"
 
-#gi.require_version("WebKit2", "4.0")
-#gi.require_version("Gtk", "3.0")
-#gi.require_version("Gdk", "3.0")
+gi.require_version("WebKit2", "4.0")
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
 # Gdk.set_allowed_backends('broadway')  # for gui over web
@@ -790,9 +790,21 @@ class App(Gtk.Application):
 
             # read the default recipe from the config and set the gui box to that
             if "solarsim" in self.config:
-                if "default_recipe" in self.config["solarsim"]:
+                if "recipes" in self.config["solarsim"]:
                     tb = self.b.get_object('light_recipe')
-                    tb.set_text(self.config["solarsim"]["default_recipe"])
+                    tb.set_text(self.config["solarsim"]["recipes"][0])
+                    tbc = self.b.get_object('light_recipe_combo')
+                    for recipe in self.config["solarsim"]["recipes"]:
+                        tbc.append_text(recipe)
+
+            # read the default recipe from the config and set the gui box to that
+            if "mppt" in self.config:
+                if "presets" in self.config["mppt"]:
+                    tb = self.b.get_object('mppt_params')
+                    tb.set_text(self.config["mppt"]["presets"][0])
+                    tbc = self.b.get_object('mppt_params_combo')
+                    for recipe in self.config["mppt"]["presets"]:
+                        tbc.append_text(recipe)
 
             # read the invert plot settings from the config and set the switches to that
             if 'plots' in self.config:
