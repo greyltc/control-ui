@@ -419,7 +419,7 @@ class App(Gtk.Application):
 
         # the refrence designator column
         ref_des_cell = Gtk.CellRendererText()
-        ref_des_col = Gtk.TreeViewColumn("Subs.", ref_des_cell, text=1, ypad=2)
+        ref_des_col = Gtk.TreeViewColumn("Slot", ref_des_cell, text=1, ypad=2)
         if substrate_tree.get_columns() == []:
             substrate_tree.append_column(ref_des_col)
 

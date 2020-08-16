@@ -547,8 +547,8 @@ Author: Greyson Christoforo
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Substrate info table</property>
-                                <property name="label" translatable="yes">Substrates</property>
+                                <property name="tooltip_text" translatable="yes">Table to configure what's in each position in the sample chamber</property>
+                                <property name="label" translatable="yes">Slot Configuration</property>
                               </object>
                             </child>
                           </object>
