@@ -790,9 +790,9 @@ class App(Gtk.Application):
 
             # read the default recipe from the config and set the gui box to that
             if "solarsim" in self.config:
-                if "default_recipe" in config["solarsim"]:
+                if "default_recipe" in self.config["solarsim"]:
                     tb = self.b.get_object('light_recipe')
-                    tb.set_text(config["solarsim"]["default_recipe"])
+                    tb.set_text(self.config["solarsim"]["default_recipe"])
 
             # read the invert plot settings from the config and set the switches to that
             if 'plots' in self.config:
