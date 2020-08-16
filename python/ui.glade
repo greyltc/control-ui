@@ -2772,13 +2772,12 @@ Author: Greyson Christoforo
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSwitch">
+                                  <object class="GtkSwitch" id="inv_v_switch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="tooltip_text" translatable="yes">Should the voltage values on these plots be multiplied by negative one?</property>
                                     <property name="halign">center</property>
                                     <property name="valign">center</property>
-                                    <property name="active">True</property>
                                     <signal name="state-set" handler="on_voltage_switch" swapped="no"/>
                                   </object>
                                   <packing>
@@ -2812,7 +2811,7 @@ Author: Greyson Christoforo
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSwitch">
+                                  <object class="GtkSwitch" id="inv_i_switch">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="tooltip_text" translatable="yes">Should the current values on these plots be multiplied by negative one?</property>
