@@ -2475,11 +2475,13 @@ Author: Greyson Christoforo
                       <object class="GtkFlowBoxChild">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
                           <object class="GtkFrame">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Round Robin Tasks will perform some function on every device selected (the union of IV and EQE selections)</property>
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
                             <child>
@@ -2518,8 +2520,8 @@ Author: Greyson Christoforo
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
-                                        <property name="tooltip_text" translatable="yes">Checks if all devices selected for measurement are loaded properly</property>
-                                        <signal name="clicked" handler="on_connectivity_button" swapped="no"/>
+                                        <property name="tooltip_text" translatable="yes">Checks the integrity of the 4-wire connection</property>
+                                        <signal name="clicked" handler="on_round_robin_button" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2533,9 +2535,9 @@ Author: Greyson Christoforo
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
-                                        <property name="tooltip_text" translatable="yes">Assumes there's an RTD loaded in each of the I-V bitmask devices, measures the temperature of each of those.</property>
+                                        <property name="tooltip_text" translatable="yes">Assumes every device selected is an RTD. Performs a 4-wire resistance measurement on each of those and converts it to temperature. Silently discards nonsense temperatures.</property>
                                         <property name="image_position">top</property>
-                                        <signal name="clicked" handler="on_RTD_button" swapped="no"/>
+                                        <signal name="clicked" handler="on_round_robin_button" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -2546,13 +2548,12 @@ Author: Greyson Christoforo
                                     <child>
                                       <object class="GtkButton">
                                         <property name="label" translatable="yes">Currents</property>
-                                        <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
                                         <property name="tooltip_text" translatable="yes">Instructs the sourcemeter to make a current measurement with all switches open, then cycles through all the I-V bitmask devices and does the same for each.</property>
                                         <property name="image_position">top</property>
                                         <property name="always_show_image">True</property>
-                                        <signal name="clicked" handler="on_current_button" swapped="no"/>
+                                        <signal name="clicked" handler="on_round_robin_button" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
