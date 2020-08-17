@@ -903,7 +903,6 @@ class App(Gtk.Application):
 
     def on_debug_button(self, button):
         lg.debug("Hello World!")
-        self.on_connectivity_button(None)
         self.b.get_object("run_but").set_sensitive(True)
         msg = {'cmd':'debug'}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
@@ -1098,9 +1097,15 @@ class App(Gtk.Application):
         else:
             lg.info(f"Load aborted.")
 
-
-    def on_connectivity_button(self, button):
-        lg.info("Connectivity check started")
+    def on_round_robin_button(self, button):
+        button_label = button.get_label()
+        this_type = "none"
+        if button_label == "Connectivity":
+            lg.info("Connectivity check started...")
+            this_type = "connectivity"
+        elif 'RTD' in button_label:
+            lg.info("Measuring RTD temperatures...")
+            this_type = "rtd"
         iv_dev_txt = self.b.get_object("iv_devs").get_text()
         iv_dev_num = int(iv_dev_txt, 16)
         eqe_dev_txt = self.b.get_object("eqe_devs").get_text()
@@ -1109,38 +1114,12 @@ class App(Gtk.Application):
         some_lists = self.bitmask_to_some_lists(hex(any_dev_num))
         msg = {
             'cmd':'round_robin',
-            'type': 'connectivity',
+            'type': this_type,
             'slots': some_lists['subs_names'],
             'pixels': some_lists['sub_dev_nums'],
             'pcb': self.config['controller']['address'],
             'smu': self.config['smu']
             }
-        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
-        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
-
-
-    def on_RTD_button(self, button):
-        lg.info("RTD temperature measurement started")
-        msg = {'cmd':'round_robin',
-        'type': 'rtd',
-        'devices': self.bitmask_to_some_lists(self.b.get_object("iv_devs").get_text())['selections'],
-        'pcb': self.config['controller']['address'],
-        'smu_address': self.config['smu']['address'],
-        'smu_baud': int(self.config['smu']['baud']),
-        }
-        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
-        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
-
-
-    def on_current_button(self, button):
-        lg.info("Current measurement started")
-        msg = {'cmd':'round_robin',
-        'type': 'current',
-        'devices': self.bitmask_to_some_lists(self.b.get_object("iv_devs").get_text())['selections'],
-        'pcb': self.config['controller']['address'],
-        'smu_address': self.config['smu']['address'],
-        'smu_baud': int(self.config['smu']['baud']),
-        }
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
