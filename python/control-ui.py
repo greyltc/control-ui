@@ -774,16 +774,16 @@ class App(Gtk.Application):
                 wvs.append(self.b.get_object("wv4"))
                 wvs.append(self.b.get_object("wv5"))
                 wvs.append(self.b.get_object("wv6"))
-                if "liv_data_uris" in self.config["network"]:
-                    for i,uri in enumerate(self.config["network"]['data_uris']):
+                if "live_data_uris" in self.config["network"]:
+                    for i,uri in enumerate(self.config["network"]['live_data_uris']):
                         if uri != "":
                             wvs[i].load_uri(uri)
                 
-                    if len(self.config["network"]['data_uris']) == 6:
+                    if len(self.config["network"]['live_data_uris']) == 6:
                         cvt_vis = True
 
             cvt = self.b.get_object("custom_view_tab")
-            cvt.set_visisible(cvt_vis)
+            cvt.set_visible(cvt_vis)
 
             # start MQTT client
             self._start_mqtt()
