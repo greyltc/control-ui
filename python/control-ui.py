@@ -903,6 +903,7 @@ class App(Gtk.Application):
 
     def on_debug_button(self, button):
         lg.debug("Hello World!")
+        self.on_connectivity_button(None)
         self.b.get_object("run_but").set_sensitive(True)
         msg = {'cmd':'debug'}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
@@ -1105,13 +1106,15 @@ class App(Gtk.Application):
         eqe_dev_txt = self.b.get_object("eqe_devs").get_text()
         eqe_dev_num = int(eqe_dev_txt, 16)
         any_dev_num = iv_dev_num|eqe_dev_num # combine the selections for the connectivity check
-        msg = {'cmd':'round_robin',
-        'type': 'connectivity',
-        'devices': self.bitmask_to_some_lists(hex(any_dev_num))['selections'],
-        'pcb': self.config['controller']['address'],
-        'smu_address': self.config['smu']['address'],
-        'smu_baud': int(self.config['smu']['baud']),
-        }
+        some_lists = self.bitmask_to_some_lists(hex(any_dev_num))
+        msg = {
+            'cmd':'round_robin',
+            'type': 'connectivity',
+            'slots': some_lists['subs_names'],
+            'pixels': some_lists['sub_dev_nums'],
+            'pcb': self.config['controller']['address'],
+            'smu': self.config['smu']
+            }
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
