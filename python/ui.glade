@@ -2861,6 +2861,34 @@ Author: Greyson Christoforo
                   </packing>
                 </child>
                 <child>
+                  <object class="GtkFixed" id="custom_view_tab">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkViewport">
+                        <property name="width_request">1200</property>
+                        <property name="height_request">600</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv6">
+                            <property name="name">wv5</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="title" translatable="yes">Custom View</property>
+                    <property name="position">3</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
@@ -2873,7 +2901,7 @@ Author: Greyson Christoforo
                   </object>
                   <packing>
                     <property name="title" translatable="yes">Log View</property>
-                    <property name="position">3</property>
+                    <property name="position">4</property>
                   </packing>
                 </child>
               </object>
