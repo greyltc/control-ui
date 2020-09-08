@@ -1308,6 +1308,14 @@ class App(Gtk.Application):
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
             self.mqttc.publish("measurement/run", pic_msg, qos=2).wait_for_publish()
 
+            save_file_name = run_name + '.dat'
+            this_file = (pathlib.Path.home() / save_file_name)
+            lg.info(f"Saving gui state to: {this_file}")
+
+            save_data = self.harvest_gui_data()
+            with open(this_file, "wb") as f:
+                pickle.dump(save_data,f,protocol=pickle.HIGHEST_PROTOCOL)
+
 
     # makes the gui dict more consumable for a backend
     def gui_to_args(self, gui_dict):
