@@ -1336,10 +1336,18 @@ class App(Gtk.Application):
         args['chan3'] = args['chan3_ma']/1000
         args['i_dwell_value'] = args['i_dwell_value_ma']/1000
 
-        args['substrate_labels'] = self.label_shadow
-        for i, lab in enumerate(args['substrate_labels']):
-            if lab == "":  # change empty labels to ref des
-                args['substrate_labels'][i] = self.substrate_designators[i]
+        args['substrate_labels'] = []
+        args['substrate_layouts'] = []
+        # substrate tree[0] = user label
+        # substrate tree[1] = ref des
+        # substrate tree[2] = ypad
+        # substrate tree[3] = layout name
+        for row in gui_dict['substrate_tree']['value']['table_list']:
+            if row[0] == "":
+                args['substrate_labels'].append(row[1])
+            else:
+                args['substrate_labels'].append(row[0])
+            args['substrate_layouts'].append(row[3])
 
         args['iv_subs_names'] = self.bitmask_to_some_lists(args['iv_devs'])['subs_names']
         args['iv_subs_dev_nums'] = self.bitmask_to_some_lists(args['iv_devs'])['sub_dev_nums']
