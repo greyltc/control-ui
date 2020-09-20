@@ -660,13 +660,6 @@ class App(Gtk.Application):
             self.num_pix = len(
                 self.config["substrates"]["layouts"][self.active_layout]["pixels"]
             )
-            #self.live_data_uri = []
-            
-            #self.live_data_uri.append(self.config["network"]["live_data_uri_1"])
-            #self.live_data_uri.append(self.config["network"]["live_data_uri_2"])
-            #self.live_data_uri.append(self.config["network"]["live_data_uri_3"])
-            #self.live_data_uri.append(self.config["network"]["live_data_uri_4"])
-            #self.live_data_uri.append(self.config["network"]["live_data_uri_5"])
 
             # stage specific stuff
             esl = self.config["stage"]["uri"].split('://')[1].split('/')[0]

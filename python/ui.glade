@@ -2606,6 +2606,7 @@ Author: Greyson Christoforo
                     <property name="height_request">-1</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="halign">center</property>
                     <property name="valign">start</property>
                     <property name="orientation">vertical</property>
                     <property name="baseline_position">top</property>
@@ -2861,26 +2862,23 @@ Author: Greyson Christoforo
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkFixed" id="custom_view_tab">
+                  <object class="GtkBox" id="custom_view_tab">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkViewport">
-                        <property name="width_request">1200</property>
-                        <property name="height_request">600</property>
+                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv6">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can_focus">True</property>
                         <child>
-                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv6">
-                            <property name="name">wv5</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <child>
-                              <placeholder/>
-                            </child>
-                          </object>
+                          <placeholder/>
                         </child>
                       </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>
