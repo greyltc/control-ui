@@ -595,14 +595,20 @@ Author: Greyson Christoforo
                                             <property name="margin_start">2</property>
                                             <property name="margin_end">2</property>
                                             <property name="margin_bottom">2</property>
+                                            <property name="editable">False</property>
                                             <property name="activates_default">True</property>
+                                            <property name="caps_lock_warning">False</property>
                                             <property name="secondary_icon_stock">gtk-execute</property>
                                             <property name="primary_icon_activatable">False</property>
+                                            <property name="primary_icon_sensitive">False</property>
                                             <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose I-V devices</property>
                                             <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose devices for I-V measurement</property>
                                             <signal name="changed" handler="on_devs_changed" swapped="no"/>
                                             <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
                                             <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
+                                            <style>
+                                              <class name=".monospace"/>
+                                            </style>
                                           </object>
                                         </child>
                                         <child type="label">
@@ -1664,9 +1670,12 @@ Author: Greyson Christoforo
                                         <property name="margin_start">2</property>
                                         <property name="margin_end">2</property>
                                         <property name="margin_bottom">2</property>
+                                        <property name="editable">False</property>
                                         <property name="activates_default">True</property>
+                                        <property name="caps_lock_warning">False</property>
                                         <property name="secondary_icon_stock">gtk-execute</property>
                                         <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_sensitive">False</property>
                                         <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose EQE devices</property>
                                         <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose EQE devices</property>
                                         <signal name="changed" handler="on_devs_changed" swapped="no"/>
