@@ -794,7 +794,7 @@ class App(Gtk.Application):
             # read the default recipe from the config and set the gui box to that
             if "solarsim" in self.config:
                 if "recipes" in self.config["solarsim"]:
-                    tb = self.b.get_object('light_recipe')
+                    tb = self.b.get_object('light_recipe') # the active (editable combox box item)
                     tb.set_text(self.config["solarsim"]["recipes"][0])
                     tbc = self.b.get_object('light_recipe_combo')
                     for recipe in self.config["solarsim"]["recipes"]:

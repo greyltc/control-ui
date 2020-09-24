@@ -26,8 +26,9 @@ mppt:
         - "gd://10:0.0001:10" # gd://alpha:min_step:NPLC --> alpha is the learning rate, min_step is the smallest possible voltage step, larger NPLC means slower, more accurate measurements
         - "basic://7:10" # basic://degrees:dwell_time --> larger degrees means wider exploration, larger dwell_time means longer dwell periods
 
-# i-v-t measurement settings
-ivt:
+# controls for how "smart mode" works
+smart_mode:
+    enabled: false
     # when using smart mode, start scan 1 and end scan 2 this many percent higher than Voc
     # bigger numbers here give better fitting for series resistance at an incresed danger of pushing too much current through the device
     percent_beyond_voc: 25
@@ -38,22 +39,24 @@ ivt:
 
 network:
     MQTTHOST: "127.0.0.1"
-    live_data_uri_1: "http://127.0.0.1:8051/"
-    live_data_uri_2: "http://127.0.0.1:8052/"
-    live_data_uri_3: "http://127.0.0.1:8053/"
-    live_data_uri_4: "http://127.0.0.1:8054/"
-    live_data_uri_5: "http://127.0.0.1:8055/"
+    live_data_uris:
+        - "http://127.0.0.1:8051/"  # V vs T plot
+        - "http://127.0.0.1:8052/"  # J vs V plot
+        - "http://127.0.0.1:8053/"  # MPPT plots
+        - "http://127.0.0.1:8054/"  # J vs T plot
+        - "http://127.0.0.1:8055/"  # EQE plot
+#        - "https://duckduckgo.com/" # custom webview tab
 
 visa:
     visa_lib: '@py'
 
-# stage and mux controller
+# stage and mux controller netowrk address
 controller:
     address: "10.42.0.239"
 
 # source-measure unit(s)
 smu:
-    active: true
+    enabled: true
     address: ASRL/dev/ttyS0::INSTR
     #address: GPIB::24::INSTR
     baud: 57600
@@ -65,7 +68,7 @@ smu:
     two_wire: false
 
 solarsim:
-    active: false
+    enabled: false
     #uri: wavelabs://0.0.0.0:3334
     uri: wavelabs-relay://127.0.0.1:3335
     recipes: ["am1_5_1_sun", "Christo Disco"]
@@ -73,14 +76,16 @@ solarsim:
 
 # lock-in amplifier
 lia:
-    active: false
-    address: ASRL/dev/ttyUSB1::INSTR
+    enabled: false
+    address: ASRL/dev/ttyUSB0::INSTR
     terminator: "\r"
     baud: 9600
     output_interface: 0
+    auto_gain_method: instr  # user or instr
+    ratio: true  # true to use AUX1 input signal to account for lamp output drift
 
 monochromator:
-    active: false
+    enabled: false
     address: ASRL/dev/ttyUSB2::INSTR
     terminator: "\r"
     baud: 9600
@@ -89,6 +94,7 @@ monochromator:
 
 # LED power supply unit
 psu:
+    enabled: false
     address: TCPIP0::192.168.1.235::INSTR
     terminator: "\r"
     baud: 9600
@@ -100,7 +106,7 @@ psu:
     ch3_ocp : 0.0
 
 stage:
-    active: true
+    enabled: true
     # stage connection URI
     # tells the system how to talk to the stage.
     # format = controller-type://list,of,expected,travel,lengths,in,mm/steps_per_mm/list of lists of keepout zones per axis/extra_info
@@ -112,7 +118,7 @@ stage:
     # the final field contains extra info for controlling the stage, for example "otter" tells the system to use a special homing procedure specific to one hardware setup
     uri: us://375/6400
     #uri: us://125/6400
-    # approx mm/s
+    # approx mm/s (used for timing calculations only, does not actually set speed)
     speed: 29
     experiment_positions:
         solarsim: [174]
