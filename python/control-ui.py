@@ -775,8 +775,8 @@ class App(Gtk.Application):
                     if len(self.config["network"]['live_data_uris']) == 6:
                         cvt_vis = True
 
-            cvt = self.b.get_object("custom_view_tab")
-            cvt.set_visible(cvt_vis)
+            cwv = self.b.get_object("wv6")
+            cwv.set_visible(cvt_vis)
 
             # start MQTT client
             self._start_mqtt()
