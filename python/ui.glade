@@ -2397,7 +2397,7 @@ Author: Greyson Christoforo
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
                             <child>
-                              <object class="GtkBox">
+                              <object class="GtkBox" id="stage_util">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="orientation">vertical</property>
@@ -2422,7 +2422,7 @@ Author: Greyson Christoforo
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkLabel">
+                                      <object class="GtkLabel" id="places_label">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="label" translatable="yes">Load Config Position:</property>
@@ -2436,7 +2436,7 @@ Author: Greyson Christoforo
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkComboBox">
+                                      <object class="GtkComboBox" id="places_combo">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="model">places_list</property>

@@ -26,6 +26,12 @@ mppt:
         - "gd://10:0.0001:10" # gd://alpha:min_step:NPLC --> alpha is the learning rate, min_step is the smallest possible voltage step, larger NPLC means slower, more accurate measurements
         - "basic://7:10" # basic://degrees:dwell_time --> larger degrees means wider exploration, larger dwell_time means longer dwell periods
 
+# controls automatic gui config saving every time the run button is pressed
+config_autosave:
+    enabled: true
+    # relative paths are relative to the user's home dir
+    path: runconfigs
+
 # controls for how "smart mode" works
 smart_mode:
     enabled: false
@@ -123,7 +129,12 @@ stage:
     experiment_positions:
         solarsim: [174]
 #        eqe: [800, 250]
-    custom_positions: {"Load Position": [355], "Grey's fav spot": [88.54241], "Midway": [187.5], "Light center": [174], "Offline Position": [20]}
+    # these just show up in a list in the gui to make it easier to move somewhere
+    custom_positions:
+        Load Position: [355]
+        Grey's fav spot: [88.54241]
+        Midway: [187.5]
+        Offline Position: [20]
 
 substrates:
   # list of number of substrates along each available axis: [x-direction, y-direction]

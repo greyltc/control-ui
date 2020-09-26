@@ -697,13 +697,28 @@ class App(Gtk.Application):
                 o.set_visible(False)
 
             # handle custom locations
-            location_names = self.config["stage"]["custom_positions"].keys()
-            pl = self.b.get_object("places_list")
+            pl = self.b.get_object("places_list")  # a tree model
             self.custom_coords = []
-            for name in location_names:
-                coord = self.config["stage"]["custom_positions"][name]
-                self.custom_coords.append(coord)
-                pl.append([name])
+            if 'stage' in self.config:
+                if "experiment_positions" in self.config["stage"]:
+                    for key, val in self.config["stage"]["experiment_positions"].items():
+                        pl.append(['EXPERIMENT -- ' + key])
+                        self.custom_coords.append(val)
+
+                if "custom_positions" in self.config["stage"]:
+                    for key, val in self.config["stage"]["custom_positions"].items():
+                        pl.append([key])
+                        self.custom_coords.append(val)
+                
+                if "enabled" in self.config["stage"]:
+                    if self.config["stage"]["enabled"] != True:
+                        self.b.get_object("stage_uil").set_visible(False)
+            else:
+                self.b.get_object("stage_uil").set_visible(False)
+            
+            if len(self.custom_coords) == 0:
+                self.b.get_object("places_combo").set_visible(False)
+                self.b.get_object("places_label").set_visible(False)
             
             # do layout things
             self.layouts = ['Unknown']
@@ -725,7 +740,7 @@ class App(Gtk.Application):
             self.dev_tree = self.b.get_object("devTV")
             self.setup_dev_tree(self.dev_tree)
 
-            # TODO: do this in a non-obsolete way (probably w/ css)
+            # TODO: do this in a non-obsolete way (probably w/ css somehow)
             fontdesc = Pango.FontDescription("monospace")
 
             max_devices = self.num_pix * self.num_substrates
@@ -1312,21 +1327,39 @@ class App(Gtk.Application):
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
         if (self.move_warning() == Gtk.ResponseType.OK):
-            self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
             run_name = self.b.get_object("run_name").get_text()
-            lg.info(f"Starting new run: {run_name}")
+            gui_data = self.harvest_gui_data()
 
-            msg = {"cmd":"run", "args": self.gui_to_args(self.harvest_gui_data()), "config": self.config}
+            autosave_config = True
+            if 'config_autosave' in self.config:
+                if 'enabled' in self.config['config_autosave']:
+                    if self.config['config_autosave']['enabled'] != True:
+                       autosave_config = False
+                    else:
+                        if 'path' in self.config['config_autosave']:
+                            user_autosave_path = self.config['config_autosave']['path']
+            
+            if autosave_config == True:
+                autosave_file_name = run_name + '_autosave.dat'
+                if 'user_autosave_path' in locals():
+                    if os.path.isabs(user_autosave_path):
+                        autosave_pathname = pathlib.Path(user_autosave_path)
+                    else:
+                        autosave_pathname = pathlib.Path.home() / user_autosave_path
+                else:
+                    autosave_pathname = pathlib.Path.home()
+                autosave_pathname.mkdir(parents=True, exist_ok=True)
+                autosave_destination = (autosave_pathname / autosave_file_name)
+                lg.info(f"Autosaving gui state to: {autosave_destination}")
+                with open(autosave_destination, "wb") as f:
+                    pickle.dump(gui_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            msg = {"cmd":"run", "args": self.gui_to_args(gui_data), "config": self.config}
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+            # publish the run message
+            lg.info(f"Starting new run: {run_name}")
+            self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
             self.mqttc.publish("measurement/run", pic_msg, qos=2).wait_for_publish()
-
-            save_file_name = run_name + '_autosave.dat'
-            this_file = (pathlib.Path.home() / save_file_name)
-            lg.info(f"Saving gui state to: {this_file}")
-
-            save_data = self.harvest_gui_data()
-            with open(this_file, "wb") as f:
-                pickle.dump(save_data,f,protocol=pickle.HIGHEST_PROTOCOL)
 
 
     # makes the gui dict more consumable for a backend
