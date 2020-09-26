@@ -558,7 +558,7 @@ Author: Greyson Christoforo
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkFrame">
+                          <object class="GtkFrame" id="iv_frame">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="valign">start</property>
@@ -601,7 +601,6 @@ Author: Greyson Christoforo
                                             <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose devices for I-V measurement</property>
                                             <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose devices for I-V measurement</property>
                                             <signal name="changed" handler="on_devs_changed" swapped="no"/>
-                                            <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
                                             <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
                                             <style>
                                               <class name=".monospace"/>
@@ -623,7 +622,7 @@ Author: Greyson Christoforo
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkBox">
+                                      <object class="GtkBox" id="ss_box">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="spacing">5</property>
@@ -1262,7 +1261,7 @@ Author: Greyson Christoforo
                                               </packing>
                                             </child>
                                             <child>
-                                              <object class="GtkBox">
+                                              <object class="GtkBox" id="ill_box">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
                                                 <property name="spacing">5</property>
@@ -1640,7 +1639,7 @@ Author: Greyson Christoforo
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkFrame">
+                          <object class="GtkFrame" id="eqe_frame">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="valign">start</property>
@@ -1679,7 +1678,6 @@ Author: Greyson Christoforo
                                         <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose EQE devices</property>
                                         <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose EQE devices</property>
                                         <signal name="changed" handler="on_devs_changed" swapped="no"/>
-                                        <signal name="focus-out-event" handler="on_devs_focus_out_event" swapped="no"/>
                                         <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
                                         <style>
                                           <class name=".monospace"/>
@@ -1908,7 +1906,7 @@ Author: Greyson Christoforo
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkFrame">
+                                  <object class="GtkFrame" id="psu_frame">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="label_xalign">0</property>
@@ -2276,7 +2274,7 @@ Author: Greyson Christoforo
                           </packing>
                         </child>
                         <child>
-                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv4">
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="jt_wv">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
@@ -2291,7 +2289,7 @@ Author: Greyson Christoforo
                           </packing>
                         </child>
                         <child>
-                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv1">
+                          <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="vt_wv">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
@@ -2312,7 +2310,7 @@ Author: Greyson Christoforo
                       </packing>
                     </child>
                     <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv2">
+                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="iv_wv">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -2325,7 +2323,7 @@ Author: Greyson Christoforo
                       </packing>
                     </child>
                     <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv5">
+                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="eqe_wv">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -2338,7 +2336,7 @@ Author: Greyson Christoforo
                       </packing>
                     </child>
                     <child>
-                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv3">
+                      <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="mppt_wv">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -2364,7 +2362,7 @@ Author: Greyson Christoforo
                     <property name="valign">start</property>
                     <property name="selection_mode">none</property>
                     <child>
-                      <object class="GtkFlowBoxChild">
+                      <object class="GtkFlowBoxChild" id="home_util">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
@@ -2385,7 +2383,7 @@ Author: Greyson Christoforo
                       </object>
                     </child>
                     <child>
-                      <object class="GtkFlowBoxChild">
+                      <object class="GtkFlowBoxChild" id="stage_util">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
@@ -2397,7 +2395,7 @@ Author: Greyson Christoforo
                             <property name="label_xalign">0</property>
                             <property name="shadow_type">etched-out</property>
                             <child>
-                              <object class="GtkBox" id="stage_util">
+                              <object class="GtkBox">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="orientation">vertical</property>
@@ -2601,7 +2599,7 @@ Author: Greyson Christoforo
                       </object>
                     </child>
                     <child>
-                      <object class="GtkFlowBoxChild">
+                      <object class="GtkFlowBoxChild" id="bias_light_util">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
@@ -2621,7 +2619,7 @@ Author: Greyson Christoforo
                       </object>
                     </child>
                     <child>
-                      <object class="GtkFlowBoxChild">
+                      <object class="GtkFlowBoxChild" id="eqe_util">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
@@ -2671,7 +2669,9 @@ Author: Greyson Christoforo
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Toggles between closing the mux switches to connect the first device selected in the I-V device bitmask and opening all switches</property>
+                            <property name="tooltip_text" translatable="yes">Toggles between A&amp;B:
+A -- The first device selected in the I-V device bitmask is connected
+B -- All devices are disconnected</property>
                             <property name="image_position">top</property>
                             <property name="always_show_image">True</property>
                             <signal name="clicked" handler="on_device_toggle" swapped="no"/>
@@ -2699,7 +2699,7 @@ Author: Greyson Christoforo
                       </object>
                     </child>
                     <child>
-                      <object class="GtkFlowBoxChild">
+                      <object class="GtkFlowBoxChild" id="eqe_relay_util">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
@@ -2823,7 +2823,7 @@ Author: Greyson Christoforo
                       </object>
                     </child>
                     <child>
-                      <object class="GtkFlowBoxChild">
+                      <object class="GtkFlowBoxChild" id="mono_util">
                         <property name="width_request">100</property>
                         <property name="height_request">80</property>
                         <property name="visible">True</property>
@@ -2847,7 +2847,7 @@ Author: Greyson Christoforo
                   </packing>
                 </child>
                 <child>
-                  <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="wv6">
+                  <object class="WebKitWebView" type-func="webkit_web_view_get_type" id="custom_wv">
                     <property name="height_request">600</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>

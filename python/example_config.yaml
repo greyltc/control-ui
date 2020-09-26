@@ -143,19 +143,17 @@ substrates:
     # spacing in mm between substrate centers along each available axis
     #spacing: [35, 29]
     spacing: [40]
-    # List of available pixel layout names. Additional info about each layout is given
-    # it's named sub-section in the "layouts" sub-section below.
-    layout_names: [6px_1in]
-    # for clients that only accept one layout, use this layout
-    active_layout: 6xbpw34_30mm
 
     # pixel layout info
+    # the first one listed here will be considered the default
     layouts:
         # layout name
         6px_1in:
-            # pcb adapter name
+            # enabled means the layout is something that can be selected in the GUI
+            enabled: true
+            # which of the the (changeable) PCB adapter boards are in use for this layout
             pcb_name: 6px_1in_pcb
-            # pcb pin numbers to use
+             # list of pixel numbers that should be enabled for this layout
             pixels: [1, 2, 3, 4, 5, 6]
             # List of position vectors of each pixel in use on each substrate.
             # Positions are given in mm relative to the substrate center.
@@ -163,23 +161,33 @@ substrates:
             # vectors, e.g. for an x,y stage the list would be formatted as:
             # [[pixel1_x, pixel1_y], [pixel2_x, pixel2_y], ...]
             # There should be a pixel position vector for every force pin on the adpater pcb, even
-            # for pixels that are unused. Unused pixels can set to [0, ...].
+            # for pixels that are unused. Unused pixels can be set to [0, ...].
             positions: [[-5, -5], [-5, 5], [0, -5], [0, 5], [5, -5], [5, 5]]
             # list of areas in cm^2 of each pixel on a substrate
             areas: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
         4px_30mm:
+            enabled: true
             pcb_name: 6px_30mm_pcb
             pixels: [1, 3, 4, 5]
             positions: [[-6, -6], [0, 0], [0, -6], [0, 6], [6, -6], [0, 0]]
             areas: [0.15, 0, 1.0, 0.15, 0.15, 0]
-            
+
         # oxford photodiode boards
         6xbpw34_30mm:
+            enabled: true
             pcb_name: 6px_30mm_pcb
             pixels: [1, 2, 3, 4, 5, 6]
             positions: [[-7.5], [-7.5], [0], [0], [7.5], [7.5]]
             areas: [0.0702, 0.0702, 0.0702, 0.0702, 0.0702, 0.0702]
+
+        # nothing in the slot
+        Empty:
+            enabled: true
+            pcb_name: 6px_30mm_pcb
+            pixels: []
+            positions: []
+            areas: []
         
     # pcb adapter info
     adapters:

@@ -219,16 +219,17 @@ class App(Gtk.Application):
         for store in dev_stores:
             checked = True
             inconsistent = False
+            store.clear()
             top = store.append(None, ['All', checked, inconsistent])
             # fill in the model
-            for i in range(num_substrates):
+            for i in range(num_substrates):  # iterate through substrates 
                 if substrate_store[i][0] == "":
                     label = substrate_store[i][1]
                 else:
                     label = substrate_store[i][0]
                 piter = store.append(top, [label, checked, inconsistent])
                 j = 1
-                while j <= num_pix:
+                while j <= num_pix[i]:  # iterate through pixels on that substrate 
                     store.append(piter, [f"Device {j}", checked, inconsistent])
                     j += 1
 
@@ -289,12 +290,15 @@ class App(Gtk.Application):
             citer = self.dev_store[eqe].iter_children(piter) # iterator for the first sibling of my parent
             # check if all the children are selected
             num_selected = 0
+            num_deselected = 0
             while citer is not None:
                 if self.dev_store[eqe][citer][1] is True:
                     num_selected = num_selected + 1
+                else:
+                    num_deselected = num_deselected + 1
                 citer = self.dev_store[eqe].iter_next(citer)
             # if they are, the device as well is selected; otherwise it is not
-            if num_selected == self.num_pix: # all siblings selected, then substrate selected, consitent
+            if num_deselected == 0: # all siblings selected, then substrate selected, consitent
                 self.dev_store[eqe][piter][2] = False
                 self.dev_store[eqe][piter][1] = True
             elif num_selected == 0:  # all siblings deselected, then substrate deselected, consitent
@@ -308,12 +312,15 @@ class App(Gtk.Application):
         selection_bitmask = 0
         bit_location = 0
         total_enabled = 0
+        total_disenabled = 0
         while siter is not None:
             diter = self.dev_store[eqe].iter_children(siter)  # device iterator
             while diter is not None:
                 if self.dev_store[eqe][diter][1] is True:
                     selection_bitmask = selection_bitmask + (1 << bit_location)
                     total_enabled += 1
+                else:
+                    total_disenabled += 1
                 bit_location = bit_location + 1
                 diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
             siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
@@ -323,7 +330,7 @@ class App(Gtk.Application):
         if total_enabled == 0:
             self.dev_store[eqe][top][1] = False  # set top off
             self.dev_store[eqe][top][2] = False  # set top consistent
-        elif total_enabled == self.num_pix*self.num_substrates:
+        elif total_disenabled == 0:
             self.dev_store[eqe][top][1] = True  # set top on
             self.dev_store[eqe][top][2] = False  # set top consistent
         else:
@@ -369,21 +376,6 @@ class App(Gtk.Application):
                 #self.measure_note(selection_bitmask, self.approx_seconds_per_iv)
         else:
             editable.set_icon_from_icon_name(0, "dialog-error")
-
-    def on_devs_focus_out_event(self, widget, user_data=None):
-        eqe = "eqe" in Gtk.Buildable.get_name(widget)
-        text_is = widget.get_text()
-        try:
-            selection_bitmask = int(text_is, 16)
-            should_be = f"0x{selection_bitmask:{self.def_fmt_str}}"
-            if text_is == should_be:
-                return
-            widget.set_text(should_be)
-            self.last_valid_devs[eqe] = should_be
-        except:
-            widget.set_text(self.last_valid_devs[eqe])
-            lg.warn(f"Bad device selection reverted")
-        widget.set_icon_from_icon_name(0, "emblem-default")
 
     def update_measure_count(self, eqe):
         if eqe == True:
@@ -656,50 +648,15 @@ class App(Gtk.Application):
             )
             self.num_substrates = len(self.substrate_designators)
 
-            self.active_layout = self.config["substrates"]["active_layout"]
-            self.num_pix = len(
-                self.config["substrates"]["layouts"][self.active_layout]["pixels"]
-            )
-
-            # stage specific stuff
-            esl = self.config["stage"]["uri"].split('://')[1].split('/')[0]
-            if ',' in esl:
-                esl = [float(x) for x in esl.split(',')]
-            else:
-                esl = [float(esl)]
-            length_oom = max([math.ceil(math.log10(x)) for x in esl])
-            steps_per_mm = int(self.config["stage"]["uri"].split('://')[1].split('/')[1])
-            movement_res = 1/steps_per_mm
-            movement_res_oom = abs(math.floor(math.log10(movement_res)))
-            goto_field_width = length_oom + 1 + movement_res_oom
-
-            self.gotos = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
-            adjusters = [self.b.get_object("stage_x_adj"), self.b.get_object("stage_y_adj"), self.b.get_object("stage_z_adj")]
-            end_buffer_in_mm = 5 # don't allow the user to go less than this from the ends
-            for i, axlen in enumerate(esl):
-                self.gotos[i].set_width_chars(goto_field_width)
-                self.gotos[i].set_digits(movement_res_oom)
-                adjusters[i].set_value(axlen/2)
-                adjusters[i].set_lower(end_buffer_in_mm)
-                adjusters[i].set_upper(axlen-end_buffer_in_mm)
-
-            # hide unused axes
-            self.num_axes = len(esl)
-            if self.num_axes < 3:
-                o = self.b.get_object("gtzl")
-                o.set_visible(False)
-                o = self.b.get_object("goto_z")
-                o.set_visible(False)
-            if self.num_axes < 2:
-                o = self.b.get_object("gtyl")
-                o.set_visible(False)
-                o = self.b.get_object("goto_y")
-                o.set_visible(False)
-
-            # handle custom locations
+            # handle custom locations and stage stuff
             pl = self.b.get_object("places_list")  # a tree model
             self.custom_coords = []
+            enable_stage = False
             if 'stage' in self.config:
+                if "enabled" in self.config["stage"]:
+                    if self.config["stage"]["enabled"] == True:
+                        enable_stage = True
+
                 if "experiment_positions" in self.config["stage"]:
                     for key, val in self.config["stage"]["experiment_positions"].items():
                         pl.append(['EXPERIMENT -- ' + key])
@@ -709,22 +666,136 @@ class App(Gtk.Application):
                     for key, val in self.config["stage"]["custom_positions"].items():
                         pl.append([key])
                         self.custom_coords.append(val)
+
+            if enable_stage == True:
+                if len(self.custom_coords) == 0:
+                    self.b.get_object("places_combo").set_visible(False)
+                    self.b.get_object("places_label").set_visible(False)
+
+                # stage specific stuff
+                stage_uri_split = self.config["stage"]["uri"].split('://')
+                stage_protocol = stage_uri_split[0]
+                stage_address = stage_uri_split[1]
+                stage_address_split = stage_address.split('/')
+                esl = stage_address_split[0]
+                steps_per_mm = int(stage_address_split[1])
+                if ',' in esl:
+                    esl = [float(x) for x in esl.split(',')]
+                else:
+                    esl = [float(esl)]
+                length_oom = max([math.ceil(math.log10(x)) for x in esl])
                 
-                if "enabled" in self.config["stage"]:
-                    if self.config["stage"]["enabled"] != True:
-                        self.b.get_object("stage_uil").set_visible(False)
+                movement_res = 1/steps_per_mm
+                movement_res_oom = abs(math.floor(math.log10(movement_res)))
+                goto_field_width = length_oom + 1 + movement_res_oom
+
+                self.gotos = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
+                adjusters = [self.b.get_object("stage_x_adj"), self.b.get_object("stage_y_adj"), self.b.get_object("stage_z_adj")]
+                end_buffer_in_mm = 5 # don't allow the user to go less than this from the ends
+                for i, axlen in enumerate(esl):
+                    self.gotos[i].set_width_chars(goto_field_width)
+                    self.gotos[i].set_digits(movement_res_oom)
+                    adjusters[i].set_value(axlen/2)
+                    adjusters[i].set_lower(end_buffer_in_mm)
+                    adjusters[i].set_upper(axlen-end_buffer_in_mm)
+
+                # hide unused axes
+                self.num_axes = len(esl)
+                if self.num_axes < 3:
+                    o = self.b.get_object("gtzl")
+                    o.set_visible(False)
+                    o = self.b.get_object("goto_z")
+                    o.set_visible(False)
+                if self.num_axes < 2:
+                    o = self.b.get_object("gtyl")
+                    o.set_visible(False)
+                    o = self.b.get_object("goto_y")
+                    o.set_visible(False)
+            else: # there is no stage
+                self.b.get_object("stage_util").set_visible(False)
+                self.b.get_object("home_util").set_visible(False)
+
+            # do lockin things
+            enable_lia = False
+            if 'lia' in self.config:
+                if "enabled" in self.config["lia"]:
+                    if self.config["lia"]["enabled"] == True:
+                        enable_lia = True
+
+            # do mono things
+            enable_mono = False
+            if 'monochromator' in self.config:
+                if "enabled" in self.config["monochromator"]:
+                    if self.config["monochromator"]["enabled"] == True:
+                        enable_mono = True
+
+            # do smu things
+            enable_smu = False
+            if 'smu' in self.config:
+                if "enabled" in self.config["smu"]:
+                    if self.config["smu"]["enabled"] == True:
+                        enable_smu = True
+
+            # do solarsim things
+            enable_solarsim = False
+            if 'solarsim' in self.config:
+                if "enabled" in self.config["solarsim"]:
+                    if self.config["solarsim"]["enabled"] == True:
+                        enable_solarsim = True
+
+            # do psu things
+            enable_psu = False
+            if 'psu' in self.config:
+                if "enabled" in self.config["psu"]:
+                    if self.config["psu"]["enabled"] == True:
+                        enable_solarsim = True
+
+            enable_eqe = False
+            if (enable_mono == True) and (enable_lia == True) and (enable_smu == True):
+                enable_eqe = True
+            
+            enable_iv = False
+            if (enable_smu == True):
+                enable_iv = True
+
+            if enable_eqe == False:
+                self.b.get_object("eqe_frame").set_visible(False)
+                self.b.get_object("eqe_util").set_visible(False)
+                self.b.get_object("eqe_wv").set_visible(False)
             else:
-                self.b.get_object("stage_uil").set_visible(False)
-            
-            if len(self.custom_coords) == 0:
-                self.b.get_object("places_combo").set_visible(False)
-                self.b.get_object("places_label").set_visible(False)
-            
+                if enable_psu == False:
+                    self.b.get_object("psu_frame").set_visible(False)
+
+            if enable_iv == False:
+                self.b.get_object("iv_frame").set_visible(False)
+                self.b.get_object("vt_wv").set_visible(False)
+                self.b.get_object("iv_wv").set_visible(False)
+                self.b.get_object("mppt_wv").set_visible(False)
+                self.b.get_object("jt_wv").set_visible(False)
+            else:
+                if enable_solarsim == False:
+                    self.b.get_object("ss_box").set_visible(False)
+                    self.b.get_object("ill_box").set_visible(False)
+
+            if (enable_smu == False) or (enable_psu == False):
+                self.b.get_object("bias_light_util").set_visible(False)
+
+            if (enable_iv == False) or (enable_eqe == False):
+                self.b.get_object("eqe_relay_util").set_visible(False)
+
+            if (enable_mono == False):
+                self.b.get_object("mono_util").set_visible(False)
+
             # do layout things
-            self.layouts = ['Unknown']
+            self.layouts = []  # list of enabled layouts
+            self.npix = []  # number of pixels for each layout
             if 'substrates' in self.config:
-                if 'layout_names' in self.config['substrates']:
-                    self.layouts = self.config['substrates']['layout_names']
+                if 'layouts' in self.config['substrates']:
+                    for layout_name, val in self.config['substrates']['layouts'].items():
+                        if 'enabled' in val:
+                            if val['enabled'] == True:
+                                self.layouts.append(layout_name)
+                                self.npix.append(len(val['pixels']))
 
             ns = self.num_substrates
             self.substrate_tree, self.substrate_store = self.setup_substrate_tree(['']*ns, self.substrate_designators, [0]*ns, [self.layouts[0]]*ns)
@@ -735,7 +806,8 @@ class App(Gtk.Application):
                 Gtk.TreeStore(str, bool, bool),
                 Gtk.TreeStore(str, bool, bool),
             ]  # [iv devs, eqe devs]
-            self.setup_dev_stores(self.num_substrates, self.num_pix, self.dev_store, self.substrate_store)
+            self.spix = [self.npix[0]]*self.num_substrates  # list containing the number of pixels each substrate has
+            self.setup_dev_stores(self.num_substrates, self.spix, self.dev_store, self.substrate_store)
 
             self.dev_tree = self.b.get_object("devTV")
             self.setup_dev_tree(self.dev_tree)
@@ -743,13 +815,15 @@ class App(Gtk.Application):
             # TODO: do this in a non-obsolete way (probably w/ css somehow)
             fontdesc = Pango.FontDescription("monospace")
 
-            max_devices = self.num_pix * self.num_substrates
-            address_string_length = math.ceil(max_devices / 4)
-            selection_box_length = 4 + address_string_length + 3
-            default_on = "0x" + "F" * address_string_length
-            default_off = "0x" + "0" * address_string_length
+            abs_max_devices = max(self.npix) * self.num_substrates
+            max_devices = self.npix[0] * self.num_substrates
+            max_address_string_length = math.ceil(abs_max_devices / 4)
+            selection_box_length = max_address_string_length + 3
 
-            self.def_fmt_str = f"0{address_string_length}X"
+            self.def_fmt_str = f"0{max_address_string_length}X"
+
+            default_on = f"0x{int('1'*max_devices,2):{self.def_fmt_str}}"
+            default_off = f"0x{0:{self.def_fmt_str}}"
 
             self.iv_dev_box = self.b.get_object("iv_devs")
 
@@ -759,13 +833,13 @@ class App(Gtk.Application):
             self.iv_dev_box.modify_font(fontdesc)
             self.iv_dev_box.set_text(default_on)
             self.iv_dev_box.set_width_chars(selection_box_length)
-            self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
+            #self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
 
             self.eqe_dev_box = self.b.get_object("eqe_devs")
             self.eqe_dev_box.modify_font(fontdesc)
             self.eqe_dev_box.set_text(default_off)
             self.eqe_dev_box.set_width_chars(selection_box_length)
-            self.eqe_dev_box.set_icon_from_icon_name(0, "emblem-default")
+            #self.eqe_dev_box.set_icon_from_icon_name(0, "emblem-default")
 
             self.po = self.b.get_object("picker_po")
             self.po.set_position(Gtk.PositionType.BOTTOM)
@@ -774,13 +848,12 @@ class App(Gtk.Application):
             self.approx_seconds_per_eqe = 150
 
             cvt_vis = False
-            self.wvs = []  # the webviews
-            self.wvs.append(self.b.get_object("wv1"))  # order here must match config file order
-            self.wvs.append(self.b.get_object("wv2"))
-            self.wvs.append(self.b.get_object("wv3"))
-            self.wvs.append(self.b.get_object("wv4"))
-            self.wvs.append(self.b.get_object("wv5"))
-            self.wvs.append(self.b.get_object("wv6"))
+            self.wvids = []
+            self.wvids.append("vt_wv")
+            self.wvids.append("iv_wv")
+            self.wvids.append("mppt_wv")
+            self.wvids.append("jt_wv")
+            self.wvids.append("eqe_wv")
 
             self.uris = []  # the uris to put in the webviews
             if "network" in self.config:
@@ -792,7 +865,7 @@ class App(Gtk.Application):
                         cvt_vis = True
 
             # set the custom view tab visible or not
-            self.b.get_object("wv6").set_visible(cvt_vis)
+            self.b.get_object("custom_wv").set_visible(cvt_vis)
 
             # start MQTT client
             self._start_mqtt()
@@ -865,20 +938,22 @@ class App(Gtk.Application):
         self.main_win.present()
 
     def load_live_data_webviews(self, load):
-        # load only the first 5 URIs (for the live data view)
-        for i in range(5):
-            if load == True:
-                self.wvs[i].load_uri(self.uris[i])
-            else:
-                self.wvs[i].stop_loading()
+        for i,wvid in enumerate(self.wvids):
+            wv = self.b.get_object(wvid)
+            if wv.get_visible() == True:
+                if load == True:
+                    wv.load_uri(self.uris[i])
+                else:
+                    wv.stop_loading()
 
     # must only get called if this tab is visible
     def load_custom_webview(self, load):
-        # should always be the last webview and uri
-        if load == True:
-            self.wvs[-1].load_uri(self.uris[-1])
-        else:
-            self.wvs[-1].stop_loading()
+        wv = self.b.get_object("custom_wv")
+        if wv.get_visible() == True:
+            if load == True:
+                wv.load_uri(self.uris[-1])  # should always be the last webview and uri
+            else:
+                wv.stop_loading()
 
     # gets called when the user selects a custom position
     def on_load_pos(self, cb):
@@ -963,33 +1038,31 @@ class App(Gtk.Application):
         siter = self.dev_store[eqe].get_iter("0:0")  # first substrate iterator
         bit_location = 0
         total_enabled = 0
+        total_disabled = 0
         while siter is not None:
             num_enabled = 0  # keeps track of number of enabled devices on this substrate
+            num_disabled = 0
             diter = self.dev_store[eqe].iter_children(siter)  # device iterator
             while diter is not None:
-                if (bit_location + 1 <= len(bin_mask_rev)) and (
-                    bin_mask_rev[bit_location] == "1"
-                ):
+                if (bit_location + 1 <= len(bin_mask_rev)) and (bin_mask_rev[bit_location] == "1"):
                     self.dev_store[eqe][diter][1] = True
-                    num_enabled = num_enabled + 1
+                    num_enabled += 1
                 else:
                     self.dev_store[eqe][diter][1] = False
+                    num_disabled += 1
                 bit_location = bit_location + 1
-                diter = self.dev_store[eqe].iter_next(
-                    diter
-                )  # advance to the next device
+                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
             if num_enabled == 0:
                 self.dev_store[eqe][siter][1] = False  # set substrate off
                 self.dev_store[eqe][siter][2] = False  # set substrate consistent
-            elif num_enabled == self.num_pix:
+            elif num_disabled == 0:
                 self.dev_store[eqe][siter][1] = True  # set substrate on
                 self.dev_store[eqe][siter][2] = False  # set substrate consistent
             else:
                 self.dev_store[eqe][siter][2] = True  # set substrate inconsistant
-            siter = self.dev_store[eqe].iter_next(
-                siter
-            )  # advance to the next substrate
+            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
             total_enabled += num_enabled
+            total_disabled += num_disabled
         
         # figure out what to do with the All checkbox
         top = self.dev_store[eqe].get_iter("0")
@@ -997,7 +1070,7 @@ class App(Gtk.Application):
         if total_enabled == 0:
             self.dev_store[eqe][top][1] = False  # set top off
             self.dev_store[eqe][top][2] = False  # set top consistent
-        elif total_enabled == self.num_pix*self.num_substrates:
+        elif total_disabled == 0:
             self.dev_store[eqe][top][1] = True  # set top on
             self.dev_store[eqe][top][2] = False  # set top consistent
         else:
@@ -1198,9 +1271,10 @@ class App(Gtk.Application):
         list of substrate labels the devices are on
         list of device selection strings for the mux
         """
+        tpix = sum(self.spix)  # total pixels
         selection_bitmask = int(bitmask, 16)
         bin_mask = bin(selection_bitmask)[2::]
-        bin_mask = bin_mask[:self.num_pix*self.num_substrates]  # prune to total pixel number
+        bin_mask = bin_mask[:tpix]  # prune to total pixel number
         bin_mask_rev = bin_mask[::-1]
         dev_nums = []
         subs_nums = []
@@ -1208,13 +1282,14 @@ class App(Gtk.Application):
         subs_names = []
         user_labels = []
         selections = []
+        #for subs in 
         for i,c in enumerate(bin_mask_rev):
             if c == '1':
                 dev_num = i
                 dev_nums += [dev_num]
-                subs_num = math.floor(i/self.num_pix)
+                subs_num = math.floor(i/self.num_pix)  #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
                 subs_nums += [subs_num]
-                sub_dev_num = dev_num%self.num_pix + 1  # we'll count these from 1 here
+                sub_dev_num = dev_num%self.num_pix + 1  # we'll count these from 1 here #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
                 sub_dev_nums += [sub_dev_num]
                 subs_name = self.substrate_designators[subs_num]
                 subs_names += [subs_name]
