@@ -1548,6 +1548,8 @@ class App(Gtk.Application):
             self.load_custom_webview(load=True)
         else:
             self.load_custom_webview(load=False)
+        
+        self.b.get_object("pane").set_position(0)  # move the pane handle to the top every stack change
 
     # pause/unpause plots
     def on_plotter_switch(self, switch, state):
