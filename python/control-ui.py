@@ -759,24 +759,25 @@ class App(Gtk.Application):
             self.approx_seconds_per_eqe = 150
 
             cvt_vis = False
+            self.wvs = []  # the webviews
+            self.wvs.append(self.b.get_object("wv1"))  # order here must match config file order
+            self.wvs.append(self.b.get_object("wv2"))
+            self.wvs.append(self.b.get_object("wv3"))
+            self.wvs.append(self.b.get_object("wv4"))
+            self.wvs.append(self.b.get_object("wv5"))
+            self.wvs.append(self.b.get_object("wv6"))
+
+            self.uris = []  # the uris to put in the webviews
             if "network" in self.config:
-                wvs = []
-                wvs.append(self.b.get_object("wv1"))
-                wvs.append(self.b.get_object("wv2"))
-                wvs.append(self.b.get_object("wv3"))
-                wvs.append(self.b.get_object("wv4"))
-                wvs.append(self.b.get_object("wv5"))
-                wvs.append(self.b.get_object("wv6"))
                 if "live_data_uris" in self.config["network"]:
-                    for i,uri in enumerate(self.config["network"]['live_data_uris']):
-                        if uri != "":
-                            wvs[i].load_uri(uri)
+                    for uri in self.config["network"]['live_data_uris']:
+                        self.uris.append(uri)
                 
                     if len(self.config["network"]['live_data_uris']) == 6:
                         cvt_vis = True
 
-            cwv = self.b.get_object("wv6")
-            cwv.set_visible(cvt_vis)
+            # set the custom view tab visible or not
+            self.b.get_object("wv6").set_visible(cvt_vis)
 
             # start MQTT client
             self._start_mqtt()
@@ -839,12 +840,30 @@ class App(Gtk.Application):
             self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
             self.b.connect_signals(self)  # maps all ui callbacks to functions here
 
+            ms = self.b.get_object('mainStack')
+            ms.connect("notify::visible-child", self.on_stack_change)
+
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
 
 
         self.main_win.present()
 
+    def load_live_data_webviews(self, load):
+        # load only the first 5 URIs (for the live data view)
+        for i in range(5):
+            if load == True:
+                self.wvs[i].load_uri(self.uris[i])
+            else:
+                self.wvs[i].stop_loading()
+
+    # must only get called if this tab is visible
+    def load_custom_webview(self, load):
+        # should always be the last webview and uri
+        if load == True:
+            self.wvs[-1].load_uri(self.uris[-1])
+        else:
+            self.wvs[-1].stop_loading()
 
     # gets called when the user selects a custom position
     def on_load_pos(self, cb):
@@ -1408,6 +1427,19 @@ class App(Gtk.Application):
 
     def on_smart_mode_activate(self, button):
         self.update_gui()
+    
+    # handle changes in stack
+    def on_stack_change(self, stack, child):
+        active_title = stack.child_get_property(stack.get_visible_child(),'title')
+        if active_title == 'Live Data':
+            self.load_live_data_webviews(load=True)
+        else:
+            self.load_live_data_webviews(load=False)
+        
+        if active_title == 'Custom View':
+            self.load_custom_webview(load=True)
+        else:
+            self.load_custom_webview(load=False)
 
     # pause/unpause plots
     def on_plotter_switch(self, switch, state):
