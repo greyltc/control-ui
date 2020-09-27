@@ -928,8 +928,13 @@ class App(Gtk.Application):
             self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
             self.b.connect_signals(self)  # maps all ui callbacks to functions here
 
+            # for doing tasks on stack change
             ms = self.b.get_object('mainStack')
             ms.connect("notify::visible-child", self.on_stack_change)
+
+            # for handling global accelerator key combos
+            ag = self.b.get_object('global_keystrokes')
+            ag.connect(Gdk.keyval_from_name('D'), Gdk.ModifierType.CONTROL_MASK, 0, self.on_debug_button)
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
@@ -941,19 +946,22 @@ class App(Gtk.Application):
         for i,wvid in enumerate(self.wvids):
             wv = self.b.get_object(wvid)
             if wv.get_visible() == True:
+                wv.stop_loading()
                 if load == True:
                     wv.load_uri(self.uris[i])
                 else:
-                    wv.stop_loading()
+                    wv.load_html("Inactive.")
+
 
     # must only get called if this tab is visible
     def load_custom_webview(self, load):
         wv = self.b.get_object("custom_wv")
         if wv.get_visible() == True:
+            wv.stop_loading()
             if load == True:
                 wv.load_uri(self.uris[-1])  # should always be the last webview and uri
             else:
-                wv.stop_loading()
+                wv.load_html("Inactive.")
 
     # gets called when the user selects a custom position
     def on_load_pos(self, cb):
@@ -1013,9 +1021,10 @@ class App(Gtk.Application):
 
         Gtk.Application.do_shutdown(self)
 
-    def on_debug_button(self, button):
+    def on_debug_button(self, *args, **kw_args):
         lg.debug("Hello World!")
         self.b.get_object("run_but").set_sensitive(True)
+        self.load_live_data_webviews(load=False)
         msg = {'cmd':'debug'}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
