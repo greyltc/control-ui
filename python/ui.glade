@@ -28,6 +28,7 @@ Author: Greyson Christoforo
   <!-- interface-name control-ui -->
   <!-- interface-description Characterization Control Interface -->
   <!-- interface-authors Greyson Christoforo -->
+  <object class="GtkListStore"/>
   <object class="GtkAdjustment" id="ch1_bias_light_adj">
     <property name="upper">3000</property>
     <property name="step_increment">10</property>
@@ -145,6 +146,7 @@ Author: Greyson Christoforo
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkTreeStore" id="eqe_selection_store"/>
   <object class="GtkAccelGroup" id="global_keystrokes"/>
   <object class="GtkAdjustment" id="i_dwell_adj">
     <property name="upper">100000000000</property>
@@ -211,6 +213,7 @@ Author: Greyson Christoforo
     <property name="icon_name">dialog-warning-symbolic</property>
     <property name="icon_size">3</property>
   </object>
+  <object class="GtkTreeStore" id="iv_selection_store"/>
   <object class="GtkAdjustment" id="iv_steps_adj">
     <property name="lower">3</property>
     <property name="upper">10000001</property>
@@ -254,14 +257,19 @@ Author: Greyson Christoforo
   </object>
   <object class="GtkPopover" id="picker_po">
     <property name="can_focus">False</property>
+    <property name="transitions_enabled">False</property>
+    <property name="constrain_to">none</property>
     <child>
       <object class="GtkScrolledWindow">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
+        <property name="vscrollbar_policy">always</property>
         <property name="shadow_type">in</property>
+        <property name="max_content_height">700</property>
         <property name="propagate_natural_width">True</property>
+        <property name="propagate_natural_height">True</property>
         <child>
-          <object class="GtkTreeView" id="devTV">
+          <object class="GtkTreeView" id="device_tree">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="vscroll_policy">natural</property>
@@ -493,7 +501,6 @@ Author: Greyson Christoforo
                             <property name="tooltip_text" translatable="yes">Run name</property>
                             <property name="editable">False</property>
                             <property name="width_chars">30</property>
-                            <property name="truncate_multiline">True</property>
                             <property name="caps_lock_warning">False</property>
                           </object>
                           <packing>
@@ -591,26 +598,49 @@ Author: Greyson Christoforo
                                         <property name="label_xalign">0</property>
                                         <property name="shadow_type">etched-out</property>
                                         <child>
-                                          <object class="GtkEntry" id="iv_devs">
+                                          <object class="GtkBox">
                                             <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full I-V measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
-                                            <property name="margin_start">2</property>
-                                            <property name="margin_end">2</property>
-                                            <property name="margin_bottom">2</property>
-                                            <property name="editable">False</property>
-                                            <property name="activates_default">True</property>
-                                            <property name="caps_lock_warning">False</property>
-                                            <property name="secondary_icon_stock">gtk-execute</property>
-                                            <property name="primary_icon_activatable">False</property>
-                                            <property name="primary_icon_sensitive">False</property>
-                                            <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose devices for I-V measurement</property>
-                                            <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose devices for I-V measurement</property>
-                                            <signal name="changed" handler="on_devs_changed" swapped="no"/>
-                                            <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
-                                            <style>
-                                              <class name=".monospace"/>
-                                            </style>
+                                            <property name="can_focus">False</property>
+                                            <property name="orientation">vertical</property>
+                                            <child>
+                                              <object class="GtkEntry" id="iv_devs">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">False</property>
+                                                <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full I-V measurement routine on</property>
+                                                <property name="margin_start">2</property>
+                                                <property name="margin_end">2</property>
+                                                <property name="margin_bottom">2</property>
+                                                <property name="editable">False</property>
+                                                <property name="caps_lock_warning">False</property>
+                                                <style>
+                                                  <class name=".monospace"/>
+                                                </style>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">0</property>
+                                              </packing>
+                                            </child>
+                                            <child>
+                                              <object class="GtkButton">
+                                                <property name="label" translatable="yes">Choose Devices for I-V Measurement</property>
+                                                <property name="name">IV Device Picker Button</property>
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="receives_default">True</property>
+                                                <property name="margin_start">2</property>
+                                                <property name="margin_end">2</property>
+                                                <property name="margin_top">2</property>
+                                                <property name="margin_bottom">2</property>
+                                                <signal name="clicked" handler="open_dev_picker" swapped="no"/>
+                                              </object>
+                                              <packing>
+                                                <property name="expand">False</property>
+                                                <property name="fill">True</property>
+                                                <property name="position">1</property>
+                                              </packing>
+                                            </child>
                                           </object>
                                         </child>
                                         <child type="label">
@@ -753,6 +783,7 @@ Author: Greyson Christoforo
                                           <object class="GtkLabel">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
+                                            <property name="tooltip_markup" translatable="yes">Number of Power Line Cycles (1/50s or 1/60s)</property>
                                             <property name="halign">start</property>
                                             <property name="label" translatable="yes">[NPLC]</property>
                                           </object>
@@ -1668,26 +1699,49 @@ Author: Greyson Christoforo
                                     <property name="label_xalign">0</property>
                                     <property name="shadow_type">etched-out</property>
                                     <child>
-                                      <object class="GtkEntry" id="eqe_devs">
+                                      <object class="GtkBox">
                                         <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full EQE measurement routine on (you probably want to use the gear icon to set this rather than manually editing this value)</property>
-                                        <property name="margin_start">2</property>
-                                        <property name="margin_end">2</property>
-                                        <property name="margin_bottom">2</property>
-                                        <property name="editable">False</property>
-                                        <property name="activates_default">True</property>
-                                        <property name="caps_lock_warning">False</property>
-                                        <property name="secondary_icon_stock">gtk-execute</property>
-                                        <property name="primary_icon_activatable">False</property>
-                                        <property name="primary_icon_sensitive">False</property>
-                                        <property name="secondary_icon_tooltip_text" translatable="yes">Press to choose EQE devices</property>
-                                        <property name="secondary_icon_tooltip_markup" translatable="yes">Press to choose EQE devices</property>
-                                        <signal name="changed" handler="on_devs_changed" swapped="no"/>
-                                        <signal name="icon-release" handler="on_devs_icon_release" swapped="no"/>
-                                        <style>
-                                          <class name=".monospace"/>
-                                        </style>
+                                        <property name="can_focus">False</property>
+                                        <property name="orientation">vertical</property>
+                                        <child>
+                                          <object class="GtkEntry" id="eqe_devs">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="tooltip_text" translatable="yes">Hexadecimal bitmask indicating which devices to perform the full EQE measurement routine on</property>
+                                            <property name="margin_start">2</property>
+                                            <property name="margin_end">2</property>
+                                            <property name="margin_bottom">2</property>
+                                            <property name="editable">False</property>
+                                            <property name="caps_lock_warning">False</property>
+                                            <style>
+                                              <class name=".monospace"/>
+                                            </style>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkButton">
+                                            <property name="label" translatable="yes">Choose Devices for EQE Measurement</property>
+                                            <property name="name">EQE Device Picker Button</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">True</property>
+                                            <property name="margin_start">2</property>
+                                            <property name="margin_end">2</property>
+                                            <property name="margin_top">2</property>
+                                            <property name="margin_bottom">2</property>
+                                            <signal name="clicked" handler="open_dev_picker" swapped="no"/>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
                                       </object>
                                     </child>
                                     <child type="label">

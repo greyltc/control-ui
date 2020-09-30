@@ -19,6 +19,7 @@ import paho.mqtt.client as mqtt
 import configparser
 import json
 import pickle
+import collections
 
 import yaml
 
@@ -214,179 +215,13 @@ class App(Gtk.Application):
             except:
                 pass
 
-
-    def setup_dev_stores(self, num_substrates, num_pix, dev_stores, substrate_store):
-        for store in dev_stores:
-            checked = True
-            inconsistent = False
-            store.clear()
-            top = store.append(None, ['All', checked, inconsistent])
-            # fill in the model
-            for i in range(num_substrates):  # iterate through substrates 
-                if substrate_store[i][0] == "":
-                    label = substrate_store[i][1]
-                else:
-                    label = substrate_store[i][0]
-                piter = store.append(top, [label, checked, inconsistent])
-                j = 1
-                while j <= num_pix[i]:  # iterate through pixels on that substrate 
-                    store.append(piter, [f"Device {j}", checked, inconsistent])
-                    j += 1
-
-    def setup_dev_tree(self, deviceTree):
-        # deviceTree.set_model(devStore)
-        renderDesignator = Gtk.CellRendererText()
-        # the first column is created
-        designator = Gtk.TreeViewColumn("Substrate/Device", renderDesignator, text=0)
-        deviceTree.append_column(designator)
-
-        # the cellrenderer for the second column - boolean rendered as a toggle
-        renderCheck = Gtk.CellRendererToggle()
-        # the second column is created
-        colCheck = Gtk.TreeViewColumn("Measure?", renderCheck, active=1, inconsistent=2)
-        # colCheck.set_clickable(True)
-        # colCheck.connect("clicked", self.dev_col_click)
-        deviceTree.append_column(colCheck)
-
-        # connect the cellrenderertoggle with a callback function
-        renderCheck.connect("toggled", self.dev_toggle)
-
-        deviceTree.connect("key-release-event", self.handle_dev_key)
-
-    # handles clicks on the header cell in the device tree selector
-    #def dev_col_click(self, a):
-    #    lg.debug(f"Col Clicked! {a}")
-
-
-    # callback function for select/deselect device/substrate
-    def dev_toggle(self, toggle, path):
-        eqe = "eqe" in Gtk.Buildable.get_name(self.po.get_relative_to())
-        this = self.dev_store[eqe].get_iter(path)
-        path_split = path.split(":")
-        old_value = self.dev_store[eqe][this][1] # what was the checkbox state when we clicked it?
-        current_value = not old_value  # compute what the new checkbox state should be
-        self.dev_store[eqe][this][1] = current_value  # update the checkbox state
-        self.dev_store[eqe][this][2] = False  # we just clicked it. so there's no way it can be inconsistent
-        if len(path_split) == 1:  # the toplevel checkbox was toggled
-            siter = self.dev_store[eqe].iter_children(this) # substrate iterator
-            while siter is not None:  # iterate through the substrates
-                self.dev_store[eqe][siter][1] = current_value
-                self.dev_store[eqe][siter][2] = False
-                diter = self.dev_store[eqe].iter_children(siter) # device iterator
-                while diter is not None:  # iterate through the devices
-                    self.dev_store[eqe][diter][1] = current_value
-                    self.dev_store[eqe][diter][2] = False
-                    diter = self.dev_store[eqe].iter_next(diter)
-                siter = self.dev_store[eqe].iter_next(siter)
-        if len(path_split) == 2:  # if length of the path is 2 (that is, if we are selecting a substrate)
-            citer = self.dev_store[eqe].iter_children(this) # get the iter associated with my first child
-            # change the state of all children to match this one
-            while citer is not None:
-                self.dev_store[eqe][citer][1] = current_value
-                citer = self.dev_store[eqe].iter_next(citer)
-        elif len(path_split) == 3: # a device toggle
-            # get the first child of the parent of the substrate (device 1)
-            piter = self.dev_store[eqe].iter_parent(this) # parent iterator
-            citer = self.dev_store[eqe].iter_children(piter) # iterator for the first sibling of my parent
-            # check if all the children are selected
-            num_selected = 0
-            num_deselected = 0
-            while citer is not None:
-                if self.dev_store[eqe][citer][1] is True:
-                    num_selected = num_selected + 1
-                else:
-                    num_deselected = num_deselected + 1
-                citer = self.dev_store[eqe].iter_next(citer)
-            # if they are, the device as well is selected; otherwise it is not
-            if num_deselected == 0: # all siblings selected, then substrate selected, consitent
-                self.dev_store[eqe][piter][2] = False
-                self.dev_store[eqe][piter][1] = True
-            elif num_selected == 0:  # all siblings deselected, then substrate deselected, consitent
-                self.dev_store[eqe][piter][2] = False
-                self.dev_store[eqe][piter][1] = False
-            else:
-                self.dev_store[eqe][piter][2] = True  # not all selected, not all deselected, thus substrate is incosistent
-
-        # iterate through everything and build up the resulting bitmask for the text field
-        siter = self.dev_store[eqe].get_iter("0:0")  # iterator for first substrate
-        selection_bitmask = 0
-        bit_location = 0
-        total_enabled = 0
-        total_disenabled = 0
-        while siter is not None:
-            diter = self.dev_store[eqe].iter_children(siter)  # device iterator
-            while diter is not None:
-                if self.dev_store[eqe][diter][1] is True:
-                    selection_bitmask = selection_bitmask + (1 << bit_location)
-                    total_enabled += 1
-                else:
-                    total_disenabled += 1
-                bit_location = bit_location + 1
-                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
-            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
-
-        # figure out what to do with the All checkbox
-        top = self.dev_store[eqe].get_iter("0")
-        if total_enabled == 0:
-            self.dev_store[eqe][top][1] = False  # set top off
-            self.dev_store[eqe][top][2] = False  # set top consistent
-        elif total_disenabled == 0:
-            self.dev_store[eqe][top][1] = True  # set top on
-            self.dev_store[eqe][top][2] = False  # set top consistent
-        else:
-            self.dev_store[eqe][top][2] = True  # set top inconsistant
-
-        if eqe:
-            self.eqe_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
-        else:
-            self.iv_dev_box.set_text(f"0x{selection_bitmask:{self.def_fmt_str}}")
-
-    # change in a device text box value
-    def on_devs_changed(self, editable, user_data=None):
-        eqe = "eqe" in Gtk.Buildable.get_name(editable)
-        valid = False
-        text_is = editable.get_text()
-        if len(text_is) == len(f"0x{0:{self.def_fmt_str}}"):
-            try:
-                is_upper = text_is.upper()
-                if is_upper[0:2] == "0X":
-                    num_part = is_upper[2::]
-                    valid_chars = "0123456789ABCDEF"
-                    filtered = filter(lambda ch: ch in valid_chars, num_part)
-                    num_part = "".join(filtered)
-                    selection_bitmask = int(num_part, 16)
-                    should_be = f"0x{selection_bitmask:{self.def_fmt_str}}"
-                    if text_is == should_be:
-                        valid = True
-            except:
-                pass
-
-        if valid is True:
-            #self.last_valid_devs[eqe] = text_is
-            #editable.set_icon_from_icon_name(0, "emblem-default")
-            #num_selected = sum([c == "1" for c in bin(selection_bitmask)])
-            #txt = f'Device Selection Bitmask ({num_selected} selected)'
-            if eqe:
-                self.update_measure_count(True)
-                #self.b.get_object("eqe_dsb_lab").set_text(txt)
-                #self.measure_note(selection_bitmask, self.approx_seconds_per_eqe)
-            else:
-                self.update_measure_count(False)
-                #self.b.get_object("iv_dsb_lab").set_text(txt)
-                #self.measure_note(selection_bitmask, self.approx_seconds_per_iv)
-        else:
-            editable.set_icon_from_icon_name(0, "dialog-error")
-
-    def update_measure_count(self, eqe):
-        if eqe == True:
-            thing = "eqe"
-        else:
-            thing = "iv"
-        text_is = self.b.get_object(f"{thing}_devs").get_text()
+    def update_measure_count(self, entry):
+        parent_frame = entry.get_parent().get_parent()
+        text_is = entry.get_text()
         selection_bitmask = int(text_is, 16)
         num_selected = sum([c == "1" for c in bin(selection_bitmask)])
         txt = f'Device Selection Bitmask ({num_selected} selected)'
-        self.b.get_object(f"{thing}_dsb_lab").set_text(txt)
+        parent_frame.set_label(txt)
 
     # log message printer for device selection change
     def measure_note(self, selection_bitmask, seconds_per):
@@ -403,52 +238,192 @@ class App(Gtk.Application):
         # This report is probably too annoying to maintain properly in its current state
         #lg.info(f"{num_selected} devices selected for ~ {duration_string}")
 
+    # this configures a treeview object for use in selecting/unselecing devices.
+    def setup_device_select_tv(self, tree_view):
+        if len(tree_view.get_columns()) == 0:
+            renderDesignator = Gtk.CellRendererText()
+            # the first column is created
+            designator = Gtk.TreeViewColumn("Substrate/Device", renderDesignator, text=0)
+            tree_view.append_column(designator)
+        
+        if len(tree_view.get_columns()) == 1:
+            renderDesignator = Gtk.CellRendererText()
+            # the first column is created
+            designator = Gtk.TreeViewColumn("Area", renderDesignator, text=3)
+            tree_view.append_column(designator)
+        
+        # the cellrenderer for the second column - boolean rendered as a toggle
+        if len(tree_view.get_columns()) == 2:
+            renderCheck = Gtk.CellRendererToggle()
+            # the second column is created
+            colCheck = Gtk.TreeViewColumn("Measure?", renderCheck, active=1, inconsistent=2, visible=4)
+            # colCheck.set_clickable(True)
+            # colCheck.connect("clicked", self.dev_col_click)
+            tree_view.append_column(colCheck)
+            # connect the cellrenderertoggle with a callback function
+            renderCheck.connect("toggled", self.on_dev_toggle)
 
-    def setup_substrate_tree(self, labels, substrate_designators, cell_y_padding, layouts):
-        substrate_tree = self.b.get_object("substrate_tree")
-        substrate_store = Gtk.ListStore(str, str, int, str)
-        self.label_shadow = labels
+        # this handles left/right arrow buttons for expanding and collapsing rows
+        tree_view.connect("key-release-event", self.handle_dev_key)
 
+    # populates a device selection store with the default startup values
+    # checkmarks is a list of lists of booleans
+    # len(checkmarks) is the number of substrates
+    # and the lengths of the inner lists are the number of pixels on each substrate
+    def fill_device_select_store(self, store, checkmarks, substrate_designators, labels, areas, check_vis):
+        store.clear()
+        # compute the checkbox state for the top level
+        any_check = False
+        all_check = True
+        for subs_bool in checkmarks:
+            if all(subs_bool):
+                any_check = True
+            else:
+                all_check = False
+                if any(subs_bool):
+                    any_check = True
+        if all_check == True:
+            # [str, bool, bool, str, bool] is for [label, checked, inconsistent, area, check visible]
+            checked = True
+            inconsistent = False
+        else:
+            checked = False
+            if any_check == True:
+                inconsistent = True
+            else:
+                inconsistent = False
+        total_devices = 0
+        for subs_areas in areas:
+            total_devices += len(subs_areas)
+        if total_devices == 0:
+            top_vis = False
+        else:
+            top_vis = True
+        top = store.append(None, ['All', checked, inconsistent, '', top_vis])
+
+        # now we can fill in the model
+        for i, subs_checks in enumerate(checkmarks):  # iterate through substrates
+            this_label = substrate_designators[i]
+            subs_areas = areas[i]
+            if labels[i] != "":
+                this_label += f": {labels[i]}"
+            if all(subs_checks):
+                checked = True
+                inconsistent = False
+            else:
+                checked = False
+                if any(subs_checks):
+                    inconsistent = True
+                else:
+                    inconsistent = False
+            # append a substrate header row
+            piter = store.append(top, [this_label, checked, inconsistent, '', len(subs_areas) != 0])
+            j = 1
+            for checked, area in zip(subs_checks, subs_areas):
+                # append a substrate header row
+                store.append(piter, [f"Device {j}", checked, False, str(area), True])
+                j += 1
+
+    # sets up the columns the slot configuration treeview will show us
+    def setup_slot_config_tv(self, tree_view, layouts):
         # the refrence designator column
-        ref_des_cell = Gtk.CellRendererText()
-        ref_des_col = Gtk.TreeViewColumn("Slot", ref_des_cell, text=1, ypad=2)
-        if substrate_tree.get_columns() == []:
-            substrate_tree.append_column(ref_des_col)
+        if len(tree_view.get_columns()) == 0:
+            ref_des_cell = Gtk.CellRendererText()
+            ref_des_col = Gtk.TreeViewColumn("Slot", ref_des_cell, text=0)
+            tree_view.append_column(ref_des_col)
 
         # the editable substrate label column
-        label_cell = Gtk.CellRendererText()
-        label_cell.set_property("editable", True)
-        labels_col = Gtk.TreeViewColumn("Label", label_cell, text=0, ypad=2)
         # only append the col if it's not already there
         # fixes double col on file load
-        if len(substrate_tree.get_columns()) == 1:
-            substrate_tree.append_column(labels_col)
+        if len(tree_view.get_columns()) == 1:
+            label_cell = Gtk.CellRendererText()
+            label_cell.set_property("editable", True)
+            label_cell.connect("edited", self.on_user_label_edit)
+            labels_col = Gtk.TreeViewColumn("Label", label_cell, text=1)
+            tree_view.append_column(labels_col)
 
-        # the layout column
-        layout_cell = Gtk.CellRendererCombo()
-        layouts_store = Gtk.ListStore(str)
-        for layout in self.layouts:
-            layouts_store.append([layout])
-        layout_cell.set_property("editable", True)
-        layout_cell.set_property("model", layouts_store)
-        layout_cell.set_property("has-entry", False)
-        layout_cell.set_property("text-column", 0)
-        layout_cell.connect("edited", self.on_layout_combo_changed)
-        layout_col = Gtk.TreeViewColumn("Layout", layout_cell, text=3, ypad=2)
-        if len(substrate_tree.get_columns()) == 2:
-            substrate_tree.append_column(layout_col)
+        # the layout dropdown selection column
+        if len(tree_view.get_columns()) == 2:
+            layout_cell = Gtk.CellRendererCombo()
+            layouts_store = Gtk.ListStore(str)
+            for layout in layouts:
+                layouts_store.append([layout])
+            layout_cell.set_property("editable", True)
+            layout_cell.set_property("model", layouts_store)
+            layout_cell.set_property("has-entry", False)
+            layout_cell.set_property("text-column", 0)
+            layout_cell.connect("edited", self.on_layout_combo_changed)
+            layout_col = Gtk.TreeViewColumn("Layout", layout_cell, text=2)
+            tree_view.append_column(layout_col)
 
-        for i in range(self.num_substrates):
-            substrate_store.append([labels[i], substrate_designators[i], cell_y_padding[i], layouts[i]])
-        substrate_tree.set_model(substrate_store)
+    # populates the slot config store with the default startup values
+    def fill_slot_config_store(self, store, substrate_designators, labels, layouts):
+        store.clear()
+        for i in range(len(substrate_designators)):
+            store.append([substrate_designators[i], labels[i], layouts[i]])
+    
+    # makes updates to the slot config list store
+    # if new is a list, this attempts to update them all
+    # otherwise updates the label at index
+    # called manually
+    def update_slot_config_store(self, new, column='label', index=0):
+        store = self.slot_config_store
 
-        label_cell.connect("edited", self.store_substrate_label)
-        #substrate_tree.connect("key-release-event", self.handle_label_key)
+        if column == 'label':
+            col_num = 1
+        elif column == 'layout':
+            col_num = 2
+        else:
+            col_num = -1
 
-        return (substrate_tree, substrate_store)
+        if col_num >=0:
+            if isinstance(new, list):
+                # we're updating all the rows
+                rows_to_update = range(len(new))
+                new_items = collections.deque(new)
+            else:
+                new_items = collections.deque([new])
+                rows_to_update = [index]
+            
+            # attempt to do the update(s)
+            for row_num in rows_to_update:
+                try:
+                    this_row = store[row_num]
+                    this_row[col_num] = new_items.popleft()
+                    store[(row_num,)] = this_row
+                except:
+                    pass
 
     def on_layout_combo_changed(self, widget, path, text):
-        self.substrate_store[path][3] = text
+        self.slot_config_store[path][2] = text
+
+    def on_user_label_edit(self, widget, path, text):
+        self.slot_config_store[path][1] = text
+    
+    # called when a user pushes a device selection toggle button
+    # updates the store ticked and inconsistent values
+    # for this row and all of its children and grandchildren
+    # does not touch parents
+    def on_dev_toggle(self, toggle, path):
+        store = self.get_store()
+        checked = not toggle.get_active()
+        store[path][1] = checked
+        store[path][2] = False  # can't be inconsistent
+
+        # make this selection flow down to all children and grandchildren
+        titer = store.get_iter_from_string(str(path))  # this row's iterator
+        citer = store.iter_children(titer)
+        while citer is not None:
+            store.set_value(citer, 1, checked)
+            store.set_value(citer, 2, False)  # can't be inconsistent
+            gciter = store.iter_children(citer)
+            while gciter is not None:
+                store.set_value(gciter, 1, checked)
+                store.set_value(gciter, 2, False)  # can't be inconsistent
+                gciter = store.iter_next(gciter)
+            citer = store.iter_next(citer)
+        self.update_store_booleans(store)
+
 
 
     # handles keystroke in the label creation tree
@@ -467,23 +442,11 @@ class App(Gtk.Application):
         # eqe = 'eqe' in Gtk.Buildable.get_name(self.po.get_relative_to())
         keyname = Gdk.keyval_name(event.keyval)
         if keyname in ["Right", "Left"]:
-            path, col = self.dev_tree.get_cursor()
-            if self.dev_tree.row_expanded(path) is True:
-                self.dev_tree.collapse_row(path)
+            path, col = tv.get_cursor()
+            if tv.row_expanded(path) is True:
+                tv.collapse_row(path)
             else:
-                self.dev_tree.expand_row(path, False)
-
-
-    def store_substrate_label(self, widget, path, text):
-        dev_path = f'0:{path}'
-        self.label_shadow[int(path)] = text
-        self.substrate_store[path][0] = text
-        if text == "": # if it's empty use the default
-            self.dev_store[0][dev_path][0] = self.substrate_store[path][1]
-            self.dev_store[1][dev_path][0] = self.substrate_store[path][1]
-        else: # otherwise use the user's one
-            self.dev_store[0][dev_path][0] = self.substrate_store[path][0]
-            self.dev_store[1][dev_path][0] = self.substrate_store[path][0]
+                tv.expand_row(path)
 
 
     # handle the auto iv toggle
@@ -789,6 +752,7 @@ class App(Gtk.Application):
             # do layout things
             self.layouts = []  # list of enabled layouts
             self.npix = []  # number of pixels for each layout
+            self.areas = []  # area list for each layout
             if 'substrates' in self.config:
                 if 'layouts' in self.config['substrates']:
                     for layout_name, val in self.config['substrates']['layouts'].items():
@@ -796,50 +760,57 @@ class App(Gtk.Application):
                             if val['enabled'] == True:
                                 self.layouts.append(layout_name)
                                 self.npix.append(len(val['pixels']))
+                                self.areas.append(val['areas'])
 
             ns = self.num_substrates
-            self.substrate_tree, self.substrate_store = self.setup_substrate_tree(['']*ns, self.substrate_designators, [0]*ns, [self.layouts[0]]*ns)
+            # slot configuration stuff
+            self.slot_config_tv = self.b.get_object("substrate_tree")
+            self.setup_slot_config_tv(self.slot_config_tv, self.layouts)
+            self.slot_config_store = Gtk.ListStore(str, str, str)  # ref des, user label, layout name
+            self.slot_config_tv.set_model(self.slot_config_store)
+            self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [self.layouts[0]]*ns)
+            self.slot_config_store.connect('row-changed', self.on_slot_store_change)
 
-            # one for EQE, one for iv
-            # [str, bool, bool] is for [label, checked, inconsistent]
-            self.dev_store = [
-                Gtk.TreeStore(str, bool, bool),
-                Gtk.TreeStore(str, bool, bool),
-            ]  # [iv devs, eqe devs]
-            self.spix = [self.npix[0]]*self.num_substrates  # list containing the number of pixels each substrate has
-            self.setup_dev_stores(self.num_substrates, self.spix, self.dev_store, self.substrate_store)
-
-            self.dev_tree = self.b.get_object("devTV")
-            self.setup_dev_tree(self.dev_tree)
-
-            # TODO: do this in a non-obsolete way (probably w/ css somehow)
-            fontdesc = Pango.FontDescription("monospace")
+            # device selection stuff
+            self.device_select_tv = self.b.get_object("device_tree")
+            self.setup_device_select_tv(self.device_select_tv)
+            # these treestores contain the info on which devices are selected for measurement
+            # [str, bool, bool, str, bool] is for [label, checked, inconsistent, area, check visible]
+            self.iv_store = Gtk.TreeStore(str, bool, bool, str, bool)
+            self.iv_store.set_name('IV Device Store')
+            self.eqe_store = Gtk.TreeStore(str, bool, bool, str, bool)
+            self.eqe_store.set_name('EQE Device Store')
+            self.fill_device_select_store(self.iv_store, [[True]*self.npix[0]]*ns, self.substrate_designators, ['']*ns, [self.areas[0]]*ns, [True]*ns)
+            self.fill_device_select_store(self.eqe_store, [[False]*self.npix[0]]*ns, self.substrate_designators, ['']*ns, [self.areas[0]]*ns, [True]*ns)
 
             abs_max_devices = max(self.npix) * self.num_substrates
-            max_devices = self.npix[0] * self.num_substrates
+            num_devices = self.npix[0] * self.num_substrates
             max_address_string_length = math.ceil(abs_max_devices / 4)
-            selection_box_length = max_address_string_length + 3
+            selection_box_length = max_address_string_length + 2
 
-            self.def_fmt_str = f"0{max_address_string_length}X"
+            self.def_fmt_str = f"0{math.ceil(num_devices/4)}X"
 
-            default_on = f"0x{int('1'*max_devices,2):{self.def_fmt_str}}"
+            default_on = f"0x{int('1'*num_devices,2):{self.def_fmt_str}}"
             default_off = f"0x{0:{self.def_fmt_str}}"
 
-            self.iv_dev_box = self.b.get_object("iv_devs")
+            #self.iv_dev_box = self.b.get_object("iv_devs")
 
-            self.last_valid_devs = [default_on, default_off]  # [iv devs, eqe devs]
+            #self.last_valid_devs = [default_on, default_off]  # [iv devs, eqe devs]
+
+            # TODO: do this in a non-obsolete way (i guess with css somehow?)
+            fontdesc = Pango.FontDescription("monospace")
 
             self.iv_dev_box = self.b.get_object("iv_devs")
             self.iv_dev_box.modify_font(fontdesc)
-            self.iv_dev_box.set_text(default_on)
             self.iv_dev_box.set_width_chars(selection_box_length)
-            #self.iv_dev_box.set_icon_from_icon_name(0, "emblem-default")
+            self.iv_dev_box.connect('changed', self.update_measure_count)
+            self.iv_dev_box.set_text(default_on)
 
             self.eqe_dev_box = self.b.get_object("eqe_devs")
             self.eqe_dev_box.modify_font(fontdesc)
-            self.eqe_dev_box.set_text(default_off)
             self.eqe_dev_box.set_width_chars(selection_box_length)
-            #self.eqe_dev_box.set_icon_from_icon_name(0, "emblem-default")
+            self.eqe_dev_box.connect('changed', self.update_measure_count)
+            self.eqe_dev_box.set_text(default_off)
 
             self.po = self.b.get_object("picker_po")
             self.po.set_position(Gtk.PositionType.BOTTOM)
@@ -875,10 +846,6 @@ class App(Gtk.Application):
             # with open(self.config_file, "r") as f:
             #     payload = json.dumps(f.read())
             # self.mqttc.publish("gui/config", payload, qos=2)
-
-            # update the devices to measure text for both eqe and iv
-            self.update_measure_count(True)
-            self.update_measure_count(False)
 
             # read the default recipe from the config and set the gui box to that
             if "solarsim" in self.config:
@@ -970,6 +937,131 @@ class App(Gtk.Application):
         for i,coord in enumerate(pos):
             self.gotos[i].set_value(coord)
 
+    def on_slot_store_change(self, store, path, iter):
+        system_label = store[iter][0]
+        user_label = store[iter][1]
+        layout = store[iter][2]
+        try:
+            n_pix = len(self.config['substrates']['layouts'][layout]['pixels'])
+            areas = self.config['substrates']['layouts'][layout]['areas']
+        except:
+            n_pix = float('nan')
+            areas = None
+
+        for store in [self.iv_store, self.eqe_store]:
+            all_row = store.get_iter_first()
+            slot_iter = store.iter_nth_child(all_row, int(str(path)))
+            subs_check_visible = n_pix > 0
+
+            # update the label in the device selection stores
+            if user_label != "":
+                display_label = f"{system_label}: {user_label}"
+            else:
+                display_label = system_label
+            store.set_value(slot_iter, 0, display_label)
+            store.set_value(slot_iter, 4, subs_check_visible)
+
+            # update the number of devices the substrates have for picking
+            n_children = store.iter_n_children(slot_iter)
+            if (n_pix > n_children):
+                for j in range(n_children, n_pix):
+                    if store[slot_iter][1] == True:
+                        checked = True
+                    else:
+                        checked = False
+                    store.append(slot_iter, [f"Device {j+1}", checked, False, '', True])
+            elif(n_pix < n_children):
+                for j in list(range(n_pix, n_children))[::-1]:
+                    goodbye = store.iter_nth_child(slot_iter, j)
+                    store.remove(goodbye)
+            
+            # update the areas
+            try:
+                diter = store.iter_children(slot_iter)
+                i = 0
+                while diter is not None:
+                    store[diter][3] = str(areas[i])
+                    i += 1
+                    diter = store.iter_next(diter)
+            except:
+                pass
+
+            self.update_store_booleans(store)
+
+    # this ensures the device store ckeckbox booleans make sense
+    # looks at [1] (selected) for the pixels and the tree structure
+    # and uses that info to modify the
+    # [2] incosistent, [4] visible  and [1] selected values for the top and substrate rows
+    # won't ever modify device rows
+    # this also fills the bitmask text field and writes the dev selection string
+    def update_store_booleans(self, store):
+        all_row = store.get_iter_first()  # the all row iterator
+        siter = store.iter_children(all_row) # the substrate iterator
+        n_total = 0
+        n_total_selected = 0
+        bitmask = 0
+        bitloc = 0
+        while siter is not None:
+            n_subs = store.iter_n_children(siter)
+            n_total += n_subs
+
+            # set substrate level box visibility
+            if n_subs == 0:
+                # this substrate's picker is invisible
+                store.set_value(siter, 4, False)
+            else:
+                store.set_value(siter, 4, True)
+            diter = store.iter_children(siter) # the device iterator
+            n_subs_selected = 0
+            while diter is not None:
+                if store[diter][1] == True:  # device selected
+                    n_subs_selected += 1
+                    bitmask += (1 << bitloc)
+                bitloc += 1
+                diter = store.iter_next(diter)
+            n_total_selected += n_subs_selected
+
+            # set substrate level box state
+            if n_subs_selected == 0:
+                store.set_value(siter, 1, False)
+                store.set_value(siter, 2, False)  # set consistent
+            elif n_subs_selected == n_subs:
+                store.set_value(siter, 1, True)
+                store.set_value(siter, 2, False)  # set consistent
+            else:
+                store.set_value(siter, 1, False)
+                store.set_value(siter, 2, True)  # set inconsistent
+
+            siter = store.iter_next(siter)
+        
+        # set gui's hex text
+        self.def_fmt_str = f"0{math.ceil(bitloc/4)}X"
+        bitmask_text = f"0x{bitmask:{self.def_fmt_str}}"
+        store_name = store.get_name()
+        if 'IV' in store_name:
+            self.iv_dev_box.set_text(bitmask_text)
+        elif 'EQE' in store_name:
+            self.eqe_dev_box.set_text(bitmask_text)
+
+        # set top level box visiblility
+        if n_total == 0:
+            # top level picker is invisible
+            store.set_value(all_row, 4, False)
+        else:
+            store.set_value(all_row, 4, True)
+        
+        # set top level checkbox state
+        if n_total_selected == 0:
+            store.set_value(all_row, 1, False)
+            store.set_value(all_row, 2, False)  # set consistent
+        elif n_total_selected == n_total:
+            store.set_value(all_row, 1, True)
+            store.set_value(all_row, 2, False)  # set consistent
+        else:
+            store.set_value(all_row, 1, False)
+            store.set_value(all_row, 2, True)  # set inconsistent
+
+
 
     def do_command_line(self, command_line):
         lg.debug("Doing command line things")
@@ -1024,71 +1116,28 @@ class App(Gtk.Application):
     def on_debug_button(self, *args, **kw_args):
         lg.debug("Hello World!")
         self.b.get_object("run_but").set_sensitive(True)
-        self.load_live_data_webviews(load=False)
+        #self.load_live_data_webviews(load=False)
         msg = {'cmd':'debug'}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+        #self.update_slot_config_store(['john','billy','greg'],column='layout')
 
-    # sets up the device selection tree based on the text in the selection box
-    def on_devs_icon_release(self, entry, icon, user_data=None):
-        eqe = "eqe" in Gtk.Buildable.get_name(entry)
-        self.dev_tree.set_model(self.dev_store[eqe])
-        sw = self.dev_tree.get_parent()  # scroll window
-        sw.set_min_content_height((self.num_substrates + 2) * 26)
-        if entry.get_icon_name(0) != "emblem-default":
-            entry.set_text(self.last_valid_devs[eqe])
-        text_is = entry.get_text()
-        selection_bitmask = int(text_is, 16)
-
-        bin_mask = bin(selection_bitmask)[2::]
-        bin_mask_rev = bin_mask[::-1]
-
-        # iterate through everything and build up the result
-        siter = self.dev_store[eqe].get_iter("0:0")  # first substrate iterator
-        bit_location = 0
-        total_enabled = 0
-        total_disabled = 0
-        while siter is not None:
-            num_enabled = 0  # keeps track of number of enabled devices on this substrate
-            num_disabled = 0
-            diter = self.dev_store[eqe].iter_children(siter)  # device iterator
-            while diter is not None:
-                if (bit_location + 1 <= len(bin_mask_rev)) and (bin_mask_rev[bit_location] == "1"):
-                    self.dev_store[eqe][diter][1] = True
-                    num_enabled += 1
-                else:
-                    self.dev_store[eqe][diter][1] = False
-                    num_disabled += 1
-                bit_location = bit_location + 1
-                diter = self.dev_store[eqe].iter_next(diter)  # advance to the next device
-            if num_enabled == 0:
-                self.dev_store[eqe][siter][1] = False  # set substrate off
-                self.dev_store[eqe][siter][2] = False  # set substrate consistent
-            elif num_disabled == 0:
-                self.dev_store[eqe][siter][1] = True  # set substrate on
-                self.dev_store[eqe][siter][2] = False  # set substrate consistent
-            else:
-                self.dev_store[eqe][siter][2] = True  # set substrate inconsistant
-            siter = self.dev_store[eqe].iter_next(siter)  # advance to the next substrate
-            total_enabled += num_enabled
-            total_disabled += num_disabled
-        
-        # figure out what to do with the All checkbox
-        top = self.dev_store[eqe].get_iter("0")
-        self.dev_tree.expand_row(Gtk.TreePath("0"), False)  # top is always expanded
-        if total_enabled == 0:
-            self.dev_store[eqe][top][1] = False  # set top off
-            self.dev_store[eqe][top][2] = False  # set top consistent
-        elif total_disabled == 0:
-            self.dev_store[eqe][top][1] = True  # set top on
-            self.dev_store[eqe][top][2] = False  # set top consistent
-        else:
-            self.dev_store[eqe][top][2] = True  # set top inconsistant
-
-        self.po.set_relative_to(entry)
-        self.po.show_all()
-        # lg.debug(sw.get_allocated_height())
-        return True
+    # fills the device selection bitmask text box based on the device selection treestore
+    def open_dev_picker(self, button):
+        button_name = button.get_name()
+        if 'IV' in button_name:
+            po_target_id = 'iv_devs'
+            store = self.iv_store
+        elif 'EQE' in button_name:
+            po_target_id = 'eqe_devs'
+            store = self.eqe_store
+        try:
+            self.device_select_tv.set_model(store)
+            self.po.set_relative_to(self.b.get_object(po_target_id))
+            self.device_select_tv.expand_row(Gtk.TreePath("0"), False)  # top is always expanded
+            self.po.show_all()
+        except:
+            pass
 
     def on_pause_button(self, button):
         """Pause experiment operation."""
@@ -1215,6 +1264,20 @@ class App(Gtk.Application):
             self.update_gui()
         else:
             lg.info(f"Load aborted.")
+    
+    # looks at where the popover is
+    # to determint which device selection store we want
+    def get_store(self, target_id=""):
+        # where is the popover right now?
+        if target_id == "":
+            target_id = Gtk.Buildable.get_name(self.po.get_relative_to())
+        if "eqe" in target_id:
+            store = self.eqe_store
+        elif "iv" in target_id:
+            store = self.iv_store
+        else:
+            store = None
+        return store
 
     def on_round_robin_button(self, button):
         button_label = button.get_label()
