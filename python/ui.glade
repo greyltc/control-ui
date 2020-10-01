@@ -624,7 +624,7 @@ Author: Greyson Christoforo
                                             </child>
                                             <child>
                                               <object class="GtkButton">
-                                                <property name="label" translatable="yes">Choose Devices for I-V Measurement</property>
+                                                <property name="label" translatable="yes">Choose Devices for _I-V Measurement</property>
                                                 <property name="name">IV Device Picker Button</property>
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">True</property>
@@ -633,6 +633,7 @@ Author: Greyson Christoforo
                                                 <property name="margin_end">2</property>
                                                 <property name="margin_top">2</property>
                                                 <property name="margin_bottom">2</property>
+                                                <property name="use_underline">True</property>
                                                 <signal name="clicked" handler="open_dev_picker" swapped="no"/>
                                               </object>
                                               <packing>
@@ -1725,7 +1726,7 @@ Author: Greyson Christoforo
                                         </child>
                                         <child>
                                           <object class="GtkButton">
-                                            <property name="label" translatable="yes">Choose Devices for EQE Measurement</property>
+                                            <property name="label" translatable="yes">Choose Devices for E_QE Measurement</property>
                                             <property name="name">EQE Device Picker Button</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
@@ -1734,6 +1735,7 @@ Author: Greyson Christoforo
                                             <property name="margin_end">2</property>
                                             <property name="margin_top">2</property>
                                             <property name="margin_bottom">2</property>
+                                            <property name="use_underline">True</property>
                                             <signal name="clicked" handler="open_dev_picker" swapped="no"/>
                                           </object>
                                           <packing>
