@@ -1167,17 +1167,24 @@ class App(Gtk.Application):
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_value(), "call_to_set": "set_value"}
                 elif isinstance(this_obj, gi.repository.Gtk.Entry):
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
-                elif isinstance(this_obj, gi.overrides.Gtk.TreeView):  # the TreeViews are unfortunately not pickleable
-                    ls = this_obj.get_model()  # list store associated with the treeview
-                    table_list = []  # list we'll use to store the list store
-                    col_types = []
-                    if ls is not None:
-                        n_cols = ls.get_n_columns()
-                        for i in range(n_cols):
-                            col_types.append(ls.get_column_type(i).name)
-                        for row in ls:
-                            table_list.append(tuple(row))
-                    gui_data[id_str] = {"type": str(type(this_obj)), "value": {"col_types": col_types, "table_list": table_list}, "call_to_set": None}
+                #elif isinstance(this_obj, gi.overrides.Gtk.TreeView):  # the TreeViews are unfortunately not pickleable
+                #    ls = this_obj.get_model()  # list store associated with the treeview
+                #    table_list = []  # list we'll use to store the list store
+                #    col_types = []
+                #    if ls is not None:
+                #        n_cols = ls.get_n_columns()
+                #        for i in range(n_cols):
+                #            col_types.append(ls.get_column_type(i).name)
+                #        for row in ls:
+                #            table_list.append(tuple(row))
+                #    gui_data[id_str] = {"type": str(type(this_obj)), "value": {"col_types": col_types, "table_list": table_list}, "call_to_set": None}
+        
+        # handle the treestores and liststores manually because they can't be pickled
+        for store in ['iv_store', 'eqe_store', 'slot_config_store']:
+            this_obj = getattr(self, store)
+            store_data = []
+            this_obj.foreach(lambda model, path, it: store_data.append([str(path),tuple(model[it])]))
+            gui_data[store] = {"type": str(type(this_obj)), "value": store_data, "call_to_set": "fill_store"}
         return gui_data
 
 
@@ -1238,29 +1245,33 @@ class App(Gtk.Application):
                 load_data = pickle.load(f)
 
             for id_str, obj_info in load_data.items():
-                if 'TreeView' in obj_info['type']:
-                    tvd = obj_info['value']
-                    if len(tvd['col_types']) != 0:
-                        cts = tvd['col_types']
-                        data = tvd['table_list']
-                        if id_str == 'substrate_tree':
-                            labels = [x[0] for x in data]
-                            ref_des = [x[1] for x in data]
-                            y_pad = [x[2] for x in data]
-                            if len(data[0]) > 3:
-                                layouts = [x[3] for x in data]
-                            else:
-                                layouts = ['Unknown' for x in data]
-                            try:
-                                self.substrate_tree, self.substrate_store = self.setup_substrate_tree(labels, ref_des, y_pad, layouts)
-                                for i, lab in enumerate(labels):
-                                    self.store_substrate_label(None, str(i), lab)
-                            except:
-                                lg.info(f"Loading substrate info failed.")
+                this_type = obj_info['type']
+                if ('TreeStore' in this_type) or ('ListStore' in this_type): # for handling liststores and treestores
+                    list_store = 'ListStore' in this_type
+                    try:
+                        store = getattr(self, id_str)
+                        store.clear()
+                        for line in obj_info['value']:
+                            path = line[0]
+                            row = line[1]
+                            if list_store:
+                                store.append(row)
+                            else:  # treestore is a bit more complicated because the tree structure must be recreated
+                                if ':' not in path:
+                                    piter = None  # no parent iterator, top level
+                                else:
+                                    parent_path = path.rsplit(':',1)[0]
+                                    piter = store.get_iter_from_string(parent_path)
+                                store.append(piter, row)
+                    except:
+                        pass  # give up on this one store if we can't load it
                 else:
-                    this_obj = self.b.get_object(id_str)
-                    call_to_set = getattr(this_obj, obj_info['call_to_set'])
-                    call_to_set(obj_info['value'])
+                    try:
+                        this_obj = self.b.get_object(id_str)
+                        call_to_set = getattr(this_obj, obj_info['call_to_set'])
+                        call_to_set(obj_info['value'])
+                    except:
+                        pass  # give up if we can't load this one element
             self.update_gui()
         else:
             lg.info(f"Load aborted.")
@@ -1332,6 +1343,7 @@ class App(Gtk.Application):
             self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
 
+    # generates per-selection lists
     def bitmask_to_some_lists(self, bitmask, maximum=float("inf")):
         """
         input: takes a hex bitmask device selection string, and a maximum number of devices to find, starting with the LSB
@@ -1697,8 +1709,6 @@ class App(Gtk.Application):
             for sib in parent.get_children():
                 sib.set_sensitive(False)
             me.set_sensitive(True)
-        self.update_measure_count(True)
-        self.update_measure_count(False)
 
 
 if __name__ == "__main__":
