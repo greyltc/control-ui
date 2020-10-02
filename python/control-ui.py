@@ -341,15 +341,17 @@ class App(Gtk.Application):
 
         # the layout dropdown selection column
         if len(tree_view.get_columns()) == 2:
+            # this allows me to find the combo box object
+            tree_view.connect('set-focus-child', self.on_layout_combo_focus)
             layout_cell = Gtk.CellRendererCombo()
-            layouts_store = Gtk.ListStore(str)
+            layouts_store = Gtk.ListStore(str)  # holds the layout options
             for layout in layouts:
                 layouts_store.append([layout])
             layout_cell.set_property("editable", True)
             layout_cell.set_property("model", layouts_store)
             layout_cell.set_property("has-entry", False)
             layout_cell.set_property("text-column", 0)
-            layout_cell.connect("edited", self.on_layout_combo_changed)
+            layout_cell.connect("changed", self.on_layout_combo_changed)
             layout_col = Gtk.TreeViewColumn("Layout", layout_cell, text=2)
             tree_view.append_column(layout_col)
 
@@ -391,9 +393,29 @@ class App(Gtk.Application):
                 except:
                     pass
 
-    def on_layout_combo_changed(self, widget, path, text):
-        self.slot_config_store[path][2] = text
+    # the user chose a new layout. save that choice in the slot config store
+    def on_layout_combo_changed(self, widget, path, ti):
+        self.slot_config_store[path][2] = widget.props.model[ti][0]
 
+    # the user has hovered their mouse over a layout choice
+    def on_layout_combo_entered(self, widget, event, user_data):
+        layout_index = user_data
+        self.lopo.get_child().set_label(self.layouts[layout_index])
+        self.lopo.popup()
+        self.lopo.show_all()
+
+    # the layout ComboBox has now been magically created!
+    # so let's install our hover-focus callbacks into its menu widget children
+    def on_layout_combo_focus(self, treeview, combobox):
+        try:
+            popup_menu_widget = combobox.get_popup_accessible().props.widget
+            popup_menu_widget.connect('unmap', lambda x: self.lopo.popdown())
+            for i,c in enumerate(popup_menu_widget.get_children()):
+                c.connect('enter-notify-event', self.on_layout_combo_entered, i)
+        except:
+            pass
+
+    # the user has made an edit in the user label cell
     def on_user_label_edit(self, widget, path, text):
         self.slot_config_store[path][1] = text
     
@@ -797,8 +819,15 @@ class App(Gtk.Application):
             self.do_dev_store_update_tasks(self.iv_store)
             self.do_dev_store_update_tasks(self.eqe_store)
 
+            # the device picker popover
             self.po = self.b.get_object("picker_po")
             self.po.set_position(Gtk.PositionType.BOTTOM)
+
+            # the layout popover
+            self.lopo = self.b.get_object("layout_po")
+            self.lopo.set_position(Gtk.PositionType.RIGHT)
+            self.lopo.set_relative_to(self.slot_config_tv)
+            self.lopo.add(Gtk.Label(label=self.layouts[0]))
 
             self.approx_seconds_per_iv = 50
             self.approx_seconds_per_eqe = 150
@@ -1123,6 +1152,9 @@ class App(Gtk.Application):
         Gtk.Application.do_shutdown(self)
 
     def on_debug_button(self, *args, **kw_args):
+        self.do_debug_tasks()
+    
+    def do_debug_tasks(self):
         lg.debug("Hello World!")
         self.b.get_object("run_but").set_sensitive(True)
         #self.load_live_data_webviews(load=False)
