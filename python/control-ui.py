@@ -775,7 +775,7 @@ class App(Gtk.Application):
                         if 'enabled' in val:
                             if val['enabled'] == True:
                                 self.layouts.append(layout_name)
-                                self.npix.append(len(val['pixels']))
+                                self.npix.append(len(val['pads']))
                                 self.areas.append(val['areas'])
 
             ns = self.num_substrates
@@ -950,7 +950,7 @@ class App(Gtk.Application):
         user_label = store[iter][1]
         layout = store[iter][2]
         try:
-            n_pix = len(self.config['substrates']['layouts'][layout]['pixels'])
+            n_pix = len(self.config['substrates']['layouts'][layout]['pads'])
             areas = self.config['substrates']['layouts'][layout]['areas']
         except:
             n_pix = float('nan')
@@ -1014,7 +1014,7 @@ class App(Gtk.Application):
         bitmask = 0
         bitloc = 0
         # pixel index is for which pixel this is on its layout, mux index is which mux switch that's connected to
-        df = pd.DataFrame(columns=['system_label', 'user_label', 'label', 'substrate_index', 'layout_pixel_index','layout', 'area', 'mux_index', 'mux_string'])
+        df = pd.DataFrame(columns=['system_label', 'user_label', 'label', 'substrate_index', 'layout_pixel_index','layout', 'area', 'dark_area', 'mux_index', 'mux_string'])
         while siter is not None:  # substrate iterator loop
             n_subs = store.iter_n_children(siter)
             n_total += n_subs
@@ -1032,7 +1032,7 @@ class App(Gtk.Application):
                     bitmask += (1 << bitloc)
 
                     dfr = n_total_selected + n_subs_selected  # dataframe row
-                    df.append(pd.Series(name=dfr))
+                    df.append(pd.Series(name=dfr, dtype=object))
                     dpath = str(store.get_path(diter))
                     dpath_split = dpath.split(':')
                     pixi = int(dpath_split[2])
@@ -1050,7 +1050,8 @@ class App(Gtk.Application):
                         df.at[dfr, 'label'] = f"{system_label}: {user_label}"
                     df.at[dfr, 'layout'] = layout
                     df.at[dfr, 'area'] = self.config['substrates']['layouts'][layout]['areas'][pixi]
-                    mux_index = self.config['substrates']['layouts'][layout]['pixels'][pixi]
+                    df.at[dfr, 'dark_area'] = self.config['substrates']['layouts'][layout]['dark_areas'][pixi]
+                    mux_index = self.config['substrates']['layouts'][layout]['pads'][pixi]
                     df.at[dfr, 'mux_index'] = mux_index
                     df.at[dfr, 'mux_string'] = f"s{system_label}{mux_index}"
 
@@ -1338,7 +1339,7 @@ class App(Gtk.Application):
             'cmd':'round_robin',
             'type': this_type,
             'slots': some_lists['subs_names'],
-            'pixels': some_lists['sub_dev_nums'],
+            'pads': some_lists['sub_dev_nums'],
             'pcb': self.config['controller']['address'],
             'smu': self.config['smu']
             }

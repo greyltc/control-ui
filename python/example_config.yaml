@@ -36,10 +36,10 @@ config_autosave:
 smart_mode:
     enabled: false
     # when using smart mode, start scan 1 and end scan 2 this many percent higher than Voc
-    # bigger numbers here give better fitting for series resistance at an incresed danger of pushing too much current through the device
+    # bigger numbers here give better fitting for series resistance at an increased danger of pushing too much current through the device
     percent_beyond_voc: 25
     # when using smart mode, end scan 1 and start scan 2 this much into reverse bias
-    # bigger numbers here give better fitting for shunt resistance at an incresed danger of pulling too much current from the device
+    # bigger numbers here give better fitting for shunt resistance at an increased danger of pulling too much current from the device
     # this is an absolute number whose sign is set depending on the sign of Voc
     voltage_beyond_isc: 0.1
 
@@ -56,7 +56,7 @@ network:
 visa:
     visa_lib: '@py'
 
-# stage and mux controller netowrk address
+# stage and mux controller network address
 controller:
     address: "10.42.0.239"
 
@@ -119,7 +119,7 @@ stage:
     # typical travel lengths might be X = 1000mm (stage length) - 125 (gantry width) = 875 and Y = 500mm (stage length) - 125 (gantry width) = 375
     # typical steps per mm might be 256[uSteps/step] (microstepping driver property) * 200[steps/rev] (motor property) / 8[mm/rev] (leadscrew property) = 6400 [uSteps/mm]
     # the keepout zone list is a list (with of length matching the expected travel lengths), each item in the list is a list of length two specifying the regions along an axis that are not allowed
-    # for example: [[],[62.5,Infinity]] means all values in X are okay, but anyplace beyond 62.5mm in Y is invalid
+    # for example: [[],[62.5,Infinity]] means all values in X are okay, but any place beyond 62.5mm in Y is invalid
     # [[],[]] means no limits for either axis
     # the final field contains extra info for controlling the stage, for example "otter" tells the system to use a special homing procedure specific to one hardware setup
     uri: us://375/6400
@@ -144,62 +144,124 @@ substrates:
     #spacing: [35, 29]
     spacing: [40]
 
-    # pixel layout info
+    # the section for device layout information
     # the first one listed here will be considered the default
     layouts:
-        # layout name
-        6px_1in:
+        # Oxford 30x30 layout with one 1cm device
+        one large:
             # enabled means the layout is something that can be selected in the GUI
             enabled: true
-            # which of the the (changeable) PCB adapter boards are in use for this layout
-            pcb_name: 6px_1in_pcb
-             # list of pixel numbers that should be enabled for this layout
-            pixels: [1, 2, 3, 4, 5, 6]
-            # List of position vectors of each pixel in use on each substrate.
-            # Positions are given in mm relative to the substrate center.
-            # If the positions are multi-axis, the positions of each pixel in the list are given as
-            # vectors, e.g. for an x,y stage the list would be formatted as:
-            # [[pixel1_x, pixel1_y], [pixel2_x, pixel2_y], ...]
-            # There should be a pixel position vector for every force pin on the adpater pcb, even
-            # for pixels that are unused. Unused pixels can be set to [0, ...].
-            positions: [[-5, -5], [-5, 5], [0, -5], [0, 5], [5, -5], [5, 5]]
-            # list of areas in cm^2 of each pixel on a substrate
-            areas: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+            # which of the the (changeable) PCB adapter boards this layout uses
+            pcb_name: 30x30mm
+            # list of PCB adapter board pad the devices of this layout use
+            pads:       [1,           2,          3,       4,      5,          6]
+            # list of position vectors of each pixel describing where they are on the substrate
+            # positions are given in mm, [x, y], relative to the substrate center
+            locations:  [[-10, -7.5], [4, -7.5],  [-4, 0], [4, 0], [-10, 7.5], [4, 7.5]]
+            # list describing the shapes of the illuminated areas. s for square, c for circle
+            # a number indicates the device shape is rectangular, with the number being the length in x
+            shapes:     [s,           s,          s,       s,      s,          s]
+            # list of illumination areas in cm^2 of each device
+            areas:      [0.001,       0.25,       1,       0.25,   0.001,      0.25]
+            # list of active areas in cm^2 of each device
 
-        4px_30mm:
+        # Oxford 30x30 layout with two 1cm devices
+        two large:
             enabled: true
-            pcb_name: 6px_30mm_pcb
-            pixels: [1, 3, 4, 5]
-            positions: [[-6, -6], [0, 0], [0, -6], [0, 6], [6, -6], [0, 0]]
-            areas: [0.15, 0, 1.0, 0.15, 0.15, 0]
+            pcb_name: 30x30mm
+            pads:       [1,           2,          3,       4,      5,          6]
+            locations:  [[-10, -7.5], [10, -7.5], [-4, 0], [4, 0], [-10, 7.5], [10, 7.5]]
+            shapes:     [s,           s,          s,       s,      s,          s]
+            areas:      [0.001,       0.001,      1,       1,      0.001,      0.001]
+            dark_areas: [0.001,       0.001,      1.1,     1.1,    0.001,      0.001]
 
-        # oxford photodiode boards
-        6xbpw34_30mm:
+        # Oxford 30x30 layout with no 1cm devices (6 medium ones)
+        no large:
             enabled: true
-            pcb_name: 6px_30mm_pcb
-            pixels: [1, 2, 3, 4, 5, 6]
-            positions: [[-7.5], [-7.5], [0], [0], [7.5], [7.5]]
-            areas: [0.0702, 0.0702, 0.0702, 0.0702, 0.0702, 0.0702]
+            pcb_name: 30x30mm
+            pads:       [1,           2,         3,       4,      5,         6]
+            locations:  [[-4, -7.5],  [4, -7.5], [-4, 0], [4, 0], [-4, 7.5], [4, 7.5]]
+            shapes:     [s,           s,         s,       s,      s,         s]
+            areas:      [0.25,        0.25,      0.25,    0.25,   0.25,      0.25]
+            dark_areas: [0.29,        0.29,      0.29,    0.29,   0.29,      0.29]
 
-        # nothing in the slot
-        Empty:
+        # Oxford 30x30 photodiode boards
+        BPW34s:
             enabled: true
-            pcb_name: 6px_30mm_pcb
-            pixels: []
-            positions: []
+            pcb_name: 30x30mm
+            pads:       [1,          2,         3,       4,      5,         6]
+            locations:  [[-3, -7.5], [3, -7.5], [-3, 0], [3, 0], [-3, 7.5], [3, 7.5]]
+            shapes:     [s,          s,         s,       s,      s,         s]
+            areas:      [0.075,      0.075,     0.075,   0.075,  0.075,     0.075]
+            dark_areas: [0.075,      0.075,     0.075,   0.075,  0.075,     0.075]
+
+        # OLD Oxford 30x30 layout with one 1cm device
+        OLD one large:
+            enabled: true
+            pcb_name: 30x30mm
+            pads:       [2,         3,       4,       6]
+            locations:  [[4, -7.5], [-4, 0], [4, 0],  [4, 7.5]]
+            shapes:     [s,         s,       s,       s]
+            areas:      [0.2,       1,       0.2,     0.2]
+            dark_areas: [0.26,      1.1,     0.26,    0.26]
+
+        # OLD Oxford 30x30 layout with two 1cm devices
+        OLD two large:
+            enabled: true
+            pcb_name: 30x30mm
+            pads:       [3,       4]
+            locations:  [[-4, 0], [4, 0]]
+            shapes:     [s,       s]
+            areas:      [1,       1]
+            dark_areas: [1.1,     1.1]
+
+        # OLD Oxford 30x30 layout with no 1cm devices (6 medium ones)
+        OLD no large:
+            enabled: true
+            pcb_name: 30x30mm
+            pads:       [1,           2,         3,       4,      5,         6]
+            locations:  [[-4, -7.5],  [4, -7.5], [-4, 0], [4, 0], [-4, 7.5], [4, 7.5]]
+            shapes:     [s,           s,         s,       s,      s,         s]
+            areas:      [0.2,         0.2,       0.2,     0.2,    0.2,       0.2]
+            dark_areas: [0.26,        0.26,      0.26,    0.26,   0.26,      0.26]
+
+        # legacy Oxford 28x28 layout
+        28x28:
+            enabled: true
+            pcb_name: 28x28mm
+            pads:       [1,          2,         3,        4,       5,       6,      7,         8]
+            locations:  [[-4, -7.5], [4, -7.5], [-4, -2], [4, -2], [-4, 2], [4, 2], [-4, 7.5], [4, 7.5]]
+            shapes:     [c,          c,         c,        c,       c,       c,      c,         c]
+            areas:      [0.09,       0.09,      0.09,     0.09,    0.09,    0.09,   0.09,      0.09]
+            dark_areas: [0.1,        0.1,       0.1,      0.1,     0.1,     0.1,    0.1,       0.1]
+
+        # for when there's nothing loaded
+        empty:
+            enabled: true
+            pcb_name: na
+            pads: []
+            locations: []
+            shapes: []
             areas: []
-        
-    # pcb adapter info
+            dark_areas: []
+
+
+    # this section describes the possible adapter PCBs that may be installed in each slot
+    # these are the boards with the gold spring pins
     adapters:
-        6px_1in_pcb:
-            # number of available pixels per pcb
-            pcb_contact_pads: 6
-            # pcb adapter board idn resistor in Ohms
+        30x30mm:
+            # pcb adapter board identification resistor value (in Ohms)
             pcb_resistor: 0
 
-        6px_30mm_pcb:
-            pcb_contact_pads: 6
-            pcb_resistor: 0    
+        28x28mm:
+            pcb_resistor: 0
+
+        1x1in:
+            pcb_resistor: 0
+
+        # for when an adapter board is not used (external measurement for example)
+        na:
+            pcb_resistor: inf
 
 # miscellaneous reference data
 reference:
