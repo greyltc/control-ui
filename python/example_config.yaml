@@ -14,23 +14,31 @@
 # with open("example_config.yaml", "r") as f:
 #     config = yaml.load(f, Loader=yaml.FullLoader)  
 
+# configuration of configuration
+# relative paths given here are taken to be relative to the user's home directory
+meta:
+    # any .yaml files found in this folder will be loaded as if they were inline in this file
+    # for duplicated config parameters, those in this directory will take precidence
+    include_path: measurement_config.d
+
+    # controls automatic gui configuration saving every time the run button is pressed
+    autosave_enabled: true
+    
+    # folder used to store the gui configuration autosave files
+    autosave_path: runconfigs
+
 # default start-up values for the plot inversion switches
 plots:
     invert_voltage: false
     invert_current: false
 
+# maximum power point tracking configuration
 mppt:
     presets:
         - "gd://"  # gradient descent algorithm with default parameters
         - "basic://" # basic tracking algorithm (alternating periods of exploration and dwell at vmpp) with default parameters
         - "gd://10:0.0001:10" # gd://alpha:min_step:NPLC --> alpha is the learning rate, min_step is the smallest possible voltage step, larger NPLC means slower, more accurate measurements
         - "basic://7:10" # basic://degrees:dwell_time --> larger degrees means wider exploration, larger dwell_time means longer dwell periods
-
-# controls automatic gui config saving every time the run button is pressed
-config_autosave:
-    enabled: true
-    # relative paths are relative to the user's home dir
-    path: runconfigs
 
 # controls for how "smart mode" works
 smart_mode:
@@ -43,6 +51,7 @@ smart_mode:
     # this is an absolute number whose sign is set depending on the sign of Voc
     voltage_beyond_isc: 0.1
 
+# networking configuration parameters
 network:
     MQTTHOST: "127.0.0.1"
     live_data_uris:
@@ -65,20 +74,20 @@ smu:
     enabled: true
     address: ASRL/dev/ttyS0::INSTR
     #address: GPIB::24::INSTR
-    baud: 57600
-    # "\r" = <CR>, "\r\n" = <CR+LF>, "\n" = <LF>, "\n\r" = <LF+CR>
-    terminator: "\r"
-    # if front terminals is false, use rear terminals
+    baud: 57600  # only relevant for serial comms
+    # HINT: "\r" = <CR>, "\r\n" = <CR+LF>, "\n" = <LF>, "\n\r" = <LF+CR>
+    terminator: "\r"  # only relevant for serial comms
+    # if front terminals is false, then use rear terminals
     front_terminals: false
-    # if 2 wire is false, use 4 wire
+    # if 2 wire is false, then use 4 wire
     two_wire: false
 
 solarsim:
     enabled: false
-    #uri: wavelabs://0.0.0.0:3334
-    uri: wavelabs-relay://127.0.0.1:3335
+    #address: wavelabs://0.0.0.0:3334
+    address: wavelabs-relay://127.0.0.1:3335
     recipes: ["am1_5_1_sun", "Christo Disco"]
-#    spectral_calibration: !include example_solarsim_cal.yaml
+    spectral_calibration: null
 
 # lock-in amplifier
 lia:
@@ -102,8 +111,8 @@ monochromator:
 psu:
     enabled: false
     address: TCPIP0::192.168.1.235::INSTR
-    terminator: "\r"
-    baud: 9600
+    terminator: "\r"  # only relevant for serial comms
+    baud: 9600  # only relevant for serial comms
     ch1_voltage: 3.9
     ch2_voltage: 1.9
     ch3_voltage: 0
@@ -124,20 +133,21 @@ stage:
     # the final field contains extra info for controlling the stage, for example "otter" tells the system to use a special homing procedure specific to one hardware setup
     uri: us://375/6400
     #uri: us://125/6400
-    # approx mm/s (used for timing calculations only, does not actually set speed)
-    speed: 29
+    speed: 29  # approx mm/s (used for timing calculations only, does not actually set speed)
     experiment_positions:
         solarsim: [174]
-#        eqe: [800, 250]
-    # these just show up in a list in the gui to make it easier to move somewhere
+        #eqe: [800, 250]
+    # these just show up in a list in the GUI to make it easier to move somewhere
+    # experiment_positions are auto included in that list
     custom_positions:
         Load Position: [355]
         Grey's fav spot: [88.54241]
         Midway: [187.5]
         Offline Position: [20]
 
+# a section for describing how the substrates are positioned and what might be on them
 substrates:
-  # list of number of substrates along each available axis: [x-direction, y-direction]
+    # list of number of substrates along each available axis: [x-direction, y-direction]
     #number: [4, 5]
     number: [8]
     # spacing in mm between substrate centers along each available axis
@@ -164,6 +174,7 @@ substrates:
             # list of illumination areas in cm^2 of each device
             areas:      [0.001,       0.25,       1,       0.25,   0.001,      0.25]
             # list of active areas in cm^2 of each device
+            dark_areas: [0.001,       0.29,       1.1,     0.29,   0.001,      0.29]
 
         # Oxford 30x30 layout with two 1cm devices
         two large:

@@ -6,6 +6,13 @@ import pathlib
 # import signal # to handle key kill
 import logging
 import systemd.journal
+import pprint
+
+# for merging dictionaries
+from boltons.iterutils import default_enter
+from boltons.iterutils import default_visit
+from boltons.iterutils import get_path
+from boltons.iterutils import remap
 
 # import logging.handlers
 import gi
@@ -172,12 +179,10 @@ class App(Gtk.Application):
             self.mqtt_setup = False
         self.mqtt_connecting = False
 
-
     def _stop_mqtt(self):
         """Stop the MQTT client."""
         self.mqttc.loop_stop()
         self.mqttc.disconnect()
-
 
     def do_startup(self):
         lg.debug(f"Starting up app from {__file__}")
@@ -464,7 +469,6 @@ class App(Gtk.Application):
             else:
                 tv.expand_row(path)
 
-
     # handle the auto iv toggle
     def on_autoiv_toggled(self, button, user_data=None):
         siblings = button.get_parent().get_children()
@@ -481,7 +485,6 @@ class App(Gtk.Application):
             child.set_sensitive(sensitivity)
             for grandchild in child.get_children():
                 grandchild.set_sensitive(sensitivity)
-
 
     # runs once per second
     def tick(self, user_data=None):
@@ -540,12 +543,10 @@ class App(Gtk.Application):
             self.ltv = self.b.get_object("ltv")  # log text view
             self.log_win_adj = self.b.get_object("vert_log_win_scroll_adj")
 
-
             def myWrite(buf):
                 # the log update should not be done on the main gui thread
                 # or else segfault badness
                 GLib.idle_add(self.append_to_log_window, str(buf))
-
 
             def myFlush():
                 pass
@@ -610,15 +611,42 @@ class App(Gtk.Application):
                 lg.warning(f"Running with the example configuration file.")
 
             try:
+                #with open(self.config_file, "r") as f:
+                #    for line in f:
+                #        lg.debug(line.rstrip())
                 with open(self.config_file, "r") as f:
-                    for line in f:
-                        lg.debug(line.rstrip())
-                with open(self.config_file, "r") as f:
-                    self.config = yaml.load(f, Loader=yaml.FullLoader)
+                    base_config = yaml.load(f, Loader=yaml.FullLoader)
             except:
                 lg.error("Unexpected error parsing config file.")
                 lg.error(sys.exc_info()[0])
                 raise
+
+            # now let's load auxiliary config files and merge the configs
+            aux_configs = []
+            aux_config_dir_exists = False
+            try:
+                ip = base_config['meta']['include_path']
+                if os.path.isabs(ip):
+                    include_path = pathlib.Path(ip)
+                else:
+                    include_path = pathlib.Path.home() / pathlib.Path(ip)
+                if include_path.exists() and include_path.is_dir():
+                    aux_config_dir_exists = True
+            except:
+                pass
+            if aux_config_dir_exists == True:
+                for pth in include_path.iterdir():
+                    try:
+                        with open(pth, "r") as f:
+                            new_config = yaml.load(f, Loader=yaml.FullLoader)
+                        aux_configs.append(new_config)
+                    except:
+                        pass
+
+            self.config = merge_dicts([base_config] + aux_configs)
+            
+            pp = pprint.PrettyPrinter(compact=True, width=140, sort_dicts=False)
+            lg.debug(pp.pformat(self.config))
 
             # get dimentions of substrate array to generate designators
             number_list = self.config["substrates"]["number"]
@@ -627,15 +655,16 @@ class App(Gtk.Application):
             )
             self.num_substrates = len(self.substrate_designators)
 
+            # are we using a stage controller here?
+            try:
+                enable_stage = self.config["stage"]["enabled"] == True
+            except:
+                enable_stage = False
+            
             # handle custom locations and stage stuff
-            pl = self.b.get_object("places_list")  # a tree model
-            self.custom_coords = []
-            enable_stage = False
-            if 'stage' in self.config:
-                if "enabled" in self.config["stage"]:
-                    if self.config["stage"]["enabled"] == True:
-                        enable_stage = True
-
+            if enable_stage == True:
+                pl = self.b.get_object("places_list")  # a tree model
+                self.custom_coords = []
                 if "experiment_positions" in self.config["stage"]:
                     for key, val in self.config["stage"]["experiment_positions"].items():
                         pl.append(['EXPERIMENT -- ' + key])
@@ -646,14 +675,12 @@ class App(Gtk.Application):
                         pl.append([key])
                         self.custom_coords.append(val)
 
-            if enable_stage == True:
                 if len(self.custom_coords) == 0:
                     self.b.get_object("places_combo").set_visible(False)
                     self.b.get_object("places_label").set_visible(False)
 
                 # stage specific stuff
                 stage_uri_split = self.config["stage"]["uri"].split('://')
-                stage_protocol = stage_uri_split[0]
                 stage_address = stage_uri_split[1]
                 stage_address_split = stage_address.split('/')
                 esl = stage_address_split[0]
@@ -694,41 +721,37 @@ class App(Gtk.Application):
                 self.b.get_object("stage_util").set_visible(False)
                 self.b.get_object("home_util").set_visible(False)
 
-            # do lockin things
-            enable_lia = False
-            if 'lia' in self.config:
-                if "enabled" in self.config["lia"]:
-                    if self.config["lia"]["enabled"] == True:
-                        enable_lia = True
+            # are we using a lockin here?
+            try:
+                enable_lia = self.config["lia"]["enabled"] == True
+            except:
+                enable_lia = False
 
-            # do mono things
-            enable_mono = False
-            if 'monochromator' in self.config:
-                if "enabled" in self.config["monochromator"]:
-                    if self.config["monochromator"]["enabled"] == True:
-                        enable_mono = True
+            # are we using a monochromator here?
+            try:
+                enable_mono = self.config["monochromator"]["enabled"] == True
+            except:
+                enable_mono = False
 
-            # do smu things
-            enable_smu = False
-            if 'smu' in self.config:
-                if "enabled" in self.config["smu"]:
-                    if self.config["smu"]["enabled"] == True:
-                        enable_smu = True
+            # are we using a SMU here?
+            try:
+                enable_smu = self.config["smu"]["enabled"] == True
+            except:
+                enable_smu = False
 
-            # do solarsim things
-            enable_solarsim = False
-            if 'solarsim' in self.config:
-                if "enabled" in self.config["solarsim"]:
-                    if self.config["solarsim"]["enabled"] == True:
-                        enable_solarsim = True
+            # are we using a solar sim here?
+            try:
+                enable_solarsim = self.config["solarsim"]["enabled"] == True
+            except:
+                enable_solarsim = False
 
-            # do psu things
-            enable_psu = False
-            if 'psu' in self.config:
-                if "enabled" in self.config["psu"]:
-                    if self.config["psu"]["enabled"] == True:
-                        enable_solarsim = True
-
+            # are we using a bias light PSU here?
+            try:
+                enable_psu = self.config["solarsim"]["enabled"] == True
+            except:
+                enable_psu = False
+            
+            # enable/disable logic
             enable_eqe = False
             if (enable_mono == True) and (enable_lia == True) and (enable_smu == True):
                 enable_eqe = True
@@ -737,6 +760,7 @@ class App(Gtk.Application):
             if (enable_smu == True):
                 enable_iv = True
 
+            # hide GUI elements that don't match what were configured to use
             if enable_eqe == False:
                 self.b.get_object("eqe_frame").set_visible(False)
                 self.b.get_object("eqe_util").set_visible(False)
@@ -829,8 +853,9 @@ class App(Gtk.Application):
             self.lopo.set_relative_to(self.slot_config_tv)
             self.lopo.add(Gtk.Label(label=self.layouts[0]))
 
-            self.approx_seconds_per_iv = 50
-            self.approx_seconds_per_eqe = 150
+            # for approximating runtimes
+            #self.approx_seconds_per_iv = 50
+            #self.approx_seconds_per_eqe = 150
 
             cvt_vis = False
             self.wvids = []
@@ -899,21 +924,22 @@ class App(Gtk.Application):
                     c3bla = self.b.get_object('ch3_bias_light_adj')
                     c3bla.set_upper(self.config['psu']['ch3_ocp']*1000)
 
-            self.tick()
-            self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
-            self.b.connect_signals(self)  # maps all ui callbacks to functions here
-
-            # for doing tasks on stack change
+            # for doing tasks when the user makes a stack change
             ms = self.b.get_object('mainStack')
             ms.connect("notify::visible-child", self.on_stack_change)
 
             # for handling global accelerator key combos
             ag = self.b.get_object('global_keystrokes')
-            ag.connect(Gdk.keyval_from_name('D'), Gdk.ModifierType.CONTROL_MASK, 0, self.on_debug_button)
+            # setup debug key combo
+            ag.connect(Gdk.keyval_from_name('D'), Gdk.ModifierType.CONTROL_MASK, 0, self.do_debug_tasks)
+
+            # do one tick now and then start the backround tick launcher
+            self.tick()
+            self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
+            self.b.connect_signals(self)  # maps all ui callbacks to functions here
 
             self.main_win = self.b.get_object("mainWindow")
             self.main_win.set_application(self)
-
 
         self.main_win.present()
 
@@ -1132,7 +1158,6 @@ class App(Gtk.Application):
         adj = self.log_win_adj
         adj.set_value(adj.get_upper())
 
-
     def on_about(self, action, param):
         about_dialog = Gtk.AboutDialog(transient_for=self.main_win, modal=True)
         about_dialog.show()
@@ -1247,7 +1272,6 @@ class App(Gtk.Application):
                 pickle.dump(save_data,f,protocol=pickle.HIGHEST_PROTOCOL)
         else:
             lg.info(f"Save aborted.")
-
 
     def on_open_button(self, button):
         """Populate widget entries from data saved in a file."""
@@ -1372,49 +1396,48 @@ class App(Gtk.Application):
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
             self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
-    # generates per-selection lists of relevant info for each device the user has selected
-    # these are what i expect the measurement backend to use
-    def generate_per_select(self, slot_store, dev_store):
-        """
-        input: the slot config store and a device selection store
-        outputs a dict of lists with one element for each selected device:
-        system_labels: 
-        user_labels: 
-        labels: 
-        pixel_numbers:
-        areas: 
-        mux_selection_strings
-        """
+    # # generates per-selection lists of relevant info for each device the user has selected
+    # # these are what i expect the measurement backend to use
+    # def generate_per_select(self, slot_store, dev_store):
+    #     """
+    #     input: the slot config store and a device selection store
+    #     outputs a dict of lists with one element for each selected device:
+    #     system_labels: 
+    #     user_labels: 
+    #     labels: 
+    #     pixel_numbers:
+    #     areas: 
+    #     mux_selection_strings
+    #     """
 
-        selection_bitmask = int(bitmask, 16)
-        bin_mask = bin(selection_bitmask)[2::]
-        bin_mask = bin_mask[:tpix]  # prune to total pixel number
-        bin_mask_rev = bin_mask[::-1]
-        dev_nums = []
-        subs_nums = []
-        sub_dev_nums = []
-        subs_names = []
-        user_labels = []
-        selections = []
-        #for subs in
-        for i,c in enumerate(bin_mask_rev):
-            if c == '1':
-                dev_num = i
-                dev_nums += [dev_num]
-                subs_num = math.floor(i/self.num_pix)  #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
-                subs_nums += [subs_num]
-                sub_dev_num = dev_num%self.num_pix + 1  # we'll count these from 1 here #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
-                sub_dev_nums += [sub_dev_num]
-                subs_name = self.substrate_designators[subs_num]
-                subs_names += [subs_name]
-                user_label = self.label_shadow[subs_num]
-                user_labels += [user_label]
-                selection = f"s{subs_name}{sub_dev_num}".lower()
-                selections += [selection]
-                if len(dev_nums) >= maximum:
-                    break
-        return({'dev_nums':dev_nums, 'subs_nums':subs_nums, 'sub_dev_nums':sub_dev_nums, 'subs_names':subs_names, 'user_labels':user_labels, 'selections':selections})
-
+    #     selection_bitmask = int(bitmask, 16)
+    #     bin_mask = bin(selection_bitmask)[2::]
+    #     bin_mask = bin_mask[:tpix]  # prune to total pixel number
+    #     bin_mask_rev = bin_mask[::-1]
+    #     dev_nums = []
+    #     subs_nums = []
+    #     sub_dev_nums = []
+    #     subs_names = []
+    #     user_labels = []
+    #     selections = []
+    #     #for subs in
+    #     for i,c in enumerate(bin_mask_rev):
+    #         if c == '1':
+    #             dev_num = i
+    #             dev_nums += [dev_num]
+    #             subs_num = math.floor(i/self.num_pix)  #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
+    #             subs_nums += [subs_num]
+    #             sub_dev_num = dev_num%self.num_pix + 1  # we'll count these from 1 here #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
+    #             sub_dev_nums += [sub_dev_num]
+    #             subs_name = self.substrate_designators[subs_num]
+    #             subs_names += [subs_name]
+    #             user_label = self.label_shadow[subs_num]
+    #             user_labels += [user_label]
+    #             selection = f"s{subs_name}{sub_dev_num}".lower()
+    #             selections += [selection]
+    #             if len(dev_nums) >= maximum:
+    #                 break
+    #     return({'dev_nums':dev_nums, 'subs_nums':subs_nums, 'sub_dev_nums':sub_dev_nums, 'subs_names':subs_names, 'user_labels':user_labels, 'selections':selections})
 
     def on_mode_toggle_button(self, button):
         """
@@ -1433,7 +1456,6 @@ class App(Gtk.Application):
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
-
     def on_health_button(self, button):
         lg.info("HEALTH CHECK INITIATED")
         msg = {'cmd':'check_health',
@@ -1450,7 +1472,6 @@ class App(Gtk.Application):
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
-
     def move_warning(self):
         message_dialog = Gtk.MessageDialog(
             modal=True,
@@ -1466,7 +1487,6 @@ class App(Gtk.Application):
         message_dialog.destroy()
         return(result)
 
-
     def on_home_button(self, button):
         """Home the stage."""
         if (self.move_warning() == Gtk.ResponseType.OK):
@@ -1474,7 +1494,6 @@ class App(Gtk.Application):
             msg = {'cmd':'home', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
             self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
-
 
     def on_halt_button(self, button):
         """Emergency stop"""
@@ -1484,20 +1503,17 @@ class App(Gtk.Application):
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
         self.mqttc.publish("measurement/stop", "stop", qos=2).wait_for_publish()
 
-
     def on_mono_zero_button(self, button):
         """Sends Monochromator to 0nm"""
         msg = {'cmd':'mono_zero', 'mono_address': self.config['monochromator']['address']}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
-
     def on_stage_read_button(self, button):
         """Read the current stage position."""
         msg = {'cmd':'read_stage', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
-
 
     def on_goto_button(self, button):
         """Goto stage position."""
@@ -1519,24 +1535,21 @@ class App(Gtk.Application):
             run_name = self.b.get_object("run_name").get_text()
             gui_data = self.harvest_gui_data()
 
-            autosave_config = True
-            if 'config_autosave' in self.config:
-                if 'enabled' in self.config['config_autosave']:
-                    if self.config['config_autosave']['enabled'] != True:
-                       autosave_config = False
-                    else:
-                        if 'path' in self.config['config_autosave']:
-                            user_autosave_path = self.config['config_autosave']['path']
+            try:
+                autosave_config = self.config['meta']['autosave_enabled'] == True
+            except:
+                autosave_config = True
             
             if autosave_config == True:
                 autosave_file_name = run_name + '_autosave.dat'
-                if 'user_autosave_path' in locals():
-                    if os.path.isabs(user_autosave_path):
-                        autosave_pathname = pathlib.Path(user_autosave_path)
-                    else:
-                        autosave_pathname = pathlib.Path.home() / user_autosave_path
+                try:
+                    user_autosave_path = self.config['meta']['autosave_path']
+                except:
+                    user_autosave_path = 'runconfigs'
+                if os.path.isabs(user_autosave_path):
+                    autosave_pathname = pathlib.Path(user_autosave_path)
                 else:
-                    autosave_pathname = pathlib.Path.home()
+                    autosave_pathname = pathlib.Path.home() / pathlib.Path(user_autosave_path)
                 autosave_pathname.mkdir(parents=True, exist_ok=True)
                 autosave_destination = (autosave_pathname / autosave_file_name)
                 lg.info(f"Autosaving gui state to: {autosave_destination}")
@@ -1748,6 +1761,39 @@ class App(Gtk.Application):
             for sib in parent.get_children():
                 sib.set_sensitive(False)
             me.set_sensitive(True)
+
+# adapted from https://gist.github.com/mahmoud/db02d16ac89fa401b968#gistcomment-2884354
+def merge_dicts(target_list, replace_lists=True):
+
+    target_list = [(id(t), t) for t in target_list]
+
+    ret = None
+
+    def remerge_enter(path, key, value):
+        new_parent, new_items = default_enter(path, key, value)
+        if ret and not path and key is None:
+            new_parent = ret
+        try:
+            cur_val = get_path(ret, path + (key, ))
+        except KeyError:
+            pass
+        else:
+            new_parent = cur_val
+
+        if isinstance(value, list):
+            if replace_lists:
+                new_parent = value
+            else:
+                new_parent.extend(value)  # concatenate lists
+            new_items = []
+
+        return new_parent, new_items
+
+    for t_name, target in target_list:
+        remerge_visit = default_visit
+        ret = remap(target, enter=remerge_enter, visit=remerge_visit)
+
+    return ret
 
 
 if __name__ == "__main__":
