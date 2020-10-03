@@ -14,7 +14,9 @@ from boltons.iterutils import default_visit
 from boltons.iterutils import get_path
 from boltons.iterutils import remap
 
-# import logging.handlers
+# for drawing layouts
+import drawSvg as draw
+
 import gi
 import sys
 import os
@@ -34,7 +36,7 @@ import yaml
 gi.require_version("WebKit2", "4.0")
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
-from gi.repository import GLib, Gio, Gtk, Gdk, Pango
+from gi.repository import GLib, Gio, Gtk, Gdk, Pango, GdkPixbuf
 
 # Gdk.set_allowed_backends('broadway')  # for gui over web
 from gi.repository.WebKit2 import WebView, Settings
@@ -405,7 +407,12 @@ class App(Gtk.Application):
     # the user has hovered their mouse over a layout choice
     def on_layout_combo_entered(self, widget, event, user_data):
         layout_index = user_data
-        self.lopo.get_child().set_label(self.layouts[layout_index])
+        svgdat = self.layout_drawings[layout_index].asSvg()
+        stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes(svgdat.encode()))
+        pixbuf = GdkPixbuf.Pixbuf.new_from_stream(stream, None)
+        #svgwidget = Gtk.Image.new_from_pixbuf(pixbuf)
+        #self.lopo.get_child().set_label()
+        self.lopo.get_child().set_from_pixbuf(pixbuf)
         self.lopo.popup()
         self.lopo.show_all()
 
@@ -790,25 +797,27 @@ class App(Gtk.Application):
                 self.b.get_object("mono_util").set_visible(False)
 
             # do layout things
-            self.layouts = []  # list of enabled layouts
-            self.npix = []  # number of pixels for each layout
-            self.areas = []  # area list for each layout
+            layouts = []  # list of enabled layouts
+            npix = []  # number of pixels for each layout
+            areas = []  # area list for each layout
+            self.layout_drawings = []  # holds our pictures of the layouts
             if 'substrates' in self.config:
                 if 'layouts' in self.config['substrates']:
                     for layout_name, val in self.config['substrates']['layouts'].items():
                         if 'enabled' in val:
                             if val['enabled'] == True:
-                                self.layouts.append(layout_name)
-                                self.npix.append(len(val['pads']))
-                                self.areas.append(val['areas'])
+                                layouts.append(layout_name)
+                                npix.append(len(val['pads']))
+                                areas.append(val['areas'])
+                                self.layout_drawings.append(self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size']))
 
             ns = self.num_substrates
             # slot configuration stuff
             self.slot_config_tv = self.b.get_object("substrate_tree")
-            self.setup_slot_config_tv(self.slot_config_tv, self.layouts)
+            self.setup_slot_config_tv(self.slot_config_tv, layouts)
             self.slot_config_store = Gtk.ListStore(str, str, str)  # ref des, user label, layout name
             self.slot_config_tv.set_model(self.slot_config_store)
-            self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [self.layouts[0]]*ns)
+            self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [layouts[0]]*ns)
             self.slot_config_store.connect('row-changed', self.on_slot_store_change)
 
             # device selection stuff
@@ -820,10 +829,10 @@ class App(Gtk.Application):
             self.iv_store.set_name('IV Device Store')
             self.eqe_store = Gtk.TreeStore(str, bool, bool, str, bool)
             self.eqe_store.set_name('EQE Device Store')
-            self.fill_device_select_store(self.iv_store,  [[True]*self.npix[0]]*ns,  self.substrate_designators, ['']*ns, [self.layouts[0]]*ns, [self.areas[0]]*ns, [True]*ns)
-            self.fill_device_select_store(self.eqe_store, [[False]*self.npix[0]]*ns, self.substrate_designators, ['']*ns, [self.layouts[0]]*ns, [self.areas[0]]*ns, [True]*ns)
+            self.fill_device_select_store(self.iv_store,  [[True]*npix[0]]*ns,  self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
+            self.fill_device_select_store(self.eqe_store, [[False]*npix[0]]*ns, self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
 
-            abs_max_devices = max(self.npix) * self.num_substrates
+            abs_max_devices = max(npix) * self.num_substrates
             max_address_string_length = math.ceil(abs_max_devices / 4)
             selection_box_length = max_address_string_length + 2
 
@@ -851,7 +860,8 @@ class App(Gtk.Application):
             self.lopo = self.b.get_object("layout_po")
             self.lopo.set_position(Gtk.PositionType.RIGHT)
             self.lopo.set_relative_to(self.slot_config_tv)
-            self.lopo.add(Gtk.Label(label=self.layouts[0]))
+            self.lopo.add(Gtk.Image())
+            #self.lopo.add(Gtk.Label(label=layouts[0]))
 
             # for approximating runtimes
             #self.approx_seconds_per_iv = 50
@@ -942,6 +952,42 @@ class App(Gtk.Application):
             self.main_win.set_application(self)
 
         self.main_win.present()
+
+    # draws pixels based on layout info from the config file
+    def draw_layout(self, pads, areas, locations, shapes, size):
+        maxdim = 300  # how big in pixels should the render be on screen?
+        fixed_scale_factor = 10
+        use_fixed_scale = True
+
+        if len(size) == 0:  # handles the empty case
+            size = [10, 10]
+            bg = None
+        else:
+            bg = draw.Rectangle(-size[0]/2, -size[1]/2, size[0], size[1], fill='black')
+
+        d = draw.Drawing(size[0], size[1], origin='center', displayInline=False)
+        d.append(bg)
+        for i in range(len(pads)):
+            pad = pads[i]
+            a = areas[i] * 100  # cm^2 to mm^2
+            xy = locations[i]
+            shape = shapes[i]
+            if shape == 'c':
+                r = math.sqrt(a/math.pi)
+                d.append(draw.Circle(xy[0], xy[1], r, fill='white'))
+            elif shape == 's':
+                q = math.sqrt(a)
+                d.append(draw.Rectangle(xy[0]-q/2, xy[1]-q/2, q, q, fill='white'))
+            elif isinstance(shape, float):
+                pass
+        
+        if use_fixed_scale == True:
+            scale = fixed_scale_factor
+        else:
+            scale = maxdim/max(size)
+        
+        d.setPixelScale(scale)
+        return d
 
     def load_live_data_webviews(self, load):
         for i,wvid in enumerate(self.wvids):

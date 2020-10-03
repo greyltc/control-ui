@@ -163,6 +163,8 @@ substrates:
             enabled: true
             # which of the the (changeable) PCB adapter boards this layout uses
             pcb_name: 30x30mm
+            # outer dimensions of the substrate in mm
+            size: [30, 30]
             # list of PCB adapter board pad the devices of this layout use
             pads:       [1,           2,          3,       4,      5,          6]
             # list of position vectors of each pixel describing where they are on the substrate
@@ -180,6 +182,7 @@ substrates:
         two large:
             enabled: true
             pcb_name: 30x30mm
+            size: [30, 30]
             pads:       [1,           2,          3,       4,      5,          6]
             locations:  [[-10, -7.5], [10, -7.5], [-4, 0], [4, 0], [-10, 7.5], [10, 7.5]]
             shapes:     [s,           s,          s,       s,      s,          s]
@@ -190,6 +193,7 @@ substrates:
         no large:
             enabled: true
             pcb_name: 30x30mm
+            size: [30, 30]
             pads:       [1,           2,         3,       4,      5,         6]
             locations:  [[-4, -7.5],  [4, -7.5], [-4, 0], [4, 0], [-4, 7.5], [4, 7.5]]
             shapes:     [s,           s,         s,       s,      s,         s]
@@ -200,6 +204,7 @@ substrates:
         BPW34s:
             enabled: true
             pcb_name: 30x30mm
+            size: [30, 30]
             pads:       [1,          2,         3,       4,      5,         6]
             locations:  [[-3, -7.5], [3, -7.5], [-3, 0], [3, 0], [-3, 7.5], [3, 7.5]]
             shapes:     [s,          s,         s,       s,      s,         s]
@@ -210,6 +215,7 @@ substrates:
         OLD one large:
             enabled: true
             pcb_name: 30x30mm
+            size: [30, 30]
             pads:       [2,         3,       4,       6]
             locations:  [[4, -7.5], [-4, 0], [4, 0],  [4, 7.5]]
             shapes:     [s,         s,       s,       s]
@@ -220,6 +226,7 @@ substrates:
         OLD two large:
             enabled: true
             pcb_name: 30x30mm
+            size: [30, 30]
             pads:       [3,       4]
             locations:  [[-4, 0], [4, 0]]
             shapes:     [s,       s]
@@ -230,6 +237,7 @@ substrates:
         OLD no large:
             enabled: true
             pcb_name: 30x30mm
+            size: [30, 30]
             pads:       [1,           2,         3,       4,      5,         6]
             locations:  [[-4, -7.5],  [4, -7.5], [-4, 0], [4, 0], [-4, 7.5], [4, 7.5]]
             shapes:     [s,           s,         s,       s,      s,         s]
@@ -240,6 +248,7 @@ substrates:
         28x28:
             enabled: true
             pcb_name: 28x28mm
+            size: [28, 28]
             pads:       [1,          2,         3,        4,       5,       6,      7,         8]
             locations:  [[-4, -7.5], [4, -7.5], [-4, -2], [4, -2], [-4, 2], [4, 2], [-4, 7.5], [4, 7.5]]
             shapes:     [c,          c,         c,        c,       c,       c,      c,         c]
@@ -250,6 +259,7 @@ substrates:
         empty:
             enabled: true
             pcb_name: na
+            size: []
             pads: []
             locations: []
             shapes: []
