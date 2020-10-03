@@ -342,12 +342,20 @@ class App(Gtk.Application):
         if len(tree_view.get_columns()) == 1:
             label_cell = Gtk.CellRendererText()
             label_cell.set_property("editable", True)
-            label_cell.connect("edited", self.on_user_label_edit)
+            label_cell.connect("edited", self.on_slot_cell_edit)
             labels_col = Gtk.TreeViewColumn("Label", label_cell, text=1)
             tree_view.append_column(labels_col)
 
-        # the layout dropdown selection column
+        # the variable column
         if len(tree_view.get_columns()) == 2:
+            vars_cell = Gtk.CellRendererText()
+            vars_cell.set_property("editable", True)
+            vars_cell.connect("edited", self.on_slot_cell_edit)
+            vars_col = Gtk.TreeViewColumn("Variable", vars_cell, text=3)
+            tree_view.append_column(vars_col)
+
+        # the layout dropdown selection column
+        if len(tree_view.get_columns()) == 3:
             # this allows me to find the combo box object
             tree_view.connect('set-focus-child', self.on_layout_combo_focus)
             layout_cell = Gtk.CellRendererCombo()
@@ -366,7 +374,7 @@ class App(Gtk.Application):
     def fill_slot_config_store(self, store, substrate_designators, labels, layouts):
         store.clear()
         for i in range(len(substrate_designators)):
-            store.append([substrate_designators[i], labels[i], layouts[i]])
+            store.append([substrate_designators[i], labels[i], layouts[i], vars[]])
     
     # makes updates to the slot config list store
     # if new is a list, this attempts to update them all
@@ -427,8 +435,8 @@ class App(Gtk.Application):
         except:
             pass
 
-    # the user has made an edit in the user label cell
-    def on_user_label_edit(self, widget, path, text):
+    # the user has made a text edit in the slot config table
+    def on_slot_cell_edit(self, widget, path, text):
         self.slot_config_store[path][1] = text
     
     # called when a user pushes a device selection toggle button
@@ -633,10 +641,10 @@ class App(Gtk.Application):
             aux_config_dir_exists = False
             try:
                 ip = base_config['meta']['include_path']
-                if os.path.isabs(ip):
+                if pathlib.Path(ip).is_absolute():
                     include_path = pathlib.Path(ip)
                 else:
-                    include_path = pathlib.Path.home() / pathlib.Path(ip)
+                    include_path = pathlib.Path.home() / ip
                 if include_path.exists() and include_path.is_dir():
                     aux_config_dir_exists = True
             except:
@@ -1592,10 +1600,10 @@ class App(Gtk.Application):
                     user_autosave_path = self.config['meta']['autosave_path']
                 except:
                     user_autosave_path = 'runconfigs'
-                if os.path.isabs(user_autosave_path):
+                if pathlib.Path(user_autosave_path).is_absolute():
                     autosave_pathname = pathlib.Path(user_autosave_path)
                 else:
-                    autosave_pathname = pathlib.Path.home() / pathlib.Path(user_autosave_path)
+                    autosave_pathname = pathlib.Path.home() / user_autosave_path
                 autosave_pathname.mkdir(parents=True, exist_ok=True)
                 autosave_destination = (autosave_pathname / autosave_file_name)
                 lg.info(f"Autosaving gui state to: {autosave_destination}")
