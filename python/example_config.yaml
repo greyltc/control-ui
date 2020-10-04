@@ -148,11 +148,9 @@ stage:
 # a section for describing how the substrates are positioned and what might be on them
 substrates:
     # list of number of substrates along each available axis: [x-direction, y-direction]
-    #number: [4, 5]
-    number: [8]
+    number: [8]  # [4, 5]
     # spacing in mm between substrate centers along each available axis
-    #spacing: [35, 29]
-    spacing: [40]
+    spacing: [40]  # [35, 29]
 
     # the section for device layout information
     # the first one listed here will be considered the default

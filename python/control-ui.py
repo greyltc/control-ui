@@ -26,8 +26,8 @@ import humanize
 import datetime as dt
 import paho.mqtt.client as mqtt
 import pickle
-import collections
 import pandas as pd
+import numpy as np
 
 import yaml
 
@@ -86,27 +86,50 @@ class App(Gtk.Application):
             None,
         )
 
-    def _generate_substrate_designators(self, number_list):
-        """Generate a list of substrate designators.
+    def make_meshgrids(self, counts, spacings):
+        d = len(counts)  # number of dimensions
+        # the labeling start character is kinda wonky so we can handle it here based on d
+        if d == 1:
+            label_starts = ['A']
+        elif d == 2:
+            label_starts = ['1','A']
+        else:
+            label_starts = ['a','1','A']
+        ranges = [np.array(range(x)) for x in counts]
+        label_ranges =    [r+ord(label_starts[i]) for i,r in enumerate(ranges)]
+        location_ranges = [r*spacings[i] for i,r in enumerate(ranges)]
+        location_ranges = [r-r.max()/2 for i,r in enumerate(location_ranges)]  # center the location ranges on zero
 
-        Parameters
-        ----------
-        number_list : list
-            List of numbers of substrates along each available axis. Length must be
-            1 or 2.
-        """
-        try:
-            rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[1]]
-            cs = range(number_list[0])
-            cs = [str(x+1) for x in cs]
-        except IndexError:
-            # if number of columns not given, must be 0
-            rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[0]]
-            cs = ['']
+        label_meshgrid = np.empty(list(counts), dtype=np.dtype(f'U{d}'))
+        pos_meshgrid = np.empty(list(counts), dtype=object)
+        labels = []
+        positions = []
 
-        subdes = [f"{n}{m}" for m in rs for n in cs]
+        # populate the grids
+        for idx, x in np.ndenumerate(label_meshgrid):
+            label = ''
+            pos = []
+            for j,i in enumerate(idx):
+                label += chr(label_ranges[j][i])
+                pos.append(location_ranges[j][i])
+            label_meshgrid[idx] = label
+            pos_meshgrid[idx] = pos
+            labels.append(label)
+            positions.append(pos)
 
-        return subdes
+        #try:
+        #    rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[1]]
+        #    cs = range(number_list[0])
+        #    cs = [str(x+1) for x in cs]
+        #except IndexError:
+        #    # if number of columns not given, must be 0
+        #    rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[0]]
+        #    cs = ['']
+        #
+        #subdes = [f"{n}{m}" for m in rs for n in cs]
+
+        #NOTE: this puts 1A@-52.5,-58 : 1E@-52.5,58 : 4A@52.5,-58 : 4E@52.5,58
+        return labels, positions, label_meshgrid, pos_meshgrid
 
     def _start_mqtt(self):
         """Start the MQTT client and subscribe to the CLI topic."""
@@ -330,83 +353,135 @@ class App(Gtk.Application):
 
     # sets up the columns the slot configuration treeview will show us
     def setup_slot_config_tv(self, tree_view, layouts):
+        # clear the cols
+        for col in tree_view.get_columns():
+            tree_view.remove_column(col)
+
         # the refrence designator column
-        if len(tree_view.get_columns()) == 0:
-            ref_des_cell = Gtk.CellRendererText()
-            ref_des_col = Gtk.TreeViewColumn("Slot", ref_des_cell, text=0)
-            tree_view.append_column(ref_des_col)
+        ref_des_cell = Gtk.CellRendererText()
+        ref_des_col = Gtk.TreeViewColumn("Slot", ref_des_cell, text=0)
+        tree_view.append_column(ref_des_col)
 
         # the editable substrate label column
         # only append the col if it's not already there
         # fixes double col on file load
-        if len(tree_view.get_columns()) == 1:
-            label_cell = Gtk.CellRendererText()
-            label_cell.set_property("editable", True)
-            label_cell.connect("edited", self.on_slot_cell_edit)
-            labels_col = Gtk.TreeViewColumn("Label", label_cell, text=1)
-            tree_view.append_column(labels_col)
-
-        # the variable column
-        if len(tree_view.get_columns()) == 2:
-            vars_cell = Gtk.CellRendererText()
-            vars_cell.set_property("editable", True)
-            vars_cell.connect("edited", self.on_slot_cell_edit)
-            vars_col = Gtk.TreeViewColumn("Variable", vars_cell, text=3)
-            tree_view.append_column(vars_col)
+        store_col = 1
+        label_cell = Gtk.CellRendererText()
+        label_cell.set_property("editable", True)
+        label_cell.connect("edited", self.on_slot_cell_edit, store_col)
+        labels_col = Gtk.TreeViewColumn("Label", label_cell, text=store_col)
+        tree_view.append_column(labels_col)
 
         # the layout dropdown selection column
-        if len(tree_view.get_columns()) == 3:
-            # this allows me to find the combo box object
-            tree_view.connect('set-focus-child', self.on_layout_combo_focus)
-            layout_cell = Gtk.CellRendererCombo()
-            layouts_store = Gtk.ListStore(str)  # holds the layout options
-            for layout in layouts:
-                layouts_store.append([layout])
-            layout_cell.set_property("editable", True)
-            layout_cell.set_property("model", layouts_store)
-            layout_cell.set_property("has-entry", False)
-            layout_cell.set_property("text-column", 0)
-            layout_cell.connect("changed", self.on_layout_combo_changed)
-            layout_col = Gtk.TreeViewColumn("Layout", layout_cell, text=2)
-            tree_view.append_column(layout_col)
+        store_col = 2
+        # this allows me to find the combo box object
+        tree_view.connect('set-focus-child', self.on_layout_combo_focus)
+        layout_cell = Gtk.CellRendererCombo()
+        layouts_store = Gtk.ListStore(str)  # holds the layout options
+        for layout in layouts:
+            layouts_store.append([layout])
+        layout_cell.set_property("editable", True)
+        layout_cell.set_property("model", layouts_store)
+        layout_cell.set_property("has-entry", False)
+        layout_cell.set_property("text-column", 0)
+        layout_cell.connect("changed", self.on_layout_combo_changed)
+        layout_col = Gtk.TreeViewColumn("Layout", layout_cell, text=store_col)
+        tree_view.append_column(layout_col)
+
+    def on_col_header_click(self, col, store_col):
+        d = Gtk.MessageDialog(parent=self.main_win, buttons=Gtk.ButtonsType.CANCEL)
+        d.set_property('text', '<b>Variable Management</b>')
+        d.set_property('message-type', Gtk.MessageType.QUESTION)
+        d.set_property('use-markup', True)
+        delete_code = 4
+        if (store_col != 3) and (store_col == (len(self.slot_config_store.variables)+2)):  # the user can only delete the last var col if it's not the only one
+            d.add_buttons('Delete', delete_code)
+        rename_code = 5
+        d.add_buttons('Rename', rename_code)
+        new_code = 6
+        d.add_buttons('Add New', new_code)
+
+        hb = Gtk.HBox()
+        hb.add(Gtk.Label(label='New Variable Name: '))
+        var_entry = Gtk.Entry()
+        var_entry.set_text(col.get_title())
+        hb.add(var_entry)
+        mdb = d.get_message_area()
+        mdb.add(hb)
+        mdb.show_all()
+        response = d.run()
+        box_text = var_entry.get_text()
+        d.destroy()
+        if response != Gtk.ResponseType.CANCEL:
+            if response == delete_code:
+                self.slot_config_tv.remove_column(col)
+                self.delete_variable()
+            elif response == rename_code:
+                col.set_title(box_text)
+                self.slot_config_store.variables[store_col-3] = box_text
+            elif response == new_code:
+                self.add_variable(box_text)
+
+    # deletes the last variable
+    # can only delete the last one because deleting
+    # any one besides that one can mess up all the existing col # refs
+    # and fixing that seems hard
+    # assumes the treeview col as already been deleted
+    # updates the slot config store to remove the variable's data
+    def delete_variable(self):
+        variables = self.slot_config_store.variables
+        del(variables[-1])
+        # we must create the store in the proper shape
+        create_params = tuple([str]*(len(list(self.slot_config_store[0]))-1))
+        new_store = Gtk.ListStore(*create_params)  # ref des, user label, layout name, then the variable cols
+        for row in self.slot_config_store:
+            new_row = list(row)
+            del(new_row[-1])
+            new_store.append(tuple(new_row))
+        self.slot_config_tv.set_model(new_store)
+        del(self.slot_config_store)
+        self.slot_config_store = new_store
+        self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+        self.slot_config_store.variables = variables
+
+    # registers a new variable
+    # adds the variable name to the variables list
+    # inserts a col for it in the slot config treeview
+    # and if add_store_col == True, appends a new col for it in the slot config liststore
+    def add_variable(self, var_name, add_store_col=True):
+        variables = self.slot_config_store.variables
+        variables.append(var_name)
+        store_col = 2 + len(variables)
+
+        if add_store_col == True:
+            # we must create the store in the proper shape
+            create_params = tuple([str]*(len(list(self.slot_config_store[0]))+1))  
+            new_store = Gtk.ListStore(*create_params)  # ref des, user label, layout name, then the variable cols
+            for row in self.slot_config_store:
+                new_row = list(row) + ['']
+                new_store.append(tuple(new_row))
+            self.slot_config_tv.set_model(new_store)
+            del(self.slot_config_store)
+            self.slot_config_store = new_store
+            self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+        self.slot_config_store.variables = variables
+
+        var_cell = Gtk.CellRendererText()
+        var_cell.set_property("editable", True)
+        var_cell.connect("edited", self.on_slot_cell_edit, store_col)
+        var_col = Gtk.TreeViewColumn(var_name, var_cell, text=store_col)
+        var_col.set_clickable(True)
+        var_col.connect('clicked', self.on_col_header_click, store_col)
+        self.slot_config_tv.insert_column(var_col, store_col-1)
+    
+    def on_new_var_button(self, button):
+        self.add_variable(self.b.get_object("new_var").get_text())
 
     # populates the slot config store with the default startup values
     def fill_slot_config_store(self, store, substrate_designators, labels, layouts):
         store.clear()
         for i in range(len(substrate_designators)):
-            store.append([substrate_designators[i], labels[i], layouts[i], vars[]])
-    
-    # makes updates to the slot config list store
-    # if new is a list, this attempts to update them all
-    # otherwise updates the label at index
-    # called manually
-    def update_slot_config_store(self, new, column='label', index=0):
-        store = self.slot_config_store
-
-        if column == 'label':
-            col_num = 1
-        elif column == 'layout':
-            col_num = 2
-        else:
-            col_num = -1
-
-        if col_num >= 0:
-            if isinstance(new, list):
-                # we're updating all the rows
-                rows_to_update = range(len(new))
-                new_items = collections.deque(new)
-            else:
-                new_items = collections.deque([new])
-                rows_to_update = [index]
-            
-            # attempt to do the update(s)
-            for row_num in rows_to_update:
-                try:
-                    this_row = store[row_num]
-                    this_row[col_num] = new_items.popleft()
-                    store[(row_num,)] = this_row
-                except:
-                    pass
+            store.append([substrate_designators[i], labels[i], layouts[i]])
 
     # the user chose a new layout. save that choice in the slot config store
     def on_layout_combo_changed(self, widget, path, ti):
@@ -436,8 +511,8 @@ class App(Gtk.Application):
             pass
 
     # the user has made a text edit in the slot config table
-    def on_slot_cell_edit(self, widget, path, text):
-        self.slot_config_store[path][1] = text
+    def on_slot_cell_edit(self, widget, path, text, col):
+        self.slot_config_store[path][col] = text
     
     # called when a user pushes a device selection toggle button
     # updates the store ticked and inconsistent values
@@ -664,11 +739,12 @@ class App(Gtk.Application):
             lg.debug(pp.pformat(self.config))
 
             # get dimentions of substrate array to generate designators
-            number_list = self.config["substrates"]["number"]
-            self.substrate_designators = self._generate_substrate_designators(
-                number_list
-            )
-            self.num_substrates = len(self.substrate_designators)
+            counts = self.config["substrates"]["number"]
+            spacings = self.config["substrates"]["spacing"]
+            labels, positions, label_grid, position_grid = self.make_meshgrids(counts, spacings)
+            self.substrate_designators = labels
+            self.substrate_locations = positions
+            ns = len(self.substrate_designators)
 
             # are we using a stage controller here?
             try:
@@ -733,6 +809,7 @@ class App(Gtk.Application):
                     o = self.b.get_object("goto_y")
                     o.set_visible(False)
             else: # there is no stage
+                self.num_axes = 0
                 self.b.get_object("stage_util").set_visible(False)
                 self.b.get_object("home_util").set_visible(False)
 
@@ -818,15 +895,17 @@ class App(Gtk.Application):
                                 npix.append(len(val['pads']))
                                 areas.append(val['areas'])
                                 self.layout_drawings.append(self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size']))
+            self.layouts = layouts
 
-            ns = self.num_substrates
             # slot configuration stuff
             self.slot_config_tv = self.b.get_object("substrate_tree")
             self.setup_slot_config_tv(self.slot_config_tv, layouts)
             self.slot_config_store = Gtk.ListStore(str, str, str)  # ref des, user label, layout name
+            self.slot_config_store.variables = []
             self.slot_config_tv.set_model(self.slot_config_store)
             self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [layouts[0]]*ns)
             self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+            self.add_variable('Variable')
 
             # device selection stuff
             self.device_select_tv = self.b.get_object("device_tree")
@@ -840,7 +919,7 @@ class App(Gtk.Application):
             self.fill_device_select_store(self.iv_store,  [[True]*npix[0]]*ns,  self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
             self.fill_device_select_store(self.eqe_store, [[False]*npix[0]]*ns, self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
 
-            abs_max_devices = max(npix) * self.num_substrates
+            abs_max_devices = max(npix) * ns
             max_address_string_length = math.ceil(abs_max_devices / 4)
             selection_box_length = max_address_string_length + 2
 
@@ -1093,8 +1172,26 @@ class App(Gtk.Application):
         n_total_selected = 0
         bitmask = 0
         bitloc = 0
-        # pixel index is for which pixel this is on its layout, mux index is which mux switch that's connected to
-        df = pd.DataFrame(columns=['system_label', 'user_label', 'label', 'substrate_index', 'layout_pixel_index','layout', 'area', 'dark_area', 'mux_index', 'mux_string'])
+        
+        df_cols=[]
+        df_cols.append('system_label')  # label for the substrate slot that the system uses
+        df_cols.append('user_label')  # label the user may have entered for this substrate
+        df_cols.append('label')  # combo of the above two, formated as "{system}: {user}"
+        df_cols.append('substrate_index')  # a number used to represent the substrate
+        df_cols.append('layout_pixel_index')  # pixel index is for which pixel this is on its layout
+        df_cols.append('pixel_offset_raw')  # offset of this pixel relative to the center of its substrate (as read from the config file)
+        df_cols.append('pixel_offset')  # offset of this pixel relative to the center of its substrate (with unconfigured axes trimmed)
+        df_cols.append('substrate_offset_raw')  # offset of this substrate in the array
+        df_cols.append('substrate_offset')  # offset of this substrate in the array (with unconfigured axes trimmed)
+        df_cols.append('loc_raw')  # offset of this pixel from center of substrate array
+        df_cols.append('loc')  # offset of this pixel from center of substrate array  (with unconfigured axes trimmed)
+        df_cols.append('layout')  # the layout name
+        df_cols.append('area')  # illuminated area in cm^2
+        df_cols.append('dark_area')  # active area in cm^2
+        df_cols.append('mux_index')  # mux index is which mux switch needs to be closed for this (same as "pad" in cofig file)
+        df_cols.append('mux_string')  # the string the firmware needs to select this pixel
+        df_cols += self.slot_config_store.variables  # experimental variable names
+        df = pd.DataFrame(columns=df_cols)
         while siter is not None:  # substrate iterator loop
             n_subs = store.iter_n_children(siter)
             n_total += n_subs
@@ -1115,8 +1212,8 @@ class App(Gtk.Application):
                     df.append(pd.Series(name=dfr, dtype=object))
                     dpath = str(store.get_path(diter))
                     dpath_split = dpath.split(':')
-                    pixi = int(dpath_split[2])
-                    subi = int(dpath_split[1])
+                    pixi = int(dpath_split[2])  # pixel index in tree
+                    subi = int(dpath_split[1])  # substrate index in tree
                     system_label = self.slot_config_store[subi][0]
                     user_label = self.slot_config_store[subi][1]
                     layout = self.slot_config_store[subi][2]
@@ -1134,6 +1231,40 @@ class App(Gtk.Application):
                     mux_index = self.config['substrates']['layouts'][layout]['pads'][pixi]
                     df.at[dfr, 'mux_index'] = mux_index
                     df.at[dfr, 'mux_string'] = f"s{system_label}{mux_index}"
+                    por = self.config['substrates']['layouts'][layout]['locations'][pixi]
+                    df.at[dfr, 'pixel_offset_raw'] = por
+                    sor = self.substrate_locations[subi]
+                    df.at[dfr, 'substrate_offset_raw'] = sor
+                    locr = []
+                    for s,p in zip(sor,por):
+                        locr.append(s+p)
+                    df.at[dfr, 'loc_raw'] = locr
+                    if self.num_axes < 3:
+                        try:
+                            del por[2]
+                            del sor[2]
+                            del locr[2]
+                        except:
+                            pass
+                    if self.num_axes < 2:
+                        try:
+                            del por[1]
+                            del sor[1]
+                            del locr[1]
+                        except:
+                            pass
+                    if self.num_axes < 1:
+                        try:
+                            del por[0]
+                            del sor[0]
+                            del locr[0]
+                        except:
+                            pass
+                    df.at[dfr, 'pixel_offset'] = por
+                    df.at[dfr, 'substrate_offset'] = sor
+                    df.at[dfr, 'loc'] = locr
+                    for i,var in enumerate(self.slot_config_store.variables):
+                        df.at[dfr, var] = self.slot_config_store[subi][3+i]
 
                     n_subs_selected += 1
 
@@ -1214,7 +1345,7 @@ class App(Gtk.Application):
 
     def on_about(self, action, param):
         about_dialog = Gtk.AboutDialog(transient_for=self.main_win, modal=True)
-        about_dialog.show()
+        about_dialog.run()
 
     def do_shutdown(self):
         # stop the ticker
@@ -1234,14 +1365,14 @@ class App(Gtk.Application):
     def on_debug_button(self, *args, **kw_args):
         self.do_debug_tasks()
     
-    def do_debug_tasks(self):
+    def do_debug_tasks(self, *args, **kw_args):
         lg.debug("Hello World!")
         self.b.get_object("run_but").set_sensitive(True)
         #self.load_live_data_webviews(load=False)
         msg = {'cmd':'debug'}
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
-        #self.update_slot_config_store(['john','billy','greg'],column='layout')
+        print(self.slot_config_store.variables)
 
     # fills the device selection bitmask text box based on the device selection treestore
     def open_dev_picker(self, button):
@@ -1295,6 +1426,9 @@ class App(Gtk.Application):
             store_data = []
             this_obj.foreach(lambda model, path, it: store_data.append([str(path),tuple(model[it])]))
             gui_data[store] = {"type": str(type(this_obj)), "value": store_data, "call_to_set": "fill_store"}
+            if hasattr(this_obj, 'variables'):
+                gui_data['variables'] = {"type": "variables", "value": this_obj.variables, "call_to_set": "set_variables"}
+
         return gui_data
 
     def on_save_button(self, button):
@@ -1351,35 +1485,53 @@ class App(Gtk.Application):
             lg.info(f"Loading gui state from: {this_file}")
             with open(this_file, "rb") as f:
                 load_data = pickle.load(f)
-
+            
+            stores = {}  # a place to hold the stores we read. they need to be filled last
             for id_str, obj_info in load_data.items():
                 this_type = obj_info['type']
                 if ('TreeStore' in this_type) or ('ListStore' in this_type): # for handling liststores and treestores
-                    list_store = 'ListStore' in this_type
-                    try:
-                        store = getattr(self, id_str)
-                        store.clear()
-                        for line in obj_info['value']:
-                            path = line[0]
-                            row = line[1]
-                            if list_store:
-                                store.append(row)
-                            else:  # treestore is a bit more complicated because the tree structure must be recreated
-                                if ':' not in path:
-                                    piter = None  # no parent iterator, top level
-                                else:
-                                    parent_path = path.rsplit(':',1)[0]
-                                    piter = store.get_iter_from_string(parent_path)
-                                store.append(piter, row)
-                    except:
-                        pass  # give up on this one store if we can't load it
-                else:
+                    stores[id_str] = obj_info  # save the stores for later handling when we see them
+                elif this_type == 'variables':  # deal with the user's custom variables here
+                    vars = obj_info['value']
+                    create_params = tuple([str]*(3+len(vars)))  # we must create the store in the proper shape
+                    self.slot_config_store = Gtk.ListStore(*create_params)  # ref des, user label, layout name, then the variable cols
+                    self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+                    self.slot_config_store.variables = []
+                    # now that the store is the right shape, we can remake the treeview cols
+                    self.setup_slot_config_tv(self.slot_config_tv, self.layouts)
+                    self.slot_config_tv.set_model(self.slot_config_store)
+                    for var in vars:
+                        self.add_variable(var, add_store_col=False)
+                else:  # all the other gui params can be handled simply
                     try:
                         this_obj = self.b.get_object(id_str)
                         call_to_set = getattr(this_obj, obj_info['call_to_set'])
                         call_to_set(obj_info['value'])
                     except:
                         pass  # give up if we can't load this one element
+            
+            # now we can update the stores since we know we have shape for the slot config store set properly
+            for id_str, obj_info in stores.items():
+                this_type = obj_info['type']
+                list_store = 'ListStore' in this_type
+                try:
+                    store = getattr(self, id_str)
+                    store.clear()
+                    for line in obj_info['value']:
+                        path = line[0]
+                        row = line[1]
+                        if list_store:
+                            store.append(row)
+                        else:  # treestore is a bit more complicated because the tree structure must be recreated
+                            if ':' not in path:
+                                piter = None  # no parent iterator, top level
+                            else:
+                                parent_path = path.rsplit(':',1)[0]
+                                piter = store.get_iter_from_string(parent_path)
+                            store.append(piter, row)
+                except:
+                    pass  # give up on this one store if we can't load it
+            
             self.update_gui()
         else:
             lg.info(f"Load aborted.")
