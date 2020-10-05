@@ -164,39 +164,38 @@ substrates:
             # outer dimensions of the substrate in mm
             size: [30, 30]
             # list of PCB adapter board pad the devices of this layout use
-            pads:       [1,           2,          3,       4,      5,          6]
+            pads:       [1,              2,              3,          4,         5,             6]
             # list of position vectors of each pixel describing where they are on the substrate
             # positions are given in mm, [x, y], relative to the substrate center
-            locations:  [[-10, -7.5], [4, -7.5],  [-4, 0], [4, 0], [-10, 7.5], [4, 7.5]]
+            locations:  [[-8.16, -3.43], [4.33, -8.05],  [-4.33, 0], [4.33, 0], [-8.16, 3.43], [4.33, 8.05]]
             # list describing the shapes of the illuminated areas. s for square, c for circle
             # a number indicates the device shape is rectangular, with the number being the length in x
-            shapes:     [s,           s,          s,       s,      s,          s]
+            shapes:     [s,              4.66,           4.66,       4.66,      s,             4.66]
             # list of illumination areas in cm^2 of each device
-            areas:      [0.001,       0.25,       1,       0.25,   0.001,      0.25]
+            areas:      [0.01,           0.25,           1,          0.25,      0.01,          0.25]
             # list of active areas in cm^2 of each device
-            dark_areas: [0.001,       0.29,       1.1,     0.29,   0.001,      0.29]
+            dark_areas: [0.01,           0.3087,         1.1392,     0.3087,    0.01,          0.3087]
 
-        # Oxford 30x30 layout with two 1cm devices
         two large:
             enabled: true
             pcb_name: 30x30mm
             size: [30, 30]
-            pads:       [1,           2,          3,       4,      5,          6]
-            locations:  [[-10, -7.5], [10, -7.5], [-4, 0], [4, 0], [-10, 7.5], [10, 7.5]]
-            shapes:     [s,           s,          s,       s,      s,          s]
-            areas:      [0.001,       0.001,      1,       1,      0.001,      0.001]
-            dark_areas: [0.001,       0.001,      1.1,     1.1,    0.001,      0.001]
+            pads:       [1,              2,             3,          4,         5,             6]
+            locations:  [[-8.16, -3.43], [8.16, -3.43], [-4.33, 0], [4.33, 0], [-8.16, 3.43], [8.16, 3.43]]
+            shapes:     [s,              s,             4.66,       4.66,      s,             s]
+            areas:      [0.01,           0.01,          1,          1,         0.01,          0.01]
+            dark_areas: [0.01,           0.01,          1.1392,     1.1392,    0.01,          0.01]
 
         # Oxford 30x30 layout with no 1cm devices (6 medium ones)
         no large:
             enabled: true
             pcb_name: 30x30mm
             size: [30, 30]
-            pads:       [1,           2,         3,       4,      5,         6]
-            locations:  [[-4, -7.5],  [4, -7.5], [-4, 0], [4, 0], [-4, 7.5], [4, 7.5]]
-            shapes:     [s,           s,         s,       s,      s,         s]
-            areas:      [0.25,        0.25,      0.25,    0.25,   0.25,      0.25]
-            dark_areas: [0.29,        0.29,      0.29,    0.29,   0.29,      0.29]
+            pads:       [1,               2,             3,          4,         5,             6]
+            locations:  [[-4.33, -8.05],  [4.33, -8.05], [-4.33, 0], [4.33, 0], [-4.33, 8.05], [4.33, 8.05]]
+            shapes:     [4.66,            4.66,          4.66,       4.66,      4.66,          4.66]
+            areas:      [0.25,            0.25,          0.25,       0.25,      0.25,          0.25]
+            dark_areas: [0.3087,          0.3087,        0.3087,     0.3087,    0.3087,        0.3087]
 
         # Oxford 30x30 photodiode boards
         BPW34s:
@@ -214,36 +213,36 @@ substrates:
             enabled: true
             pcb_name: 30x30mm
             size: [30, 30]
-            pads:       [2,         3,       4,       6]
-            locations:  [[4, -7.5], [-4, 0], [4, 0],  [4, 7.5]]
-            shapes:     [s,         s,       s,       s]
-            areas:      [0.2,       1,       0.2,     0.2]
-            dark_areas: [0.26,      1.1,     0.26,    0.26]
+            pads:       [2,           3,          4,         6]
+            locations:  [[6.2, -7.1], [-6.35, 0], [6.2, 0],  [6.2, 7.1]]
+            shapes:     [4.02,        5.28,       4.02,      4.02]
+            areas:      [0.2,         1,          0.2,       0.2]
+            dark_areas: [0.2730,      1.1565,     0.2730,    0.2730]
 
         # OLD Oxford 30x30 layout with two 1cm devices
         OLD two large:
             enabled: true
             pcb_name: 30x30mm
             size: [30, 30]
-            pads:       [3,       4]
-            locations:  [[-4, 0], [4, 0]]
-            shapes:     [s,       s]
-            areas:      [1,       1]
-            dark_areas: [1.1,     1.1]
+            pads:       [3,          4]
+            locations:  [[-6.35, 0], [6.35, 0]]
+            shapes:     [5.28,       5.28]
+            areas:      [1,          1]
+            dark_areas: [1.1565,     1.1565]
 
         # OLD Oxford 30x30 layout with no 1cm devices (6 medium ones)
         OLD no large:
             enabled: true
             pcb_name: 30x30mm
             size: [30, 30]
-            pads:       [1,           2,         3,       4,      5,         6]
-            locations:  [[-4, -7.5],  [4, -7.5], [-4, 0], [4, 0], [-4, 7.5], [4, 7.5]]
-            shapes:     [s,           s,         s,       s,      s,         s]
-            areas:      [0.2,         0.2,       0.2,     0.2,    0.2,       0.2]
-            dark_areas: [0.26,        0.26,      0.26,    0.26,   0.26,      0.26]
+            pads:       [1,             2,           3,         4,        5,           6]
+            locations:  [[-6.2, -7.1],  [6.2, -7.1], [-6.2, 0], [6.2, 0], [-6.2, 7.1], [6.2, 7.1]]
+            shapes:     [4.02,          4.02,        4.02,      4.02,     4.02,        4.02]
+            areas:      [0.2,           0.2,         0.2,       0.2,      0.2,         0.2]
+            dark_areas: [0.2730,        0.2730,      0.2730,    0.2730,   0.2730,      0.2730]
 
         # legacy Oxford 28x28 layout
-        28x28:
+        28x28 legacy:
             enabled: true
             pcb_name: 28x28mm
             size: [28, 28]

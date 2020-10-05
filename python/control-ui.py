@@ -894,7 +894,7 @@ class App(Gtk.Application):
                                 layouts.append(layout_name)
                                 npix.append(len(val['pads']))
                                 areas.append(val['areas'])
-                                self.layout_drawings.append(self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size']))
+                                self.layout_drawings.append(self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size'], self.config['substrates']['spacing'], layout_name))
             self.layouts = layouts
 
             # slot configuration stuff
@@ -1041,19 +1041,26 @@ class App(Gtk.Application):
         self.main_win.present()
 
     # draws pixels based on layout info from the config file
-    def draw_layout(self, pads, areas, locations, shapes, size):
-        maxdim = 300  # how big in pixels should the render be on screen?
-        fixed_scale_factor = 10
-        use_fixed_scale = True
+    def draw_layout(self, pads, areas, locations, shapes, size, spacing, name):
+        max_render_pix = 300  # how big in pixels should the canvas be on screen?
+        d = len(spacing)
+        canvas = spacing
+        if d == 1:
+            canvas = canvas*2
+        elif d == 3:
+            del(canvas[-1])
+        maxd = max(canvas)
+        scale = max_render_pix/maxd
+
+        d = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False)
 
         if len(size) == 0:  # handles the empty case
-            size = [10, 10]
-            bg = None
+            c = draw.Circle(0, 0, maxd/4, **{'stroke-width':f"{maxd/16}", "stroke":"red", 'fill':'none'})
+            d.append(c)
         else:
             bg = draw.Rectangle(-size[0]/2, -size[1]/2, size[0], size[1], fill='black')
+            d.append(bg)
 
-        d = draw.Drawing(size[0], size[1], origin='center', displayInline=False)
-        d.append(bg)
         for i in range(len(pads)):
             pad = pads[i]
             a = areas[i] * 100  # cm^2 to mm^2
@@ -1063,16 +1070,22 @@ class App(Gtk.Application):
                 r = math.sqrt(a/math.pi)
                 d.append(draw.Circle(xy[0], xy[1], r, fill='white'))
             elif shape == 's':
-                q = math.sqrt(a)
-                d.append(draw.Rectangle(xy[0]-q/2, xy[1]-q/2, q, q, fill='white'))
+                rx = math.sqrt(a)
+                d.append(draw.Rectangle(xy[0]-rx/2, xy[1]-rx/2, rx, rx, fill='white'))
             elif isinstance(shape, float):
-                pass
-        
-        if use_fixed_scale == True:
-            scale = fixed_scale_factor
-        else:
-            scale = maxdim/max(size)
-        
+                rx = shape
+                ry = a/rx
+                d.append(draw.Rectangle(xy[0]-rx/2, xy[1]-ry/2, rx, ry, fill='white'))
+            lab_font_size = scale/3
+            lab = draw.Text(str(pad), lab_font_size, xy[0], xy[1]-lab_font_size/4, fill='gray', **{'text-anchor':'middle','dominant-baseline':'middle', 'font-weight':"bold"})
+            d.append(lab)
+        if ('OLD' in name) or ('legacy' in name):
+            ll = maxd/4
+            x1 = draw.Line(ll, ll, -ll, -ll, **{'stroke-width':f"{ll/8}","stroke":"red", "opacity":"0.5"})
+            d.append(x1)
+            x2 = draw.Line(ll, -ll, -ll, ll, **{'stroke-width':f"{ll/8}","stroke":"red", "opacity":"0.5"})
+            d.append(x2)
+
         d.setPixelScale(scale)
         return d
 
