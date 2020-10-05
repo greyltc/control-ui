@@ -133,11 +133,20 @@ stage:
     # the final field contains extra info for controlling the stage, for example "otter" tells the system to use a special homing procedure specific to one hardware setup
     uri: us://375/6400
     #uri: us://125/6400
-    speed: 29  # approx mm/s (used for timing calculations only, does not actually set speed)
+
+    # approx mm/s (used for timing calculations only, does not actually set speed)
+    speed: 29
+
+    # a list of true/false, one for each axis which tell the system which direction "forward" is for that axis
+    flip_axis_polarity: [false]
+    #flip_axis_polarity: [false, false]
+    
+    # coordinates of the center of the substrate array for specific measurement types
     experiment_positions:
         solarsim: [174]
         #eqe: [800, 250]
-    # these just show up in a list in the GUI to make it easier to move somewhere
+    
+        # these just show up in a list in the GUI to make it easier to move somewhere
     # experiment_positions are auto included in that list
     custom_positions:
         Load Position: [355]
@@ -148,10 +157,19 @@ stage:
 # a section for describing how the substrates are positioned and what might be on them
 substrates:
     # list of number of substrates along each available axis: [x-direction, y-direction]
-    number: [8]  # [4, 5]
+    number: [8]
+    #number: [4, 5]
+    
     # spacing in mm between substrate centers along each available axis
-    spacing: [40]  # [35, 29]
-
+    spacing: [40]
+    #spacing: [35, 29]
+    
+    # a list of true/false one, for each axis which tell the system
+    # if the labels along that axis direction should be flipped
+    # this might be needed to get the labels to match the physical array layout
+    flip_labels: [false]
+    #flip_labels: [false, true]
+    
     # the section for device layout information
     # the first one listed here will be considered the default
     layouts:
@@ -167,10 +185,10 @@ substrates:
             pads:       [1,              2,              3,          4,         5,             6]
             # list of position vectors of each pixel describing where they are on the substrate
             # positions are given in mm, [x, y], relative to the substrate center
-            locations:  [[-8.16, -3.43], [4.33, -8.05],  [-4.33, 0], [4.33, 0], [-8.16, 3.43], [4.33, 8.05]]
+            locations:  [[-3.43, -8.16], [-8.05, 4.33],  [0, -4.33], [0, 4.33], [3.43, -8.16], [8.05, 4.33]]
             # list describing the shapes of the illuminated areas. s for square, c for circle
             # a number indicates the device shape is rectangular, with the number being the length in x
-            shapes:     [s,              4.66,           4.66,       4.66,      s,             4.66]
+            shapes:     [s,              5.41,           21.5,       5.41,      s,             5.41]
             # list of illumination areas in cm^2 of each device
             areas:      [0.01,           0.25,           1,          0.25,      0.01,          0.25]
             # list of active areas in cm^2 of each device

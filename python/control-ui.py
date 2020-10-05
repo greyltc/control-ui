@@ -5,6 +5,7 @@ import pathlib
 # import time
 # import signal # to handle key kill
 import logging
+import drawSvg
 import systemd.journal
 import pprint
 
@@ -86,7 +87,480 @@ class App(Gtk.Application):
             None,
         )
 
-    def make_meshgrids(self, counts, spacings):
+    def do_startup(self):
+        lg.debug(f"Starting up app from {__file__}")
+        Gtk.Application.do_startup(self)
+        self.this_file = pathlib.Path(__file__)
+
+        galde_ui_xml_file_name = "ui.glade"
+        gui_file = pathlib.Path(galde_ui_xml_file_name)
+        python_gui_file = ("python" / gui_file)
+        file_sibling_gui_file = self.this_file.parent / galde_ui_xml_file_name
+        if gui_file.is_file():
+            self.galde_ui_xml_file = str(gui_file.resolve())
+        elif python_gui_file.is_file():  # so that debug from code works
+            self.galde_ui_xml_file = str(python_gui_file.resolve())
+        elif file_sibling_gui_file.is_file():  # look in __file__'s dir
+            self.galde_ui_xml_file = str(file_sibling_gui_file.resolve())
+        else:
+            raise (ValueError("Can't find glade file!"))
+
+        self.b = Gtk.Builder()
+        self.b.add_from_file(self.galde_ui_xml_file)
+
+        # crawl the builder object and mine all the object ID strings we can
+        # this list of id strings will need to be filtered by the load and save functions
+        # a good starting point will be to discard those starting with "___"
+        # I should probably just rename all the saveable/loadable stuff to contain
+        # some special character so the filtering becomes easier
+        self.ids = []
+        for o in self.b.get_objects():
+            try:
+                self.ids.append(Gtk.Buildable.get_name(o))
+            except:
+                pass
+
+    def do_activate(self):
+        lg.debug("Activating app")
+
+        # We only allow a single window and raise any existing ones
+        if self.main_win is None:
+            # Windows are associated with the application
+            # when the last one is closed the application shuts down
+
+            self.logTB = self.b.get_object("tbLog")  # log text buffer
+            self.ltv = self.b.get_object("ltv")  # log text view
+            self.log_win_adj = self.b.get_object("vert_log_win_scroll_adj")
+            self.array_pic = self.b.get_object("array_overview")
+
+            def myWrite(buf):
+                # the log update should not be done on the main gui thread
+                # or else segfault badness
+                GLib.idle_add(self.append_to_log_window, str(buf))
+
+            def myFlush():
+                pass
+
+            self.logTB.write = myWrite
+            self.logTB.flush = myFlush
+            uiLog = logging.StreamHandler(stream=self.logTB)
+            uiLog.setLevel(logging.INFO)
+            uiLog.set_name("ui")
+            uiLog.setFormatter(uiLogFormat)
+            lg.addHandler(uiLog)
+            lg.debug("Gui logging setup.")
+
+            example_config_file_name = "example_config.yaml"
+            config_file_name = "measurement_config.yaml"
+            self.config_file = pathlib.Path(config_file_name)
+
+            # let's figure out where the configuration file is
+            config_env_var = "MEASUREMENT_CONFIGURATION_FILE_NAME"
+            if config_env_var in os.environ:
+                env_config = pathlib.Path(os.environ.get(config_env_var))
+            else:
+                env_config = pathlib.Path()
+            home_config = pathlib.Path.home() / config_file_name
+            local_config = pathlib.Path(config_file_name)
+            example_config = pathlib.Path(example_config_file_name)
+            example_python_config = pathlib.Path("python") / example_config_file_name
+            file_sibling_config = self.this_file.parent / example_config_file_name
+            self.config_warn = False
+            if self.cl_config.is_file():  # priority 1: check the command line
+                lg.debug("Using config file from command line")
+                self.config_file = self.cl_config
+            elif env_config.is_file():  # priority 2: check the environment
+                lg.debug(f"Using config file from {config_env_var} variable")
+                self.config_file = env_config
+            elif local_config.is_file():  # priority 3: check in the current drectory
+                #lg.debug(f"Using local config file {local_config.resolve()}")
+                self.config_file = local_config
+            elif home_config.is_file():  # priority 4: check in home dir
+                lg.debug(
+                    f"Using config file {config_file_name} in home dir: {pathlib.Path.home()}"
+                )
+                self.config_file = home_config
+            elif example_config.is_file():  # priority 5: check in cwd for example
+                lg.debug(f"Using example config file: {example_config.resolve()}")
+                self.config_file = example_config
+                self.config_warn = True
+            elif example_python_config.is_file():  # priority 6: check in python/for example
+                lg.debug(f"Using example config file: {example_python_config.resolve()}")
+                self.config_file = example_python_config
+                self.config_warn = True
+            elif file_sibling_config.is_file():
+                lg.debug(f"Using example config file next to __file__: {file_sibling_config.resolve()}")
+                self.config_file = file_sibling_config
+                self.config_warn = True
+            else:  # and give up
+                lg.error("Unable to find a configuration file to load.")
+                raise (ValueError("No config file"))
+
+            lg.info(f"Using configuration file: {self.config_file.resolve()}")
+            if self.config_warn == True:
+                lg.warning(f"Running with the example configuration file.")
+
+            try:
+                #with open(self.config_file, "r") as f:
+                #    for line in f:
+                #        lg.debug(line.rstrip())
+                with open(self.config_file, "r") as f:
+                    base_config = yaml.load(f, Loader=yaml.FullLoader)
+            except:
+                lg.error("Unexpected error parsing config file.")
+                lg.error(sys.exc_info()[0])
+                raise
+
+            # now let's load auxiliary config files and merge the configs
+            aux_configs = []
+            aux_config_dir_exists = False
+            try:
+                ip = base_config['meta']['include_path']
+                if pathlib.Path(ip).is_absolute():
+                    include_path = pathlib.Path(ip)
+                else:
+                    include_path = pathlib.Path.home() / ip
+                if include_path.exists() and include_path.is_dir():
+                    aux_config_dir_exists = True
+            except:
+                pass
+            if aux_config_dir_exists == True:
+                for pth in include_path.iterdir():
+                    try:
+                        with open(pth, "r") as f:
+                            new_config = yaml.load(f, Loader=yaml.FullLoader)
+                        aux_configs.append(new_config)
+                    except:
+                        pass
+
+            self.config = merge_dicts([base_config] + aux_configs)
+            
+            pp = pprint.PrettyPrinter(compact=True, width=140, sort_dicts=False)
+            lg.debug(pp.pformat(self.config))
+
+            # get dimentions of substrate array to generate designators
+            self.counts = self.config["substrates"]["number"]
+            self.spacings = self.config["substrates"]["spacing"]
+            try:
+                polarities = self.config["stage"]["flip_axis_polarity"]
+            except:
+                polarities = [False]*len(self.counts)
+            try:
+                lab_flips = self.config["substrates"]["flip_labels"]
+            except:
+                lab_flips = [False]*len(self.counts)
+            label_grid, position_grid = self.make_meshgrids(self.counts, self.spacings, polarities, lab_flips)
+            labels = self.grid_to_list(label_grid)
+            pos_list = self.grid_to_list(position_grid)
+            self.substrate_locations = dict(zip(labels, pos_list))
+            self.substrate_designators = labels
+            ns = len(self.substrate_designators)
+
+            # are we using a stage controller here?
+            try:
+                enable_stage = self.config["stage"]["enabled"] == True
+            except:
+                enable_stage = False
+            
+            # handle custom locations and stage stuff
+            if enable_stage == True:
+                pl = self.b.get_object("places_list")  # a tree model
+                self.custom_coords = []
+                if "experiment_positions" in self.config["stage"]:
+                    for key, val in self.config["stage"]["experiment_positions"].items():
+                        pl.append(['EXPERIMENT -- ' + key])
+                        self.custom_coords.append(val)
+
+                if "custom_positions" in self.config["stage"]:
+                    for key, val in self.config["stage"]["custom_positions"].items():
+                        pl.append([key])
+                        self.custom_coords.append(val)
+
+                if len(self.custom_coords) == 0:
+                    self.b.get_object("places_combo").set_visible(False)
+                    self.b.get_object("places_label").set_visible(False)
+
+                # stage specific stuff
+                stage_uri_split = self.config["stage"]["uri"].split('://')
+                stage_address = stage_uri_split[1]
+                stage_address_split = stage_address.split('/')
+                esl = stage_address_split[0]
+                steps_per_mm = int(stage_address_split[1])
+                if ',' in esl:
+                    esl = [float(x) for x in esl.split(',')]
+                else:
+                    esl = [float(esl)]
+                length_oom = max([math.ceil(math.log10(x)) for x in esl])
+                
+                movement_res = 1/steps_per_mm
+                movement_res_oom = abs(math.floor(math.log10(movement_res)))
+                goto_field_width = length_oom + 1 + movement_res_oom
+
+                self.gotos = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
+                adjusters = [self.b.get_object("stage_x_adj"), self.b.get_object("stage_y_adj"), self.b.get_object("stage_z_adj")]
+                end_buffer_in_mm = 5 # don't allow the user to go less than this from the ends
+                for i, axlen in enumerate(esl):
+                    self.gotos[i].set_width_chars(goto_field_width)
+                    self.gotos[i].set_digits(movement_res_oom)
+                    adjusters[i].set_value(axlen/2)
+                    adjusters[i].set_lower(end_buffer_in_mm)
+                    adjusters[i].set_upper(axlen-end_buffer_in_mm)
+
+                # hide unused axes
+                self.num_axes = len(esl)
+                if self.num_axes < 3:
+                    o = self.b.get_object("gtzl")
+                    o.set_visible(False)
+                    o = self.b.get_object("goto_z")
+                    o.set_visible(False)
+                if self.num_axes < 2:
+                    o = self.b.get_object("gtyl")
+                    o.set_visible(False)
+                    o = self.b.get_object("goto_y")
+                    o.set_visible(False)
+            else: # there is no stage
+                self.num_axes = 0
+                self.b.get_object("stage_util").set_visible(False)
+                self.b.get_object("home_util").set_visible(False)
+
+            # are we using a lockin here?
+            try:
+                enable_lia = self.config["lia"]["enabled"] == True
+            except:
+                enable_lia = False
+
+            # are we using a monochromator here?
+            try:
+                enable_mono = self.config["monochromator"]["enabled"] == True
+            except:
+                enable_mono = False
+
+            # are we using a SMU here?
+            try:
+                enable_smu = self.config["smu"]["enabled"] == True
+            except:
+                enable_smu = False
+
+            # are we using a solar sim here?
+            try:
+                enable_solarsim = self.config["solarsim"]["enabled"] == True
+            except:
+                enable_solarsim = False
+
+            # are we using a bias light PSU here?
+            try:
+                enable_psu = self.config["solarsim"]["enabled"] == True
+            except:
+                enable_psu = False
+            
+            # enable/disable logic
+            enable_eqe = False
+            if (enable_mono == True) and (enable_lia == True) and (enable_smu == True):
+                enable_eqe = True
+            
+            enable_iv = False
+            if (enable_smu == True):
+                enable_iv = True
+
+            # hide GUI elements that don't match what were configured to use
+            if enable_eqe == False:
+                self.b.get_object("eqe_frame").set_visible(False)
+                self.b.get_object("eqe_util").set_visible(False)
+                self.b.get_object("eqe_wv").set_visible(False)
+            else:
+                if enable_psu == False:
+                    self.b.get_object("psu_frame").set_visible(False)
+
+            if enable_iv == False:
+                self.b.get_object("iv_frame").set_visible(False)
+                self.b.get_object("vt_wv").set_visible(False)
+                self.b.get_object("iv_wv").set_visible(False)
+                self.b.get_object("mppt_wv").set_visible(False)
+                self.b.get_object("jt_wv").set_visible(False)
+            else:
+                if enable_solarsim == False:
+                    self.b.get_object("ss_box").set_visible(False)
+                    self.b.get_object("ill_box").set_visible(False)
+
+            if (enable_smu == False) or (enable_psu == False):
+                self.b.get_object("bias_light_util").set_visible(False)
+
+            if (enable_iv == False) or (enable_eqe == False):
+                self.b.get_object("eqe_relay_util").set_visible(False)
+
+            if (enable_mono == False):
+                self.b.get_object("mono_util").set_visible(False)
+
+            # do layout things
+            layouts = []  # list of enabled layouts
+            npix = []  # number of pixels for each layout
+            areas = []  # area list for each layout
+            self.layout_drawings = {}  # holds our pictures of the layouts
+            if 'substrates' in self.config:
+                if 'layouts' in self.config['substrates']:
+                    for layout_name, val in self.config['substrates']['layouts'].items():
+                        if 'enabled' in val:
+                            if val['enabled'] == True:
+                                layouts.append(layout_name)
+                                npix.append(len(val['pads']))
+                                areas.append(val['areas'])
+                                self.layout_drawings[layout_name] = self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size'], self.spacings, layout_name)
+            self.layouts = layouts
+
+            # slot configuration stuff
+            self.slot_config_tv = self.b.get_object("substrate_tree")
+            self.setup_slot_config_tv(self.slot_config_tv, layouts)
+            self.slot_config_store = Gtk.ListStore(str, str, str)  # ref des, user label, layout name
+            self.slot_config_store.variables = []
+            self.slot_config_tv.set_model(self.slot_config_store)
+            self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [layouts[0]]*ns)
+            self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+            self.add_variable('Variable')
+
+            # device selection stuff
+            self.device_select_tv = self.b.get_object("device_tree")
+            self.setup_device_select_tv(self.device_select_tv)
+            # these treestores contain the info on which devices are selected for measurement
+            # [str, bool, bool, str, bool] is for [label, checked, inconsistent, area, check visible]
+            self.iv_store = Gtk.TreeStore(str, bool, bool, str, bool)
+            self.iv_store.set_name('IV Device Store')
+            self.eqe_store = Gtk.TreeStore(str, bool, bool, str, bool)
+            self.eqe_store.set_name('EQE Device Store')
+            self.fill_device_select_store(self.iv_store,  [[True]*npix[0]]*ns,  self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
+            self.fill_device_select_store(self.eqe_store, [[False]*npix[0]]*ns, self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
+
+            abs_max_devices = max(npix) * ns
+            max_address_string_length = math.ceil(abs_max_devices / 4)
+            selection_box_length = max_address_string_length + 2
+
+            # TODO: do this in a non-obsolete way (i guess with css somehow?)
+            fontdesc = Pango.FontDescription("monospace")
+
+            self.iv_dev_box = self.b.get_object("iv_devs")
+            self.iv_dev_box.modify_font(fontdesc)
+            self.iv_dev_box.set_width_chars(selection_box_length)
+            self.iv_dev_box.connect('changed', self.update_measure_count)
+
+            self.eqe_dev_box = self.b.get_object("eqe_devs")
+            self.eqe_dev_box.modify_font(fontdesc)
+            self.eqe_dev_box.set_width_chars(selection_box_length)
+            self.eqe_dev_box.connect('changed', self.update_measure_count)
+
+            self.do_dev_store_update_tasks(self.iv_store)
+            self.do_dev_store_update_tasks(self.eqe_store)
+
+            # the device picker popover
+            self.po = self.b.get_object("picker_po")
+            self.po.set_position(Gtk.PositionType.BOTTOM)
+
+            # the layout popover
+            self.lopo = self.b.get_object("layout_po")
+            self.lopo.set_position(Gtk.PositionType.RIGHT)
+            self.lopo.set_relative_to(self.slot_config_tv)
+            self.lopo.add(Gtk.Image())
+            #self.lopo.add(Gtk.Label(label=layouts[0]))
+
+            # for approximating runtimes
+            #self.approx_seconds_per_iv = 50
+            #self.approx_seconds_per_eqe = 150
+
+            cvt_vis = False
+            self.wvids = []
+            self.wvids.append("vt_wv")
+            self.wvids.append("iv_wv")
+            self.wvids.append("mppt_wv")
+            self.wvids.append("jt_wv")
+            self.wvids.append("eqe_wv")
+
+            self.uris = []  # the uris to put in the webviews
+            if "network" in self.config:
+                if "live_data_uris" in self.config["network"]:
+                    for uri in self.config["network"]['live_data_uris']:
+                        self.uris.append(uri)
+                
+                    if len(self.config["network"]['live_data_uris']) == 6:
+                        cvt_vis = True
+
+            # set the custom view tab visible or not
+            self.b.get_object("custom_wv").set_visible(cvt_vis)
+
+            # start MQTT client
+            self._start_mqtt()
+
+            # read the default recipe from the config and set the gui box to that
+            if "solarsim" in self.config:
+                if "recipes" in self.config["solarsim"]:
+                    tb = self.b.get_object('light_recipe') # the active (editable combox box item)
+                    tb.set_text(self.config["solarsim"]["recipes"][0])
+                    tbc = self.b.get_object('light_recipe_combo')
+                    for recipe in self.config["solarsim"]["recipes"]:
+                        tbc.append_text(recipe)
+
+            # read the default recipe from the config and set the gui box to that
+            if "mppt" in self.config:
+                if "presets" in self.config["mppt"]:
+                    tb = self.b.get_object('mppt_params')
+                    tb.set_text(self.config["mppt"]["presets"][0])
+                    tbc = self.b.get_object('mppt_params_combo')
+                    for recipe in self.config["mppt"]["presets"]:
+                        tbc.append_text(recipe)
+
+            # read the invert plot settings from the config and set the switches to that
+            if 'plots' in self.config:
+                if 'invert_voltage' in self.config['plots']:
+                    sw = self.b.get_object('inv_v_switch')
+                    sw.set_active(self.config['plots']['invert_voltage'])
+                if 'invert_current' in self.config['plots']:
+                    sw = self.b.get_object('inv_i_switch')
+                    sw.set_active(self.config['plots']['invert_current'])
+
+            # make sure the plotter is in sync with us when we start
+            self.on_plotter_switch(None, True)
+            self.on_voltage_switch(None, self.b.get_object('inv_v_switch').get_active())
+            self.on_current_switch(None, self.b.get_object('inv_i_switch').get_active())
+
+            # set bias led spinbox limits
+            if 'psu' in self.config:
+                if 'ch1_ocp' in self.config['psu']:
+                    c1bla = self.b.get_object('ch1_bias_light_adj')
+                    c1bla.set_upper(self.config['psu']['ch1_ocp']*1000)
+                if 'ch2_ocp' in self.config['psu']:
+                    c2bla = self.b.get_object('ch2_bias_light_adj')
+                    c2bla.set_upper(self.config['psu']['ch2_ocp']*1000)
+                if 'ch3_ocp' in self.config['psu']:
+                    c3bla = self.b.get_object('ch3_bias_light_adj')
+                    c3bla.set_upper(self.config['psu']['ch3_ocp']*1000)
+
+            # for doing tasks when the user makes a stack change
+            ms = self.b.get_object('mainStack')
+            ms.connect("notify::visible-child", self.on_stack_change)
+
+            # for handling global accelerator key combos
+            ag = self.b.get_object('global_keystrokes')
+            # setup debug key combo
+            ag.connect(Gdk.keyval_from_name('D'), Gdk.ModifierType.CONTROL_MASK, 0, self.do_debug_tasks)
+
+            # do one tick now and then start the backround tick launcher
+            self.tick()
+            self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
+            self.b.connect_signals(self)  # maps all ui callbacks to functions here
+
+            self.main_win = self.b.get_object("mainWindow")
+            self.main_win.set_application(self)
+
+        self.main_win.present()
+
+    # take a mesh grid and turn it into a list
+    def grid_to_list(self, grid):
+        lis = []
+        fl = grid.flat
+        for x in fl:
+            lis.append(x)
+        return lis
+
+    # use some variables from the config file to generate
+    # arrays of labels and positions for each substrate slot in the setup
+    def make_meshgrids(self, counts, spacings, polarities, lab_flips):
         d = len(counts)  # number of dimensions
         # the labeling start character is kinda wonky so we can handle it here based on d
         if d == 1:
@@ -98,12 +572,14 @@ class App(Gtk.Application):
         ranges = [np.array(range(x)) for x in counts]
         label_ranges =    [r+ord(label_starts[i]) for i,r in enumerate(ranges)]
         location_ranges = [r*spacings[i] for i,r in enumerate(ranges)]
-        location_ranges = [r-r.max()/2 for i,r in enumerate(location_ranges)]  # center the location ranges on zero
+        # center the location ranges on zero and flip them if the axis polarity value is 1
+        location_ranges = [(r-r.max()/2)*(-2*polarities[i]+1) for i,r in enumerate(location_ranges)]  
 
+        # make some empty grids of the right shapes and types
         label_meshgrid = np.empty(list(counts), dtype=np.dtype(f'U{d}'))
         pos_meshgrid = np.empty(list(counts), dtype=object)
-        labels = []
-        positions = []
+        #labels = []
+        #positions = []
 
         # populate the grids
         for idx, x in np.ndenumerate(label_meshgrid):
@@ -114,22 +590,19 @@ class App(Gtk.Application):
                 pos.append(location_ranges[j][i])
             label_meshgrid[idx] = label
             pos_meshgrid[idx] = pos
-            labels.append(label)
-            positions.append(pos)
+            #labels.append(label)
+            #positions.append(pos)
 
-        #try:
-        #    rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[1]]
-        #    cs = range(number_list[0])
-        #    cs = [str(x+1) for x in cs]
-        #except IndexError:
-        #    # if number of columns not given, must be 0
-        #    rs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[: number_list[0]]
-        #    cs = ['']
-        #
-        #subdes = [f"{n}{m}" for m in rs for n in cs]
+        # flip the labels if the config file says so
+        for i, t in enumerate(lab_flips):
+            if t == True:
+                label_meshgrid = np.flip(label_meshgrid, i)
 
-        #NOTE: this puts 1A@-52.5,-58 : 1E@-52.5,58 : 4A@52.5,-58 : 4E@52.5,58
-        return labels, positions, label_meshgrid, pos_meshgrid
+        # HINT: visualize the arrays by printing transposed like this
+        # for comparison to the physical layout to see if it's right:
+        # print(label_meshgrid.T)
+
+        return label_meshgrid, pos_meshgrid
 
     def _start_mqtt(self):
         """Start the MQTT client and subscribe to the CLI topic."""
@@ -209,39 +682,6 @@ class App(Gtk.Application):
         self.mqttc.loop_stop()
         self.mqttc.disconnect()
 
-    def do_startup(self):
-        lg.debug(f"Starting up app from {__file__}")
-        Gtk.Application.do_startup(self)
-        self.this_file = pathlib.Path(__file__)
-
-        galde_ui_xml_file_name = "ui.glade"
-        gui_file = pathlib.Path(galde_ui_xml_file_name)
-        python_gui_file = ("python" / gui_file)
-        file_sibling_gui_file = self.this_file.parent / galde_ui_xml_file_name
-        if gui_file.is_file():
-            self.galde_ui_xml_file = str(gui_file.resolve())
-        elif python_gui_file.is_file():  # so that debug from code works
-            self.galde_ui_xml_file = str(python_gui_file.resolve())
-        elif file_sibling_gui_file.is_file():  # look in __file__'s dir
-            self.galde_ui_xml_file = str(file_sibling_gui_file.resolve())
-        else:
-            raise (ValueError("Can't find glade file!"))
-
-        self.b = Gtk.Builder()
-        self.b.add_from_file(self.galde_ui_xml_file)
-
-        # crawl the builder object and mine all the object ID strings we can
-        # this list of id strings will need to be filtered by the load and save functions
-        # a good starting point will be to discard those starting with "___"
-        # I should probably just rename all the saveable/loadable stuff to contain
-        # some special character so the filtering becomes easier
-        self.ids = []
-        for o in self.b.get_objects():
-            try:
-                self.ids.append(Gtk.Buildable.get_name(o))
-            except:
-                pass
-
     def update_measure_count(self, entry):
         parent_frame = entry.get_parent().get_parent()
         text_is = entry.get_text()
@@ -272,13 +712,13 @@ class App(Gtk.Application):
             # the first column is created
             designator = Gtk.TreeViewColumn("Substrate/Device", renderDesignator, text=0)
             tree_view.append_column(designator)
-        
+
         if len(tree_view.get_columns()) == 1:
             renderDesignator = Gtk.CellRendererText()
             # the first column is created
             designator = Gtk.TreeViewColumn("Area/Layout", renderDesignator, text=3)
             tree_view.append_column(designator)
-        
+
         # the cellrenderer for the second column - boolean rendered as a toggle
         if len(tree_view.get_columns()) == 2:
             renderCheck = Gtk.CellRendererToggle()
@@ -490,14 +930,15 @@ class App(Gtk.Application):
     # the user has hovered their mouse over a layout choice
     def on_layout_combo_entered(self, widget, event, user_data):
         layout_index = user_data
-        svgdat = self.layout_drawings[layout_index].asSvg()
-        stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes(svgdat.encode()))
-        pixbuf = GdkPixbuf.Pixbuf.new_from_stream(stream, None)
-        #svgwidget = Gtk.Image.new_from_pixbuf(pixbuf)
-        #self.lopo.get_child().set_label()
-        self.lopo.get_child().set_from_pixbuf(pixbuf)
+        self.lopo.get_child().set_from_pixbuf(self.drawing_to_pixbuf(self.layout_drawings[self.layouts[layout_index]]))
         self.lopo.popup()
         self.lopo.show_all()
+
+    # converts a drawSvg object to a pixbuf that can go into an image
+    def drawing_to_pixbuf(self, drawing):
+        svgdat = drawing.asSvg()
+        stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes(svgdat.encode()))
+        return GdkPixbuf.Pixbuf.new_from_stream(stream, None)
 
     # the layout ComboBox has now been magically created!
     # so let's install our hover-focus callbacks into its menu widget children
@@ -620,425 +1061,58 @@ class App(Gtk.Application):
         rn = self.b.get_object("run_name")
         rns = self.b.get_object("run_name_suffix")
         rn.set_text(rnp.get_text() + rns.get_text())
+    
+    # draws the whole slot array
+    def draw_array(self):
+        max_render_pix = 600  # the picture's largest dim will be this many pixels
+        dim = len(self.spacings)
+        unit = self.spacings
+        if dim == 1:
+            unit = unit*2
+        elif dim == 3:
+            del(unit[-1])
+        
+        # size the canvas
+        canvas = [0, 0]
+        x_cens = [pos[0] for lab, pos in self.substrate_locations.items()]
+        canvas[0] = max(x_cens) - min(x_cens) + unit[0]
+        if dim == 1:
+            canvas[1] = unit[1]
+        else:
+            y_cens = [pos[1] for lab, pos in self.substrate_locations.items()]
+            canvas[1] = max(y_cens) - min(y_cens) + unit[1]
 
-    def do_activate(self):
-        lg.debug("Activating app")
+        d = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False)
 
-        # We only allow a single window and raise any existing ones
-        if self.main_win is None:
-            # Windows are associated with the application
-            # when the last one is closed the application shuts down
+        # try to see if we can hyperlink the background...
+        # TODO: does not work atm, remove if this can't be fixed
+        class Hyperlink(draw.DrawingParentElement):
+            TAG_NAME = 'a'
+            def __init__(self, href, target=None, **kwargs):
+                super().__init__(href=href, target=target, **kwargs)
+        
+        hlink = Hyperlink('https://www.python.org', target='_blank')
+        hlink.append(draw.Rectangle(-canvas[0]/2, -canvas[1]/2, canvas[0], canvas[1], fill='white'))
+        d.append(hlink)
 
-            self.logTB = self.b.get_object("tbLog")  # log text buffer
-            self.ltv = self.b.get_object("ltv")  # log text view
-            self.log_win_adj = self.b.get_object("vert_log_win_scroll_adj")
-
-            def myWrite(buf):
-                # the log update should not be done on the main gui thread
-                # or else segfault badness
-                GLib.idle_add(self.append_to_log_window, str(buf))
-
-            def myFlush():
-                pass
-
-            self.logTB.write = myWrite
-            self.logTB.flush = myFlush
-            uiLog = logging.StreamHandler(stream=self.logTB)
-            uiLog.setLevel(logging.INFO)
-            uiLog.set_name("ui")
-            uiLog.setFormatter(uiLogFormat)
-            lg.addHandler(uiLog)
-            lg.debug("Gui logging setup.")
-
-            example_config_file_name = "example_config.yaml"
-            config_file_name = "measurement_config.yaml"
-            self.config_file = pathlib.Path(config_file_name)
-
-            # let's figure out where the configuration file is
-            config_env_var = "MEASUREMENT_CONFIGURATION_FILE_NAME"
-            if config_env_var in os.environ:
-                env_config = pathlib.Path(os.environ.get(config_env_var))
+        for row in self.slot_config_store:
+            label = row[0]
+            layout = row[2]
+            pos = self.substrate_locations[label]
+            lod = self.layout_drawings[layout]
+            if dim == 1:
+                t2 = f"translate({pos[0]},0)"
             else:
-                env_config = pathlib.Path()
-            home_config = pathlib.Path.home() / config_file_name
-            local_config = pathlib.Path(config_file_name)
-            example_config = pathlib.Path(example_config_file_name)
-            example_python_config = pathlib.Path("python") / example_config_file_name
-            file_sibling_config = self.this_file.parent / example_config_file_name
-            self.config_warn = False
-            if self.cl_config.is_file():  # priority 1: check the command line
-                lg.debug("Using config file from command line")
-                self.config_file = self.cl_config
-            elif env_config.is_file():  # priority 2: check the environment
-                lg.debug(f"Using config file from {config_env_var} variable")
-                self.config_file = env_config
-            elif local_config.is_file():  # priority 3: check in the current drectory
-                #lg.debug(f"Using local config file {local_config.resolve()}")
-                self.config_file = local_config
-            elif home_config.is_file():  # priority 4: check in home dir
-                lg.debug(
-                    f"Using config file {config_file_name} in home dir: {pathlib.Path.home()}"
-                )
-                self.config_file = home_config
-            elif example_config.is_file():  # priority 5: check in cwd for example
-                lg.debug(f"Using example config file: {example_config.resolve()}")
-                self.config_file = example_config
-                self.config_warn = True
-            elif example_python_config.is_file():  # priority 6: check in python/for example
-                lg.debug(f"Using example config file: {example_python_config.resolve()}")
-                self.config_file = example_python_config
-                self.config_warn = True
-            elif file_sibling_config.is_file():
-                lg.debug(f"Using example config file next to __file__: {file_sibling_config.resolve()}")
-                self.config_file = file_sibling_config
-                self.config_warn = True
-            else:  # and give up
-                lg.error("Unable to find a configuration file to load.")
-                raise (ValueError("No config file"))
+                t2 = f"translate({pos[0]},{pos[1]})"
+            g = draw.Group(**{'transform':t2})
+            for e in lod.allElements():
+                g.append(e)
+            d.append(g)
 
-            lg.info(f"Using configuration file: {self.config_file.resolve()}")
-            if self.config_warn == True:
-                lg.warning(f"Running with the example configuration file.")
-
-            try:
-                #with open(self.config_file, "r") as f:
-                #    for line in f:
-                #        lg.debug(line.rstrip())
-                with open(self.config_file, "r") as f:
-                    base_config = yaml.load(f, Loader=yaml.FullLoader)
-            except:
-                lg.error("Unexpected error parsing config file.")
-                lg.error(sys.exc_info()[0])
-                raise
-
-            # now let's load auxiliary config files and merge the configs
-            aux_configs = []
-            aux_config_dir_exists = False
-            try:
-                ip = base_config['meta']['include_path']
-                if pathlib.Path(ip).is_absolute():
-                    include_path = pathlib.Path(ip)
-                else:
-                    include_path = pathlib.Path.home() / ip
-                if include_path.exists() and include_path.is_dir():
-                    aux_config_dir_exists = True
-            except:
-                pass
-            if aux_config_dir_exists == True:
-                for pth in include_path.iterdir():
-                    try:
-                        with open(pth, "r") as f:
-                            new_config = yaml.load(f, Loader=yaml.FullLoader)
-                        aux_configs.append(new_config)
-                    except:
-                        pass
-
-            self.config = merge_dicts([base_config] + aux_configs)
-            
-            pp = pprint.PrettyPrinter(compact=True, width=140, sort_dicts=False)
-            lg.debug(pp.pformat(self.config))
-
-            # get dimentions of substrate array to generate designators
-            counts = self.config["substrates"]["number"]
-            spacings = self.config["substrates"]["spacing"]
-            labels, positions, label_grid, position_grid = self.make_meshgrids(counts, spacings)
-            self.substrate_designators = labels
-            self.substrate_locations = positions
-            ns = len(self.substrate_designators)
-
-            # are we using a stage controller here?
-            try:
-                enable_stage = self.config["stage"]["enabled"] == True
-            except:
-                enable_stage = False
-            
-            # handle custom locations and stage stuff
-            if enable_stage == True:
-                pl = self.b.get_object("places_list")  # a tree model
-                self.custom_coords = []
-                if "experiment_positions" in self.config["stage"]:
-                    for key, val in self.config["stage"]["experiment_positions"].items():
-                        pl.append(['EXPERIMENT -- ' + key])
-                        self.custom_coords.append(val)
-
-                if "custom_positions" in self.config["stage"]:
-                    for key, val in self.config["stage"]["custom_positions"].items():
-                        pl.append([key])
-                        self.custom_coords.append(val)
-
-                if len(self.custom_coords) == 0:
-                    self.b.get_object("places_combo").set_visible(False)
-                    self.b.get_object("places_label").set_visible(False)
-
-                # stage specific stuff
-                stage_uri_split = self.config["stage"]["uri"].split('://')
-                stage_address = stage_uri_split[1]
-                stage_address_split = stage_address.split('/')
-                esl = stage_address_split[0]
-                steps_per_mm = int(stage_address_split[1])
-                if ',' in esl:
-                    esl = [float(x) for x in esl.split(',')]
-                else:
-                    esl = [float(esl)]
-                length_oom = max([math.ceil(math.log10(x)) for x in esl])
-                
-                movement_res = 1/steps_per_mm
-                movement_res_oom = abs(math.floor(math.log10(movement_res)))
-                goto_field_width = length_oom + 1 + movement_res_oom
-
-                self.gotos = [self.b.get_object("goto_x"), self.b.get_object("goto_y"), self.b.get_object("goto_z")]
-                adjusters = [self.b.get_object("stage_x_adj"), self.b.get_object("stage_y_adj"), self.b.get_object("stage_z_adj")]
-                end_buffer_in_mm = 5 # don't allow the user to go less than this from the ends
-                for i, axlen in enumerate(esl):
-                    self.gotos[i].set_width_chars(goto_field_width)
-                    self.gotos[i].set_digits(movement_res_oom)
-                    adjusters[i].set_value(axlen/2)
-                    adjusters[i].set_lower(end_buffer_in_mm)
-                    adjusters[i].set_upper(axlen-end_buffer_in_mm)
-
-                # hide unused axes
-                self.num_axes = len(esl)
-                if self.num_axes < 3:
-                    o = self.b.get_object("gtzl")
-                    o.set_visible(False)
-                    o = self.b.get_object("goto_z")
-                    o.set_visible(False)
-                if self.num_axes < 2:
-                    o = self.b.get_object("gtyl")
-                    o.set_visible(False)
-                    o = self.b.get_object("goto_y")
-                    o.set_visible(False)
-            else: # there is no stage
-                self.num_axes = 0
-                self.b.get_object("stage_util").set_visible(False)
-                self.b.get_object("home_util").set_visible(False)
-
-            # are we using a lockin here?
-            try:
-                enable_lia = self.config["lia"]["enabled"] == True
-            except:
-                enable_lia = False
-
-            # are we using a monochromator here?
-            try:
-                enable_mono = self.config["monochromator"]["enabled"] == True
-            except:
-                enable_mono = False
-
-            # are we using a SMU here?
-            try:
-                enable_smu = self.config["smu"]["enabled"] == True
-            except:
-                enable_smu = False
-
-            # are we using a solar sim here?
-            try:
-                enable_solarsim = self.config["solarsim"]["enabled"] == True
-            except:
-                enable_solarsim = False
-
-            # are we using a bias light PSU here?
-            try:
-                enable_psu = self.config["solarsim"]["enabled"] == True
-            except:
-                enable_psu = False
-            
-            # enable/disable logic
-            enable_eqe = False
-            if (enable_mono == True) and (enable_lia == True) and (enable_smu == True):
-                enable_eqe = True
-            
-            enable_iv = False
-            if (enable_smu == True):
-                enable_iv = True
-
-            # hide GUI elements that don't match what were configured to use
-            if enable_eqe == False:
-                self.b.get_object("eqe_frame").set_visible(False)
-                self.b.get_object("eqe_util").set_visible(False)
-                self.b.get_object("eqe_wv").set_visible(False)
-            else:
-                if enable_psu == False:
-                    self.b.get_object("psu_frame").set_visible(False)
-
-            if enable_iv == False:
-                self.b.get_object("iv_frame").set_visible(False)
-                self.b.get_object("vt_wv").set_visible(False)
-                self.b.get_object("iv_wv").set_visible(False)
-                self.b.get_object("mppt_wv").set_visible(False)
-                self.b.get_object("jt_wv").set_visible(False)
-            else:
-                if enable_solarsim == False:
-                    self.b.get_object("ss_box").set_visible(False)
-                    self.b.get_object("ill_box").set_visible(False)
-
-            if (enable_smu == False) or (enable_psu == False):
-                self.b.get_object("bias_light_util").set_visible(False)
-
-            if (enable_iv == False) or (enable_eqe == False):
-                self.b.get_object("eqe_relay_util").set_visible(False)
-
-            if (enable_mono == False):
-                self.b.get_object("mono_util").set_visible(False)
-
-            # do layout things
-            layouts = []  # list of enabled layouts
-            npix = []  # number of pixels for each layout
-            areas = []  # area list for each layout
-            self.layout_drawings = []  # holds our pictures of the layouts
-            if 'substrates' in self.config:
-                if 'layouts' in self.config['substrates']:
-                    for layout_name, val in self.config['substrates']['layouts'].items():
-                        if 'enabled' in val:
-                            if val['enabled'] == True:
-                                layouts.append(layout_name)
-                                npix.append(len(val['pads']))
-                                areas.append(val['areas'])
-                                self.layout_drawings.append(self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size'], self.config['substrates']['spacing'], layout_name))
-            self.layouts = layouts
-
-            # slot configuration stuff
-            self.slot_config_tv = self.b.get_object("substrate_tree")
-            self.setup_slot_config_tv(self.slot_config_tv, layouts)
-            self.slot_config_store = Gtk.ListStore(str, str, str)  # ref des, user label, layout name
-            self.slot_config_store.variables = []
-            self.slot_config_tv.set_model(self.slot_config_store)
-            self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [layouts[0]]*ns)
-            self.slot_config_store.connect('row-changed', self.on_slot_store_change)
-            self.add_variable('Variable')
-
-            # device selection stuff
-            self.device_select_tv = self.b.get_object("device_tree")
-            self.setup_device_select_tv(self.device_select_tv)
-            # these treestores contain the info on which devices are selected for measurement
-            # [str, bool, bool, str, bool] is for [label, checked, inconsistent, area, check visible]
-            self.iv_store = Gtk.TreeStore(str, bool, bool, str, bool)
-            self.iv_store.set_name('IV Device Store')
-            self.eqe_store = Gtk.TreeStore(str, bool, bool, str, bool)
-            self.eqe_store.set_name('EQE Device Store')
-            self.fill_device_select_store(self.iv_store,  [[True]*npix[0]]*ns,  self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
-            self.fill_device_select_store(self.eqe_store, [[False]*npix[0]]*ns, self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
-
-            abs_max_devices = max(npix) * ns
-            max_address_string_length = math.ceil(abs_max_devices / 4)
-            selection_box_length = max_address_string_length + 2
-
-            # TODO: do this in a non-obsolete way (i guess with css somehow?)
-            fontdesc = Pango.FontDescription("monospace")
-
-            self.iv_dev_box = self.b.get_object("iv_devs")
-            self.iv_dev_box.modify_font(fontdesc)
-            self.iv_dev_box.set_width_chars(selection_box_length)
-            self.iv_dev_box.connect('changed', self.update_measure_count)
-
-            self.eqe_dev_box = self.b.get_object("eqe_devs")
-            self.eqe_dev_box.modify_font(fontdesc)
-            self.eqe_dev_box.set_width_chars(selection_box_length)
-            self.eqe_dev_box.connect('changed', self.update_measure_count)
-
-            self.do_dev_store_update_tasks(self.iv_store)
-            self.do_dev_store_update_tasks(self.eqe_store)
-
-            # the device picker popover
-            self.po = self.b.get_object("picker_po")
-            self.po.set_position(Gtk.PositionType.BOTTOM)
-
-            # the layout popover
-            self.lopo = self.b.get_object("layout_po")
-            self.lopo.set_position(Gtk.PositionType.RIGHT)
-            self.lopo.set_relative_to(self.slot_config_tv)
-            self.lopo.add(Gtk.Image())
-            #self.lopo.add(Gtk.Label(label=layouts[0]))
-
-            # for approximating runtimes
-            #self.approx_seconds_per_iv = 50
-            #self.approx_seconds_per_eqe = 150
-
-            cvt_vis = False
-            self.wvids = []
-            self.wvids.append("vt_wv")
-            self.wvids.append("iv_wv")
-            self.wvids.append("mppt_wv")
-            self.wvids.append("jt_wv")
-            self.wvids.append("eqe_wv")
-
-            self.uris = []  # the uris to put in the webviews
-            if "network" in self.config:
-                if "live_data_uris" in self.config["network"]:
-                    for uri in self.config["network"]['live_data_uris']:
-                        self.uris.append(uri)
-                
-                    if len(self.config["network"]['live_data_uris']) == 6:
-                        cvt_vis = True
-
-            # set the custom view tab visible or not
-            self.b.get_object("custom_wv").set_visible(cvt_vis)
-
-            # start MQTT client
-            self._start_mqtt()
-
-            # read the default recipe from the config and set the gui box to that
-            if "solarsim" in self.config:
-                if "recipes" in self.config["solarsim"]:
-                    tb = self.b.get_object('light_recipe') # the active (editable combox box item)
-                    tb.set_text(self.config["solarsim"]["recipes"][0])
-                    tbc = self.b.get_object('light_recipe_combo')
-                    for recipe in self.config["solarsim"]["recipes"]:
-                        tbc.append_text(recipe)
-
-            # read the default recipe from the config and set the gui box to that
-            if "mppt" in self.config:
-                if "presets" in self.config["mppt"]:
-                    tb = self.b.get_object('mppt_params')
-                    tb.set_text(self.config["mppt"]["presets"][0])
-                    tbc = self.b.get_object('mppt_params_combo')
-                    for recipe in self.config["mppt"]["presets"]:
-                        tbc.append_text(recipe)
-
-            # read the invert plot settings from the config and set the switches to that
-            if 'plots' in self.config:
-                if 'invert_voltage' in self.config['plots']:
-                    sw = self.b.get_object('inv_v_switch')
-                    sw.set_active(self.config['plots']['invert_voltage'])
-                if 'invert_current' in self.config['plots']:
-                    sw = self.b.get_object('inv_i_switch')
-                    sw.set_active(self.config['plots']['invert_current'])
-
-            # make sure the plotter is in sync with us when we start
-            self.on_plotter_switch(None, True)
-            self.on_voltage_switch(None, self.b.get_object('inv_v_switch').get_active())
-            self.on_current_switch(None, self.b.get_object('inv_i_switch').get_active())
-
-            # set bias led spinbox limits
-            if 'psu' in self.config:
-                if 'ch1_ocp' in self.config['psu']:
-                    c1bla = self.b.get_object('ch1_bias_light_adj')
-                    c1bla.set_upper(self.config['psu']['ch1_ocp']*1000)
-                if 'ch2_ocp' in self.config['psu']:
-                    c2bla = self.b.get_object('ch2_bias_light_adj')
-                    c2bla.set_upper(self.config['psu']['ch2_ocp']*1000)
-                if 'ch3_ocp' in self.config['psu']:
-                    c3bla = self.b.get_object('ch3_bias_light_adj')
-                    c3bla.set_upper(self.config['psu']['ch3_ocp']*1000)
-
-            # for doing tasks when the user makes a stack change
-            ms = self.b.get_object('mainStack')
-            ms.connect("notify::visible-child", self.on_stack_change)
-
-            # for handling global accelerator key combos
-            ag = self.b.get_object('global_keystrokes')
-            # setup debug key combo
-            ag.connect(Gdk.keyval_from_name('D'), Gdk.ModifierType.CONTROL_MASK, 0, self.do_debug_tasks)
-
-            # do one tick now and then start the backround tick launcher
-            self.tick()
-            self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
-            self.b.connect_signals(self)  # maps all ui callbacks to functions here
-
-            self.main_win = self.b.get_object("mainWindow")
-            self.main_win.set_application(self)
-
-        self.main_win.present()
+        maxd = max(canvas)
+        scale = max_render_pix/maxd
+        d.setPixelScale(scale)
+        self.array_pic.set_from_pixbuf(self.drawing_to_pixbuf(d))
 
     # draws pixels based on layout info from the config file
     def draw_layout(self, pads, areas, locations, shapes, size, spacing, name):
@@ -1244,9 +1318,13 @@ class App(Gtk.Application):
                     mux_index = self.config['substrates']['layouts'][layout]['pads'][pixi]
                     df.at[dfr, 'mux_index'] = mux_index
                     df.at[dfr, 'mux_string'] = f"s{system_label}{mux_index}"
+                    # the stage movements need to be reversed from the physical location offsets, so all
+                    # these offset numbers get multiplied by -1 before getting stored in the output dataframe
                     por = self.config['substrates']['layouts'][layout]['locations'][pixi]
+                    por = [p*-1 for p in por]
                     df.at[dfr, 'pixel_offset_raw'] = por
-                    sor = self.substrate_locations[subi]
+                    sor = self.substrate_locations[system_label]
+                    sor = [s*-1 for s in sor]
                     df.at[dfr, 'substrate_offset_raw'] = sor
                     locr = []
                     for s,p in zip(sor,por):
@@ -1386,6 +1464,7 @@ class App(Gtk.Application):
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
         print(self.slot_config_store.variables)
+        self.draw_array()
 
     # fills the device selection bitmask text box based on the device selection treestore
     def open_dev_picker(self, button):
@@ -1747,7 +1826,6 @@ class App(Gtk.Application):
             pic_msg = pickle.dumps(msg)
             self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
-
     def on_run_button(self, button):
         """Send run info to experiment orchestrator via MQTT."""
         if (self.move_warning() == Gtk.ResponseType.OK):
@@ -1903,6 +1981,9 @@ class App(Gtk.Application):
             self.load_custom_webview(load=True)
         else:
             self.load_custom_webview(load=False)
+        
+        if active_title == 'Array Overview':
+            self.draw_array()
         
         self.b.get_object("pane").set_position(0)  # move the pane handle to the top every stack change
 
