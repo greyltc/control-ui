@@ -280,7 +280,6 @@ Author: Greyson Christoforo
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="vscroll-policy">natural</property>
-            <property name="rules-hint">True</property>
             <property name="enable-grid-lines">both</property>
             <property name="enable-tree-lines">True</property>
             <child internal-child="selection">
@@ -2955,12 +2954,13 @@ B -- All devices are disconnected</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkImage" id="array_overview">
+                  <object class="GtkDrawingArea" id="array_overview">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="halign">center</property>
+                    <property name="valign">center</property>
                   </object>
                   <packing>
-                    <property name="name">page0</property>
                     <property name="title" translatable="yes">Array Overview</property>
                     <property name="position">3</property>
                   </packing>
@@ -2994,6 +2994,21 @@ B -- All devices are disconnected</property>
                   <packing>
                     <property name="title" translatable="yes">Log View</property>
                     <property name="position">5</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkGLArea" id="array_overview2">
+                    <property name="visible">True</property>
+                    <property name="app-paintable">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="has-alpha">True</property>
+                    <property name="has-depth-buffer">True</property>
+                    <property name="has-stencil-buffer">True</property>
+                    <property name="use-es">True</property>
+                  </object>
+                  <packing>
+                    <property name="title" translatable="yes">Array Overview 2</property>
+                    <property name="position">6</property>
                   </packing>
                 </child>
               </object>

@@ -36,8 +36,8 @@ import yaml
 
 gi.require_version("WebKit2", "4.0")
 gi.require_version("Gtk", "3.0")
-gi.require_version("Gdk", "3.0")
-from gi.repository import GLib, Gio, Gtk, Gdk, Pango, GdkPixbuf
+gi.require_version('Rsvg', '2.0')
+from gi.repository import GLib, Gio, Gtk, Gdk, Pango, GdkPixbuf, Rsvg
 
 # Gdk.set_allowed_backends('broadway')  # for gui over web
 from gi.repository.WebKit2 import WebView, Settings
@@ -76,6 +76,7 @@ class App(Gtk.Application):
         self.eqe_cal_time = None
         self.psu_cal_time = None
         self.iv_cal_time = None
+        self.array_drawing_handle = None
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -132,6 +133,7 @@ class App(Gtk.Application):
             self.ltv = self.b.get_object("ltv")  # log text view
             self.log_win_adj = self.b.get_object("vert_log_win_scroll_adj")
             self.array_pic = self.b.get_object("array_overview")
+            self.array_pic.connect("draw", self.on_array_pic_draw)
 
             def myWrite(buf):
                 # the log update should not be done on the main gui thread
@@ -250,10 +252,15 @@ class App(Gtk.Application):
             except:
                 lab_flips = [False]*len(self.counts)
             label_grid, position_grid = self.make_meshgrids(self.counts, self.spacings, polarities, lab_flips)
+
+            # HINT: visualize 1 and 2d meshgrids by printing transposed like this
+            # for comparison to the physical layout to see if it's right:
+            # print(label_meshgrid.T)
+
             labels = self.grid_to_list(label_grid)
             pos_list = self.grid_to_list(position_grid)
             self.substrate_locations = dict(zip(labels, pos_list))
-            self.substrate_designators = labels
+            self.substrate_designators = sorted(labels)
             ns = len(self.substrate_designators)
 
             # are we using a stage controller here?
@@ -597,10 +604,6 @@ class App(Gtk.Application):
         for i, t in enumerate(lab_flips):
             if t == True:
                 label_meshgrid = np.flip(label_meshgrid, i)
-
-        # HINT: visualize the arrays by printing transposed like this
-        # for comparison to the physical layout to see if it's right:
-        # print(label_meshgrid.T)
 
         return label_meshgrid, pos_meshgrid
 
@@ -1104,15 +1107,40 @@ class App(Gtk.Application):
                 t2 = f"translate({pos[0]},0)"
             else:
                 t2 = f"translate({pos[0]},{pos[1]})"
-            g = draw.Group(**{'transform':t2})
+            g = draw.Group(**{"transform":t2})
             for e in lod.allElements():
                 g.append(e)
+            #if not '1A' in label:
+            #    d.append(g)
             d.append(g)
 
         maxd = max(canvas)
         scale = max_render_pix/maxd
         d.setPixelScale(scale)
-        self.array_pic.set_from_pixbuf(self.drawing_to_pixbuf(d))
+        svg_handle = Rsvg.Handle.new_from_data(d.asSvg().encode())
+        self.array_drawing_handle = svg_handle
+        #x = svg_handle.props.width
+        #y = svg_handle.props.height
+        svg_dims = svg_handle.get_intrinsic_dimensions()
+        self.array_pic.props.width_request = svg_dims.out_width.length
+        self.array_pic.props.height_request = svg_dims.out_height.length
+        #self.array_pic.set('width-request', svg_handle.props.width)
+        #self.array_pic.set('height-request', svg_handle.props.height)
+
+        # this is for if we have a GtkImage target
+        #self.array_pic.set_from_pixbuf(self.drawing_to_pixbuf(d))  
+    
+    def on_array_pic_draw(self, drawing_area, cairo_context):
+        if self.array_drawing_handle is None:
+            drawing_area.queue_draw()
+        else:
+            #style_context = drawing_area.get_style_context()
+            #x = self.array_drawing_handle.props.width
+            #y = self.array_drawing_handle.props.height
+            #drawing_area.set('width-request',x)
+            #drawing_area.set('height-request',y)
+            #drawing_area
+            self.array_drawing_handle.render_cairo(cairo_context)
 
     # draws pixels based on layout info from the config file
     def draw_layout(self, pads, areas, locations, shapes, size, spacing, name):

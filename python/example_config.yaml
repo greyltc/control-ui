@@ -138,8 +138,8 @@ stage:
     speed: 29
 
     # a list of true/false, one for each axis which tell the system which direction "forward" is for that axis
-    flip_axis_polarity: [false]
-    #flip_axis_polarity: [false, false]
+    #flip_axis_polarity: [false]
+    flip_axis_polarity: [false, false]
     
     # coordinates of the center of the substrate array for specific measurement types
     experiment_positions:
@@ -157,18 +157,18 @@ stage:
 # a section for describing how the substrates are positioned and what might be on them
 substrates:
     # list of number of substrates along each available axis: [x-direction, y-direction]
-    number: [8]
-    #number: [4, 5]
+    #number: [8]
+    number: [4, 5]
     
     # spacing in mm between substrate centers along each available axis
-    spacing: [40]
-    #spacing: [35, 29]
+    #spacing: [40]
+    spacing: [35, 29]
     
     # a list of true/false one, for each axis which tell the system
     # if the labels along that axis direction should be flipped
     # this might be needed to get the labels to match the physical array layout
-    flip_labels: [false]
-    #flip_labels: [false, true]
+    #flip_labels: [false]
+    flip_labels: [false, true]
     
     # the section for device layout information
     # the first one listed here will be considered the default
