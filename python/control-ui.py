@@ -231,6 +231,7 @@ class App(Gtk.Application):
                     try:
                         with open(pth, "r") as f:
                             new_config = yaml.load(f, Loader=yaml.FullLoader)
+                            lg.info(f"Using auxillary config file: {pth}")
                         aux_configs.append(new_config)
                     except:
                         pass
@@ -265,12 +266,12 @@ class App(Gtk.Application):
 
             # are we using a stage controller here?
             try:
-                enable_stage = self.config["stage"]["enabled"] == True
+                self.enable_stage = self.config["stage"]["enabled"] == True
             except:
-                enable_stage = False
+                self.enable_stage = False
             
             # handle custom locations and stage stuff
-            if enable_stage == True:
+            if self.enable_stage == True:
                 pl = self.b.get_object("places_list")  # a tree model
                 self.custom_coords = []
                 if "experiment_positions" in self.config["stage"]:
@@ -332,70 +333,70 @@ class App(Gtk.Application):
 
             # are we using a lockin here?
             try:
-                enable_lia = self.config["lia"]["enabled"] == True
+                self.enable_lia = self.config["lia"]["enabled"] == True
             except:
-                enable_lia = False
+                self.enable_lia = False
 
             # are we using a monochromator here?
             try:
-                enable_mono = self.config["monochromator"]["enabled"] == True
+                self.enable_mono = self.config["monochromator"]["enabled"] == True
             except:
-                enable_mono = False
+                self.enable_mono = False
 
             # are we using a SMU here?
             try:
-                enable_smu = self.config["smu"]["enabled"] == True
+                self.enable_smu = self.config["smu"]["enabled"] == True
             except:
-                enable_smu = False
+                self.enable_smu = False
 
             # are we using a solar sim here?
             try:
-                enable_solarsim = self.config["solarsim"]["enabled"] == True
+                self.enable_solarsim = self.config["solarsim"]["enabled"] == True
             except:
-                enable_solarsim = False
+                self.enable_solarsim = False
 
             # are we using a bias light PSU here?
             try:
-                enable_psu = self.config["solarsim"]["enabled"] == True
+                self.enable_psu = self.config["psu"]["enabled"] == True
             except:
-                enable_psu = False
+                self.enable_psu = False
             
             # enable/disable logic
-            enable_eqe = False
-            if (enable_mono == True) and (enable_lia == True) and (enable_smu == True):
-                enable_eqe = True
+            self.enable_eqe = False
+            if (self.enable_mono == True) and (self.enable_lia == True) and (self.enable_smu == True):
+                self.enable_eqe = True
             
-            enable_iv = False
-            if (enable_smu == True):
-                enable_iv = True
+            self.enable_iv = False
+            if (self.enable_smu == True):
+                self.enable_iv = True
 
             # hide GUI elements that don't match what were configured to use
-            if enable_eqe == False:
+            if self.enable_eqe == False:
                 self.b.get_object("eqe_frame").set_visible(False)
                 self.b.get_object("eqe_util").set_visible(False)
                 self.b.get_object("eqe_wv").set_visible(False)
             else:
-                if enable_psu == False:
+                if self.enable_psu == False:
                     self.b.get_object("psu_frame").set_visible(False)
 
-            if enable_iv == False:
+            if self.enable_iv == False:
                 self.b.get_object("iv_frame").set_visible(False)
                 self.b.get_object("vt_wv").set_visible(False)
                 self.b.get_object("iv_wv").set_visible(False)
                 self.b.get_object("mppt_wv").set_visible(False)
                 self.b.get_object("jt_wv").set_visible(False)
             else:
-                if enable_solarsim == False:
+                if self.enable_solarsim == False:
                     self.b.get_object("ss_box").set_visible(False)
                     self.b.get_object("ill_box").set_visible(False)
 
-            if (enable_smu == False) or (enable_psu == False):
+            if (self.enable_smu == False) or (self.enable_psu == False):
                 self.b.get_object("bias_light_util").set_visible(False)
 
-            if (enable_iv == False) or (enable_eqe == False):
+            if (self.enable_iv == False) or (self.enable_eqe == False):
                 self.b.get_object("eqe_relay_util").set_visible(False)
 
-            if (enable_mono == False):
+            if (self.enable_mono == False):
                 self.b.get_object("mono_util").set_visible(False)
 
             # do layout things
@@ -966,7 +967,6 @@ class App(Gtk.Application):
     # for this row and all of its children and grandchildren
     # does not touch parents
     def on_dev_toggle(self, toggle, path, tree_col):
-        print('odt')
         store = tree_col.get_tree_view().get_model()
         checked = not toggle.get_active()
         store[path][1] = checked
@@ -1313,6 +1313,7 @@ class App(Gtk.Application):
         df_cols.append('dark_area')  # active area in cm^2
         df_cols.append('mux_index')  # mux index is which mux switch needs to be closed for this (same as "pad" in cofig file)
         df_cols.append('mux_string')  # the string the firmware needs to select this pixel
+        df_cols.append('user_vars')  # dictionary for the user variables
         df_cols += self.slot_config_store.variables  # experimental variable names
         df = pd.DataFrame(columns=df_cols)
         while siter is not None:  # substrate iterator loop
@@ -1390,8 +1391,11 @@ class App(Gtk.Application):
                     df.at[dfr, 'pixel_offset'] = por
                     df.at[dfr, 'substrate_offset'] = sor
                     df.at[dfr, 'loc'] = locr
+                    user_vars = {}
                     for i,var in enumerate(self.slot_config_store.variables):
                         df.at[dfr, var] = self.slot_config_store[subi][3+i]
+                        user_vars[var] = self.slot_config_store[subi][3+i]
+                    df.at[dfr, 'user_vars'] = user_vars
 
                     n_subs_selected += 1
 
@@ -1639,30 +1643,43 @@ class App(Gtk.Application):
                         pass  # give up if we can't load this one element
             
             # now we can update the stores since we know we have shape for the slot config store set properly
+            # but the slot config one has to go first
+            id = "slot_config_store"
+            self.load_store(id, stores[id])
+            del stores[id]
+
+            # now we can load the rest of the stores
             for id_str, obj_info in stores.items():
-                this_type = obj_info['type']
-                list_store = 'ListStore' in this_type
-                try:
-                    store = getattr(self, id_str)
-                    store.clear()
-                    for line in obj_info['value']:
-                        path = line[0]
-                        row = line[1]
-                        if list_store:
-                            store.append(row)
-                        else:  # treestore is a bit more complicated because the tree structure must be recreated
-                            if ':' not in path:
-                                piter = None  # no parent iterator, top level
-                            else:
-                                parent_path = path.rsplit(':',1)[0]
-                                piter = store.get_iter_from_string(parent_path)
-                            store.append(piter, row)
-                except:
-                    pass  # give up on this one store if we can't load it
-            
+                self.load_store(id_str, obj_info)
             self.update_gui()
         else:
             lg.info(f"Load aborted.")
+
+    # load a store from the save file format into the gui's GTK format
+    def load_store(self, id, info):
+        this_type = info['type']
+        list_store = 'ListStore' in this_type
+        try:
+            store = getattr(self, id)
+            store.clear()
+            for line in info['value']:
+                path = line[0]
+                row = line[1]
+                if list_store:
+                    store.append(row)
+                else:  # treestore is a bit more complicated because the tree structure must be recreated
+                    if ':' not in path:
+                        piter = None  # no parent iterator, top level
+                    else:
+                        parent_path = path.rsplit(':',1)[0]
+                        piter = store.get_iter_from_string(parent_path)
+                    store.append(piter, row)
+            if ('iv_store' == id) or ('eqe_store' == id):  # for the device stores
+                # make sure the data frames are correct
+                self.do_dev_store_update_tasks(store)
+        except:
+            lg.debug(f"Failed to load store: {id}")
+            pass  # give up on this one store if we can't load it
 
     # looks at where the popover is
     # to determint which device selection store we want
@@ -1792,17 +1809,21 @@ class App(Gtk.Application):
 
     def on_health_button(self, button):
         lg.info("HEALTH CHECK INITIATED")
-        msg = {'cmd':'check_health',
-        'pcb': self.config['controller']['address'],
-        'psu': self.config['psu']['address'],
-        'smu_address': self.config['smu']['address'],
-        'smu_baud': int(self.config['smu']['baud']),
-        'smu_le': self.config['smu']['terminator'],
-        'lia_address': self.config['lia']['address'],
-        'mono_address': self.config['monochromator']['address'],
-        'le_address': self.config['solarsim']['uri'],
-        'le_recipe': self.b.get_object("light_recipe").get_text()
-        }
+        msg = {'cmd':'check_health'}
+        msg['pcb'] = self.config['controller']['address']
+        if self.enable_psu == True:
+            msg['psu'] = self.config['psu']['address']
+        if self.enable_smu == True:
+            msg['smu_address'] =self.config['smu']['address']
+            msg['smu_baud'] = self.config['smu']['baud']
+            msg['smu_le'] = self.config['smu']['terminator']
+        if self.enable_lia == True:
+            msg['lia_address'] = self.config['lia']['address']
+        if self.enable_mono == True:
+            msg['mono_address'] = self.config['monochromator']['address']
+        if self.enable_solarsim == True:
+            msg['le_address'] = self.config['solarsim']['address']
+            msg['le_recipe'] = self.b.get_object("light_recipe").get_text()
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
@@ -1916,9 +1937,22 @@ class App(Gtk.Application):
         args['chan3'] = args['chan3_ma']/1000
         args['i_dwell_value'] = args['i_dwell_value_ma']/1000
 
-        args['eqe'] = {}
-        args['iv'] = {}
+        # these fail if the dataframe is empty (no devices selected), and that's okay
+        try:
+            args['eqe_stuff'] = self.iv_store.df.to_dict(orient='records')
+        except:
+            pass
+            # could send an empyt dict, is that better than not sending the key at all?
+            #args['eqe_df'] = {}  
 
+        # these fail if the dataframe is empty (no devices selected), and that's okay
+        try:
+            args['iv_stuff'] = self.iv_store.df.to_dict(orient='records')
+        except:
+            # could send an empyt dict, is that better than not sending the key at all?
+            #args['iv_df'] = {}  # send an empyt dict, is that better than not sending the key at all?
+            pass
+            
         print(self.iv_store.df.to_markdown())
         print(self.eqe_store.df.to_markdown())
 
