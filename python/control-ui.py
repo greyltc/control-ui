@@ -980,7 +980,8 @@ class App(Gtk.Application):
                 store.set_value(gciter, 2, False)  # can't be inconsistent
                 gciter = store.iter_next(gciter)
             citer = store.iter_next(citer)
-        self.do_dev_store_update_tasks(store)
+        GLib.idle_add(self.do_dev_store_update_tasks, store)
+        #self.do_dev_store_update_tasks(store)
 
     # handles keystroke in the label creation tree
     # def handle_label_key(self, tv, event):
@@ -1268,8 +1269,8 @@ class App(Gtk.Application):
                     diter = store.iter_next(diter)
             except:
                 pass
-
-            self.do_dev_store_update_tasks(store)
+            GLib.idle_add(self.do_dev_store_update_tasks, store)
+            #self.do_dev_store_update_tasks(store)
 
     # this function does the things that need to be done when something about a device store has changed
     # such as areas changed, pixels added to or removed from substrate, user label change or device selection change 
