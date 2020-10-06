@@ -421,7 +421,7 @@ class App(Gtk.Application):
             self.slot_config_store.variables = []
             self.slot_config_tv.set_model(self.slot_config_store)
             self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [layouts[0]]*ns)
-            self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+            #self.slot_config_store.connect('row-changed', self.on_slot_store_change)
             self.add_variable('Variable')
 
             # device selection stuff
@@ -731,7 +731,7 @@ class App(Gtk.Application):
             # colCheck.connect("clicked", self.dev_col_click)
             tree_view.append_column(colCheck)
             # connect the cellrenderertoggle with a callback function
-            renderCheck.connect("toggled", self.on_dev_toggle)
+            renderCheck.connect("toggled", self.on_dev_toggle, colCheck)
 
         # this handles left/right arrow buttons for expanding and collapsing rows
         tree_view.connect("key-release-event", self.handle_dev_key)
@@ -884,7 +884,7 @@ class App(Gtk.Application):
         self.slot_config_tv.set_model(new_store)
         del(self.slot_config_store)
         self.slot_config_store = new_store
-        self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+        #self.slot_config_store.connect('row-changed', self.on_slot_store_change)
         self.slot_config_store.variables = variables
 
     # registers a new variable
@@ -906,7 +906,7 @@ class App(Gtk.Application):
             self.slot_config_tv.set_model(new_store)
             del(self.slot_config_store)
             self.slot_config_store = new_store
-            self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+            #self.slot_config_store.connect('row-changed', self.on_slot_store_change)
         self.slot_config_store.variables = variables
 
         var_cell = Gtk.CellRendererText()
@@ -928,7 +928,9 @@ class App(Gtk.Application):
 
     # the user chose a new layout. save that choice in the slot config store
     def on_layout_combo_changed(self, widget, path, ti):
-        self.slot_config_store[path][2] = widget.props.model[ti][0]
+        store_col = 0
+        self.slot_config_store[path][2] = widget.props.model[ti][store_col]
+        GLib.idle_add(self.on_slot_store_change, self.slot_config_store, path, self.slot_config_store.get_iter(path), store_col)
 
     # the user has hovered their mouse over a layout choice
     def on_layout_combo_entered(self, widget, event, user_data):
@@ -957,17 +959,21 @@ class App(Gtk.Application):
     # the user has made a text edit in the slot config table
     def on_slot_cell_edit(self, widget, path, text, col):
         self.slot_config_store[path][col] = text
-    
+        GLib.idle_add(self.on_slot_store_change, self.slot_config_store, path, self.slot_config_store.get_iter(path), col)
+
     # called when a user pushes a device selection toggle button
     # updates the store ticked and inconsistent values
     # for this row and all of its children and grandchildren
     # does not touch parents
-    def on_dev_toggle(self, toggle, path):
-        store = self.get_store()
+    def on_dev_toggle(self, toggle, path, tree_col):
+        print('odt')
+        store = tree_col.get_tree_view().get_model()
         checked = not toggle.get_active()
         store[path][1] = checked
         store[path][2] = False  # can't be inconsistent
-
+        GLib.idle_add(self.calc_checkboxes, path, store, checked)
+    
+    def calc_checkboxes(self, path, store, checked):
         # make this selection flow down to all children and grandchildren
         titer = store.get_iter_from_string(str(path))  # this row's iterator
         citer = store.iter_children(titer)
@@ -1220,10 +1226,11 @@ class App(Gtk.Application):
             self.gotos[i].set_value(coord)
 
     # fires every time a row is changed in the slot config store
-    def on_slot_store_change(self, store, path, iter):
+    def on_slot_store_change(self, store, path, iter, col):
         system_label = store[iter][0]
         user_label = store[iter][1]
         layout = store[iter][2]
+
         try:
             n_pix = len(self.config['substrates']['layouts'][layout]['pads'])
             areas = self.config['substrates']['layouts'][layout]['areas']
@@ -1616,7 +1623,7 @@ class App(Gtk.Application):
                     vars = obj_info['value']
                     create_params = tuple([str]*(3+len(vars)))  # we must create the store in the proper shape
                     self.slot_config_store = Gtk.ListStore(*create_params)  # ref des, user label, layout name, then the variable cols
-                    self.slot_config_store.connect('row-changed', self.on_slot_store_change)
+                    #self.slot_config_store.connect('row-changed', self.on_slot_store_change)
                     self.slot_config_store.variables = []
                     # now that the store is the right shape, we can remake the treeview cols
                     self.setup_slot_config_tv(self.slot_config_tv, self.layouts)
