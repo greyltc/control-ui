@@ -72,8 +72,8 @@ controller:
 # source-measure unit(s)
 smu:
     enabled: true
-    address: ASRL/dev/ttyS0::INSTR
-    #address: GPIB::24::INSTR
+    address: "ASRL/dev/ttyS0::INSTR"
+    #address: "GPIB::24::INSTR"
     baud: 57600  # only relevant for serial comms
     # HINT: "\r" = <CR>, "\r\n" = <CR+LF>, "\n" = <LF>, "\n\r" = <LF+CR>
     terminator: "\r"  # only relevant for serial comms
@@ -84,24 +84,26 @@ smu:
 
 solarsim:
     enabled: false
-    #address: wavelabs://0.0.0.0:3334
-    address: wavelabs-relay://127.0.0.1:3335
-    recipes: ["am1_5_1_sun", "Christo Disco"]
+    #address: "wavelabs://0.0.0.0:3334"
+    address: "wavelabs-relay://127.0.0.1:3335"
+    recipes:
+      - "am1_5_1_sun"
+      - "Christo Disco"
     spectral_calibration: null
 
 # lock-in amplifier
 lia:
     enabled: false
-    address: ASRL/dev/ttyUSB0::INSTR
+    address: "ASRL/dev/ttyUSB0::INSTR"
     terminator: "\r"
     baud: 9600
     output_interface: 0
-    auto_gain_method: instr  # user or instr
+    auto_gain_method: "instr"  # user or instr
     ratio: true  # true to use AUX1 input signal to account for lamp output drift
 
 monochromator:
     enabled: false
-    address: ASRL/dev/ttyUSB2::INSTR
+    address: "ASRL/dev/ttyUSB2::INSTR"
     terminator: "\r"
     baud: 9600
     grating_change_wls: [1200]
@@ -110,7 +112,7 @@ monochromator:
 # LED power supply unit
 psu:
     enabled: false
-    address: TCPIP0::192.168.1.235::INSTR
+    address: "TCPIP0::192.168.1.235::INSTR"
     terminator: "\r"  # only relevant for serial comms
     baud: 9600  # only relevant for serial comms
     ch1_voltage: 3.9
@@ -131,15 +133,15 @@ stage:
     # for example: [[],[62.5,Infinity]] means all values in X are okay, but any place beyond 62.5mm in Y is invalid
     # [[],[]] means no limits for either axis
     # the final field contains extra info for controlling the stage, for example "otter" tells the system to use a special homing procedure specific to one hardware setup
-    uri: us://375/6400
-    #uri: us://125/6400
+    uri: "us://375/6400"
+    #uri: "us://125/6400"
 
     # approx mm/s (used for timing calculations only, does not actually set speed)
     speed: 29
 
-    # a list of true/false, one for each axis which tell the system which direction "forward" is for that axis
-    #flip_axis_polarity: [true]
-    flip_axis_polarity: [false, false]
+    # a list of true/false, one for each axis. these will tell the system which direction "forward" is for that axis
+    flip_axis_polarity: [true]
+    #flip_axis_polarity: [false, false]
     
     # coordinates of the center of the substrate array for specific measurement types
     experiment_positions:
@@ -157,18 +159,25 @@ stage:
 # a section for describing how the substrates are positioned and what might be on them
 substrates:
     # list of number of substrates along each available axis: [x-direction, y-direction]
-    #number: [8]
-    number: [4, 5]
+    number: [8]
+    #number: [4, 5]
     
     # spacing in mm between substrate centers along each available axis
-    #spacing: [40]
-    spacing: [35, 29]
+    spacing: [40]
+    #spacing: [35, 29]
+
+    # number of degrees to rotate the layout array drawing in the GUI
+    # used so that the GUI display shows the same orientation as the user views the hardware from
+    # with this zero, X (the 0th axis) is displayed horizonally and Y (the 1st axis) is vertically
+    # best to leave this zero if making config adjustments, then set the rotation angle last
+    # or else the other settings might get get confusing to set properly
+    gui_drawing_rotation_angle: -90
     
-    # a list of true/false one, for each axis which tell the system
+    # a list of true/false, one for each axis. these will tell the system
     # if the labels along that axis direction should be flipped
     # this might be needed to get the labels to match the physical array layout
-    #flip_labels: [false]
-    flip_labels: [false, true]
+    flip_labels: [false]
+    #flip_labels: [false, true]
     
     # the section for device layout information
     # the first one listed here will be considered the default
@@ -220,11 +229,11 @@ substrates:
             enabled: true
             pcb_name: 30x30mm
             size: [30, 30]
-            pads:       [1,          2,         3,       4,      5,         6]
-            locations:  [[-7.5, -3], [-7.5, 3], [0, -3], [0, 0], [7.5, -3], [7.5, 3]]
-            shapes:     [s,          s,         s,       s,      s,         s]
-            areas:      [0.075,      0.075,     0.075,   0.075,  0.075,     0.075]
-            dark_areas: [0.075,      0.075,     0.075,   0.075,  0.075,     0.075]
+            pads:       [1,              2,             3,          4,         5,             6]
+            locations:  [[-8.05, -4.33], [-8.05, 4.33], [0, -4.33], [0, 4.33], [8.05, -4.33], [8.05, 4.33]]
+            shapes:     [s,              s,             s,          s,         s,             s]
+            areas:      [0.075,          0.075,         0.075,      0.075,     0.075,         0.075]
+            dark_areas: [0.075,          0.075,         0.075,      0.075,     0.075,         0.075]
 
         # OLD Oxford 30x30 layout with one 1cm device
         OLD one large:

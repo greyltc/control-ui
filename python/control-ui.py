@@ -1101,9 +1101,12 @@ class App(Gtk.Application):
             def __init__(self, href, target=None, **kwargs):
                 super().__init__(href=href, target=target, **kwargs)
         
-        hlink = Hyperlink('https://www.python.org', target='_blank')
-        hlink.append(draw.Rectangle(-canvas[0]/2, -canvas[1]/2, canvas[0], canvas[1], fill='white'))
-        d.append(hlink)
+        #hlink = Hyperlink('https://www.python.org', target='_blank')
+        #hlink.append(draw.Rectangle(-canvas[0]/2, -canvas[1]/2, canvas[0], canvas[1], fill='white'))
+        #d.append(hlink)
+        #angle = -90
+        #rot = f"rotate({angle},0,0)"
+        #rg = draw.Group(**{"transform":rot})
 
         for row in self.slot_config_store:
             label = row[0]
@@ -1120,6 +1123,7 @@ class App(Gtk.Application):
             #if not '1A' in label:
             #    d.append(g)
             d.append(g)
+        #d.append(rg)
 
         maxd = max(canvas)
         scale = max_render_pix/maxd
@@ -1129,6 +1133,8 @@ class App(Gtk.Application):
         #x = svg_handle.props.width
         #y = svg_handle.props.height
         svg_dims = svg_handle.get_intrinsic_dimensions()
+        #self.array_pic.props.width_request = 900
+        #self.array_pic.props.height_request = 900
         self.array_pic.props.width_request = svg_dims.out_width.length
         self.array_pic.props.height_request = svg_dims.out_height.length
         #self.array_pic.set('width-request', svg_handle.props.width)
@@ -1147,7 +1153,10 @@ class App(Gtk.Application):
             #drawing_area.set('width-request',x)
             #drawing_area.set('height-request',y)
             #drawing_area
+            angle = self.config['substrates']['gui_drawing_rotation_angle']
+            #cairo_context.rotate(math.pi*angle/180)
             self.array_drawing_handle.render_cairo(cairo_context)
+            
 
     # draws pixels based on layout info from the config file
     def draw_layout(self, pads, areas, locations, shapes, size, spacing, name):
