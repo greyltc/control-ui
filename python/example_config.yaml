@@ -138,7 +138,7 @@ stage:
     speed: 29
 
     # a list of true/false, one for each axis which tell the system which direction "forward" is for that axis
-    #flip_axis_polarity: [false]
+    #flip_axis_polarity: [true]
     flip_axis_polarity: [false, false]
     
     # coordinates of the center of the substrate array for specific measurement types
@@ -221,7 +221,7 @@ substrates:
             pcb_name: 30x30mm
             size: [30, 30]
             pads:       [1,          2,         3,       4,      5,         6]
-            locations:  [[-3, -7.5], [3, -7.5], [-3, 0], [3, 0], [-3, 7.5], [3, 7.5]]
+            locations:  [[-7.5, -3], [-7.5, 3], [0, -3], [0, 0], [7.5, -3], [7.5, 3]]
             shapes:     [s,          s,         s,       s,      s,         s]
             areas:      [0.075,      0.075,     0.075,   0.075,  0.075,     0.075]
             dark_areas: [0.075,      0.075,     0.075,   0.075,  0.075,     0.075]

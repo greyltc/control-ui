@@ -1415,18 +1415,19 @@ class App(Gtk.Application):
                 store.set_value(siter, 2, True)  # set inconsistent
 
             siter = store.iter_next(siter)
-        
-        # attach the active pixel dataframe we just made to this store
-        store.df = df
-        
+
         # set gui's hex text
         fmt_str = f"0{math.ceil(bitloc/4)}X"
         bitmask_text = f"0x{bitmask:{fmt_str}}"
         store_name = store.get_name()
+        df.index.name = store_name.split()[0]
         if 'IV' in store_name:
             self.iv_dev_box.set_text(bitmask_text)
         elif 'EQE' in store_name:
             self.eqe_dev_box.set_text(bitmask_text)
+
+        # attach the active pixel dataframe we just made to this store
+        store.df = df
 
         # set top level box visiblility
         if n_total == 0:
@@ -1434,7 +1435,7 @@ class App(Gtk.Application):
             store.set_value(all_row, 4, False)
         else:
             store.set_value(all_row, 4, True)
-        
+
         # set top level checkbox state
         if n_total_selected == 0:
             store.set_value(all_row, 1, False)
@@ -1495,7 +1496,7 @@ class App(Gtk.Application):
 
     def on_debug_button(self, *args, **kw_args):
         self.do_debug_tasks()
-    
+
     def do_debug_tasks(self, *args, **kw_args):
         lg.debug("Hello World!")
         self.b.get_object("run_but").set_sensitive(True)
@@ -1937,63 +1938,14 @@ class App(Gtk.Application):
         args['chan3'] = args['chan3_ma']/1000
         args['i_dwell_value'] = args['i_dwell_value_ma']/1000
 
-        # these fail if the dataframe is empty (no devices selected), and that's okay
-        try:
-            args['eqe_stuff'] = self.iv_store.df.to_dict(orient='records')
-        except:
-            pass
-            # could send an empyt dict, is that better than not sending the key at all?
-            #args['eqe_df'] = {}  
+        dfs = [self.eqe_store.df, self.iv_store.df]
 
-        # these fail if the dataframe is empty (no devices selected), and that's okay
-        try:
-            args['iv_stuff'] = self.iv_store.df.to_dict(orient='records')
-        except:
-            # could send an empyt dict, is that better than not sending the key at all?
-            #args['iv_df'] = {}  # send an empyt dict, is that better than not sending the key at all?
-            pass
-            
-        print(self.iv_store.df.to_markdown())
-        print(self.eqe_store.df.to_markdown())
-
-        
-
-        # TODO: figure out what actually needs to be sent
-        # args['substrate_labels'] = []
-        # args['substrate_layouts'] = []
-        # # substrate tree[0] = user label
-        # # substrate tree[1] = ref des
-        # # substrate tree[2] = ypad
-        # # substrate tree[3] = layout name
-        # for row in gui_dict['substrate_tree']['value']['table_list']:
-        #     if row[0] == "":
-        #         args['substrate_labels'].append(row[1])
-        #     else:
-        #         args['substrate_labels'].append(row[0])
-        #     args['substrate_layouts'].append(row[3])
-
-        # args['iv_subs_names'] = self.bitmask_to_some_lists(args['iv_devs'])['subs_names']
-        # args['iv_subs_dev_nums'] = self.bitmask_to_some_lists(args['iv_devs'])['sub_dev_nums']
-        # args['iv_selections'] = self.bitmask_to_some_lists(args['iv_devs'])['selections']
-        # args['iv_subs_labels'] = self.bitmask_to_some_lists(args['iv_devs'])['user_labels']
-        # for i, lab in enumerate(args['iv_subs_labels']):  # change empty labels to ref des
-        #     if lab == '':
-        #         args['iv_subs_labels'][i] = args['iv_subs_names'][i]
-
-        # args['eqe_subs_names'] = self.bitmask_to_some_lists(args['eqe_devs'])['subs_names']
-        # args['eqe_subs_dev_nums'] = self.bitmask_to_some_lists(args['eqe_devs'])['sub_dev_nums']
-        # args['eqe_selections'] = self.bitmask_to_some_lists(args['eqe_devs'])['selections']
-        # args['eqe_subs_labels'] = self.bitmask_to_some_lists(args['eqe_devs'])['user_labels']
-        # for i, lab in enumerate(args['eqe_subs_labels']):  # change empty labels to ref des
-        #     if lab == '':
-        #         args['eqe_subs_labels'][i] = args['eqe_subs_names'][i]
-        
-        # args['subs_names'] = self.substrate_designators
-        # #if int(args['eqe_devs'], 16) == 0:
-        # #    args['eqe_devs'] = None
-
-        # #if int(args['iv_devs'], 16) == 0:
-        # #    args['iv_devs'] = None
+        for df in dfs:
+            dict_list = df.to_dict(orient='records')
+            if len(dict_list) > 0:
+                key = f"{df.index.name}_stuff"
+                args[key] = dict_list
+                print(df.to_markdown())
 
         return(args)
 
