@@ -1152,7 +1152,7 @@ class App(Gtk.Application):
             for e in lod.allElements():
                 g.append(e)
             big_font_size = max_render_pix/25
-            lab = draw.Text(label, big_font_size, 0, -big_font_size/3, fill='gray', fill_opacity=0.9, **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
+            lab = draw.Text(label, big_font_size, 0, -big_font_size/3, fill='lime', fill_opacity=0.9, **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
             g.append(lab)
             #if not '1A' in label:
             #    d.append(g)
