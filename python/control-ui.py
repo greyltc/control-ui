@@ -77,6 +77,7 @@ class App(Gtk.Application):
         self.psu_cal_time = None
         self.iv_cal_time = None
         self.array_drawing_handle = None
+        self.layout_drawing_handle = None
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -134,6 +135,9 @@ class App(Gtk.Application):
             self.log_win_adj = self.b.get_object("vert_log_win_scroll_adj")
             self.array_pic = self.b.get_object("array_overview")
             self.array_pic.connect("draw", self.on_array_pic_draw)
+            self.subs_pic = self.b.get_object("substrate_pic")
+            self.subs_pic.connect("draw", self.on_subs_pic_draw)
+
 
             def myWrite(buf):
                 # the log update should not be done on the main gui thread
@@ -240,6 +244,16 @@ class App(Gtk.Application):
             
             pp = pprint.PrettyPrinter(compact=True, width=140, sort_dicts=False)
             lg.debug(pp.pformat(self.config))
+
+            try:
+                self.b.get_object("user_name_frame").set_visible(self.config['UI']['show_user_box'])
+            except:
+                pass
+
+            try:
+                self.b.get_object("custom_wv").set_visible(self.config['UI']['show_custom_tab'])
+            except:
+                pass
 
             # get dimentions of substrate array to generate designators
             self.counts = self.config["substrates"]["number"]
@@ -404,6 +418,7 @@ class App(Gtk.Application):
             npix = []  # number of pixels for each layout
             areas = []  # area list for each layout
             self.layout_drawings = {}  # holds our pictures of the layouts
+            self.rotated_layout_drawings = {}  # holds our pictures of the layouts
             if 'substrates' in self.config:
                 if 'layouts' in self.config['substrates']:
                     for layout_name, val in self.config['substrates']['layouts'].items():
@@ -412,7 +427,9 @@ class App(Gtk.Application):
                                 layouts.append(layout_name)
                                 npix.append(len(val['pads']))
                                 areas.append(val['areas'])
-                                self.layout_drawings[layout_name] = self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size'], self.spacings, layout_name)
+                                d, dr = self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size'], self.spacings, layout_name)
+                                self.layout_drawings[layout_name] = d
+                                self.rotated_layout_drawings[layout_name] = dr
             self.layouts = layouts
 
             # slot configuration stuff
@@ -465,14 +482,13 @@ class App(Gtk.Application):
             self.lopo = self.b.get_object("layout_po")
             self.lopo.set_position(Gtk.PositionType.RIGHT)
             self.lopo.set_relative_to(self.slot_config_tv)
-            self.lopo.add(Gtk.Image())
+            #self.lopo.add(Gtk.Image())
             #self.lopo.add(Gtk.Label(label=layouts[0]))
 
             # for approximating runtimes
             #self.approx_seconds_per_iv = 50
             #self.approx_seconds_per_eqe = 150
 
-            cvt_vis = False
             self.wvids = []
             self.wvids.append("vt_wv")
             self.wvids.append("iv_wv")
@@ -485,12 +501,6 @@ class App(Gtk.Application):
                 if "live_data_uris" in self.config["network"]:
                     for uri in self.config["network"]['live_data_uris']:
                         self.uris.append(uri)
-                
-                    if len(self.config["network"]['live_data_uris']) == 6:
-                        cvt_vis = True
-
-            # set the custom view tab visible or not
-            self.b.get_object("custom_wv").set_visible(cvt_vis)
 
             # start MQTT client
             self._start_mqtt()
@@ -515,10 +525,10 @@ class App(Gtk.Application):
 
             # read the invert plot settings from the config and set the switches to that
             if 'plots' in self.config:
-                if 'invert_voltage' in self.config['plots']:
+                if 'invert_voltage' in self.config['UI']:
                     sw = self.b.get_object('inv_v_switch')
                     sw.set_active(self.config['plots']['invert_voltage'])
-                if 'invert_current' in self.config['plots']:
+                if 'invert_current' in self.config['UI']:
                     sw = self.b.get_object('inv_i_switch')
                     sw.set_active(self.config['plots']['invert_current'])
 
@@ -936,15 +946,24 @@ class App(Gtk.Application):
     # the user has hovered their mouse over a layout choice
     def on_layout_combo_entered(self, widget, event, user_data):
         layout_index = user_data
-        self.lopo.get_child().set_from_pixbuf(self.drawing_to_pixbuf(self.layout_drawings[self.layouts[layout_index]]))
+        d = self.rotated_layout_drawings[self.layouts[layout_index]]
+        svgh = Rsvg.Handle.new_from_data(d.asSvg().encode())
+        self.layout_drawing_handle = svgh
+        vb = svgh.get_intrinsic_dimensions()
+
+        self.subs_pic.props.width_request = vb.out_width.length
+        self.subs_pic.props.height_request = vb.out_height.length
+        self.subs_pic.queue_draw()
         self.lopo.popup()
         self.lopo.show_all()
 
-    # converts a drawSvg object to a pixbuf that can go into an image
-    def drawing_to_pixbuf(self, drawing):
-        svgdat = drawing.asSvg()
-        stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes(svgdat.encode()))
-        return GdkPixbuf.Pixbuf.new_from_stream(stream, None)
+    # called when the substrate (lightmask) picture is being drawn
+    def on_subs_pic_draw(self, drawing_area, cairo_context):
+        if self.layout_drawing_handle is None:
+            drawing_area.queue_draw()
+        else:
+            rh = self.layout_drawing_handle
+            rh.render_cairo(cairo_context)
 
     # the layout ComboBox has now been magically created!
     # so let's install our hover-focus callbacks into its menu widget children
@@ -1067,10 +1086,14 @@ class App(Gtk.Application):
         return True
 
     def update_run_name(self, user_data=None):
+        un = self.b.get_object("user_box")
+        unt = un.get_text()
+        if unt != "":
+            unt += '/'
         rnp = self.b.get_object("run_name_prefix")
         rn = self.b.get_object("run_name")
         rns = self.b.get_object("run_name_suffix")
-        rn.set_text(rnp.get_text() + rns.get_text())
+        rn.set_text(unt + rnp.get_text() + rns.get_text())
     
     # draws the whole slot array
     def draw_array(self):
@@ -1092,21 +1115,29 @@ class App(Gtk.Application):
             y_cens = [pos[1] for lab, pos in self.substrate_locations.items()]
             canvas[1] = max(y_cens) - min(y_cens) + unit[1]
 
-        d = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False)
+        d = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False, **{'text-align':'center', 'font-family': 'monospace'})
+        #d = draw.Drawing(max(canvas), max(canvas), origin='center', displayInline=False)
+        #cmax = max(canvas)
+
 
         # try to see if we can hyperlink the background...
         # TODO: does not work atm, remove if this can't be fixed
-        class Hyperlink(draw.DrawingParentElement):
-            TAG_NAME = 'a'
-            def __init__(self, href, target=None, **kwargs):
-                super().__init__(href=href, target=target, **kwargs)
+        #class Hyperlink(draw.DrawingParentElement):
+        #    TAG_NAME = 'a'
+        #    def __init__(self, href, target=None, **kwargs):
+        #        super().__init__(href=href, target=target, **kwargs)
         
         #hlink = Hyperlink('https://www.python.org', target='_blank')
         #hlink.append(draw.Rectangle(-canvas[0]/2, -canvas[1]/2, canvas[0], canvas[1], fill='white'))
         #d.append(hlink)
-        #angle = -90
-        #rot = f"rotate({angle},0,0)"
-        #rg = draw.Group(**{"transform":rot})
+        #rh = self.array_drawing_handle
+        #angle = self.config['UI']['gui_drawing_rotation_angle']
+        #cairo_context.rotate(math.pi*angle/180)
+        #rh.render_cairo(cairo_context)
+        #print(rh.get_geometry_for_element(None)[-1].width)
+        angle = self.config['UI']['gui_drawing_rotation_angle']
+        rot = f"rotate({angle},0,0)"
+        rg = draw.Group(**{"transform":rot})
 
         for row in self.slot_config_store:
             label = row[0]
@@ -1120,43 +1151,43 @@ class App(Gtk.Application):
             g = draw.Group(**{"transform":t2})
             for e in lod.allElements():
                 g.append(e)
+            big_font_size = max_render_pix/25
+            lab = draw.Text(label, big_font_size, 0, -big_font_size/3, fill='gray', fill_opacity=0.9, **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
+            g.append(lab)
             #if not '1A' in label:
             #    d.append(g)
-            d.append(g)
-        #d.append(rg)
+            rg.append(g)
+            #d.append(g)
+        d.append(rg)
 
-        maxd = max(canvas)
-        scale = max_render_pix/maxd
+        #maxd = max(canvas)
+        #scale = max_render_pix/maxd
+        #d.setPixelScale(scale)
+        svg_handle = Rsvg.Handle.new_from_data(d.asSvg().encode())
+        vb = svg_handle.get_intrinsic_dimensions().out_viewbox
+        r = svg_handle.get_geometry_for_layer(None, vb).out_ink_rect
+        vb_new = (r.x, r.y, r.width, r.height)
+        d.viewBox = vb_new
+        d.width = r.width
+        d.height = r.height
+        ndims = [r.width, r.height]
+        scale = max_render_pix/max(ndims)
         d.setPixelScale(scale)
         svg_handle = Rsvg.Handle.new_from_data(d.asSvg().encode())
-        self.array_drawing_handle = svg_handle
-        #x = svg_handle.props.width
-        #y = svg_handle.props.height
-        svg_dims = svg_handle.get_intrinsic_dimensions()
-        #self.array_pic.props.width_request = 900
-        #self.array_pic.props.height_request = 900
-        self.array_pic.props.width_request = svg_dims.out_width.length
-        self.array_pic.props.height_request = svg_dims.out_height.length
-        #self.array_pic.set('width-request', svg_handle.props.width)
-        #self.array_pic.set('height-request', svg_handle.props.height)
 
-        # this is for if we have a GtkImage target
-        #self.array_pic.set_from_pixbuf(self.drawing_to_pixbuf(d))  
+        self.array_drawing_handle = svg_handle
+
+        self.array_pic.props.width_request = ndims[0]*scale
+        self.array_pic.props.height_request = ndims[1]*scale
     
     def on_array_pic_draw(self, drawing_area, cairo_context):
         if self.array_drawing_handle is None:
             drawing_area.queue_draw()
         else:
-            #style_context = drawing_area.get_style_context()
-            #x = self.array_drawing_handle.props.width
-            #y = self.array_drawing_handle.props.height
-            #drawing_area.set('width-request',x)
-            #drawing_area.set('height-request',y)
-            #drawing_area
-            angle = self.config['substrates']['gui_drawing_rotation_angle']
+            rh = self.array_drawing_handle
+            #angle = self.config['UI']['gui_drawing_rotation_angle']
             #cairo_context.rotate(math.pi*angle/180)
-            self.array_drawing_handle.render_cairo(cairo_context)
-            
+            rh.render_cairo(cairo_context)
 
     # draws pixels based on layout info from the config file
     def draw_layout(self, pads, areas, locations, shapes, size, spacing, name):
@@ -1170,7 +1201,9 @@ class App(Gtk.Application):
         maxd = max(canvas)
         scale = max_render_pix/maxd
 
-        d = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False)
+        d  = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False, **{'text-align':'center', 'font-family': 'monospace'})
+        dr = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False, **{'text-align':'center', 'font-family': 'monospace'})
+        angle = self.config['UI']['gui_drawing_rotation_angle']
 
         if len(size) == 0:  # handles the empty case
             c = draw.Circle(0, 0, maxd/4, **{'stroke-width':f"{maxd/16}", "stroke":"red", 'fill':'none'})
@@ -1195,7 +1228,10 @@ class App(Gtk.Application):
                 ry = a/rx
                 d.append(draw.Rectangle(xy[0]-rx/2, xy[1]-ry/2, rx, ry, fill='white'))
             lab_font_size = scale/3
-            lab = draw.Text(str(pad), lab_font_size, xy[0], xy[1]-lab_font_size/4, fill='gray', **{'text-anchor':'middle','dominant-baseline':'middle', 'font-weight':"bold"})
+            lx = xy[0]
+            ly = xy[1]-lab_font_size/3
+            #urot = f"rotate({-angle},{lx},{ly})"
+            lab = draw.Text(str(pad), lab_font_size, lx, ly, fill='gray', **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
             d.append(lab)
         if ('OLD' in name) or ('legacy' in name):
             ll = maxd/4
@@ -1205,7 +1241,16 @@ class App(Gtk.Application):
             d.append(x2)
 
         d.setPixelScale(scale)
-        return d
+
+        # now for the rotated version of this
+        rot = f"rotate({angle},0,0)"
+        g = draw.Group(**{"transform":rot})
+        for e in d.allElements():
+            g.append(e)
+        dr.append(g)
+        dr.setPixelScale(scale)
+
+        return d, dr
 
     def load_live_data_webviews(self, load):
         for i,wvid in enumerate(self.wvids):

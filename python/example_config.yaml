@@ -27,10 +27,24 @@ meta:
     # folder used to store the gui configuration autosave files
     autosave_path: runconfigs
 
-# default start-up values for the plot inversion switches
-plots:
+# user interface stuff
+UI:
+    # number of degrees to rotate the layout array drawing in the GUI
+    # used so that the GUI display shows the same orientation as the user views the hardware from
+    # with this zero, X (the 0th axis) is displayed horizonally and Y (the 1st axis) is vertically
+    # best to leave this zero if making config adjustments, then set the rotation angle last
+    # or else the other settings might get get confusing to set properly
+    gui_drawing_rotation_angle: 90
+
+    # default start-up values for the plot inversion switches
     invert_voltage: false
     invert_current: false
+
+    # should we draw the user name box?
+    show_user_box: true
+
+    # should we show the custom webview tab?
+    show_custom_tab: false
 
 # maximum power point tracking configuration
 mppt:
@@ -55,12 +69,12 @@ smart_mode:
 network:
     MQTTHOST: "127.0.0.1"
     live_data_uris:
-        - "http://127.0.0.1:8051/"  # V vs T plot
-        - "http://127.0.0.1:8052/"  # J vs V plot
-        - "http://127.0.0.1:8053/"  # MPPT plots
-        - "http://127.0.0.1:8054/"  # J vs T plot
-        - "http://127.0.0.1:8055/"  # EQE plot
-#        - "https://duckduckgo.com/" # custom webview tab
+        - "http://127.0.0.1:8051/"  # for V vs T plot
+        - "http://127.0.0.1:8052/"  # for J vs V plot
+        - "http://127.0.0.1:8053/"  # for MPPT plots
+        - "http://127.0.0.1:8054/"  # for J vs T plot
+        - "http://127.0.0.1:8055/"  # for EQE plot
+        - "https://duckduckgo.com/" # for custom webview tab
 
 visa:
     visa_lib: '@py'
@@ -166,13 +180,6 @@ substrates:
     spacing: [40]
     #spacing: [35, 29]
 
-    # number of degrees to rotate the layout array drawing in the GUI
-    # used so that the GUI display shows the same orientation as the user views the hardware from
-    # with this zero, X (the 0th axis) is displayed horizonally and Y (the 1st axis) is vertically
-    # best to leave this zero if making config adjustments, then set the rotation angle last
-    # or else the other settings might get get confusing to set properly
-    gui_drawing_rotation_angle: -90
-    
     # a list of true/false, one for each axis. these will tell the system
     # if the labels along that axis direction should be flipped
     # this might be needed to get the labels to match the physical array layout
