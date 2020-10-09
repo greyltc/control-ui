@@ -461,6 +461,10 @@ class App(Gtk.Application):
             # TODO: do this in a non-obsolete way (i guess with css somehow?)
             fontdesc = Pango.FontDescription("monospace")
 
+            # connect user name box change signal
+            un = self.b.get_object("user_box")
+            un.connect("changed", self.on_user_box_change)
+
             self.iv_dev_box = self.b.get_object("iv_devs")
             self.iv_dev_box.modify_font(fontdesc)
             self.iv_dev_box.set_width_chars(selection_box_length)
@@ -1084,6 +1088,17 @@ class App(Gtk.Application):
         rns.set_text(str(now))
         self.update_run_name()
         return True
+    
+    def on_user_box_change(self, box):
+        text = box.get_text()
+        if text != "":
+            pref = f"{text}{os.sep}"
+        else:
+            pref=""
+        rnp = self.b.get_object("run_name_prefix")
+        rn = self.b.get_object("run_name")
+        rns = self.b.get_object("run_name_suffix")
+        rn.set_text(pref + rnp.get_text() + rns.get_text())
 
     def update_run_name(self, user_data=None):
         un = self.b.get_object("user_box")
@@ -1943,6 +1958,7 @@ class App(Gtk.Application):
         if (self.move_warning() == Gtk.ResponseType.OK):
             run_name = self.b.get_object("run_name").get_text()
             gui_data = self.harvest_gui_data()
+            run_name = pathlib.Path(run_name)
 
             try:
                 autosave_config = self.config['meta']['autosave_enabled'] == True
@@ -1950,20 +1966,28 @@ class App(Gtk.Application):
                 autosave_config = True
             
             if autosave_config == True:
-                autosave_file_name = run_name + '_autosave.dat'
+                autosave_file_name = run_name.name + '_autosave.dat'
                 try:
                     user_autosave_path = self.config['meta']['autosave_path']
                 except:
                     user_autosave_path = 'runconfigs'
                 if pathlib.Path(user_autosave_path).is_absolute():
-                    autosave_pathname = pathlib.Path(user_autosave_path)
+                    autosave_root = pathlib.Path(user_autosave_path)
                 else:
-                    autosave_pathname = pathlib.Path.home() / user_autosave_path
-                autosave_pathname.mkdir(parents=True, exist_ok=True)
-                autosave_destination = (autosave_pathname / autosave_file_name)
-                lg.info(f"Autosaving gui state to: {autosave_destination}")
-                with open(autosave_destination, "wb") as f:
-                    pickle.dump(gui_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+                    autosave_root = pathlib.Path.home() / user_autosave_path
+                autosave_pathname = autosave_root / run_name.parent
+                # let's check the user isn't trying to do something TERRIBLE in their user name
+                # (a la little bobby tables)
+                as_root_str = str(autosave_root.resolve())
+                as_path_str = str(autosave_pathname.resolve())
+                if as_root_str in as_path_str:
+                    autosave_pathname.mkdir(parents=True, exist_ok=True)
+                    autosave_destination = (autosave_pathname / autosave_file_name)
+                    lg.info(f"Autosaving gui state to: {autosave_destination}")
+                    with open(autosave_destination, "wb") as f:
+                        pickle.dump(gui_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+                else:
+                    lg.info('Not autosaving. Unacceptable autosave path name.')
 
             msg = {"cmd":"run", "args": self.gui_to_args(gui_data), "config": self.config}
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
@@ -1999,7 +2023,8 @@ class App(Gtk.Application):
             if len(dict_list) > 0:
                 key = f"{df.index.name}_stuff"
                 args[key] = dict_list
-                print(df.to_markdown())
+                # for debugging
+                #print(df.to_markdown())
 
         return(args)
 
