@@ -417,6 +417,7 @@ class App(Gtk.Application):
             layouts = []  # list of enabled layouts
             npix = []  # number of pixels for each layout
             areas = []  # area list for each layout
+            pads = []  # pin pad list for each layout
             self.layout_drawings = {}  # holds our pictures of the layouts
             self.rotated_layout_drawings = {}  # holds our pictures of the layouts
             if 'substrates' in self.config:
@@ -425,12 +426,14 @@ class App(Gtk.Application):
                         if 'enabled' in val:
                             if val['enabled'] == True:
                                 layouts.append(layout_name)
+                                pads.append(val['pads'])
                                 npix.append(len(val['pads']))
                                 areas.append(val['areas'])
                                 d, dr = self.draw_layout(val['pads'], val['areas'], val['locations'], val['shapes'], val['size'], self.spacings, layout_name)
                                 self.layout_drawings[layout_name] = d
                                 self.rotated_layout_drawings[layout_name] = dr
             self.layouts = layouts
+            lnd = 0  # default starting layout number
 
             # slot configuration stuff
             self.slot_config_tv = self.b.get_object("substrate_tree")
@@ -438,7 +441,7 @@ class App(Gtk.Application):
             self.slot_config_store = Gtk.ListStore(str, str, str)  # ref des, user label, layout name
             self.slot_config_store.variables = []
             self.slot_config_tv.set_model(self.slot_config_store)
-            self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [layouts[0]]*ns)
+            self.fill_slot_config_store(self.slot_config_store, self.substrate_designators, ['']*ns, [layouts[lnd]]*ns)
             #self.slot_config_store.connect('row-changed', self.on_slot_store_change)
             self.add_variable('Variable')
 
@@ -451,8 +454,8 @@ class App(Gtk.Application):
             self.iv_store.set_name('IV Device Store')
             self.eqe_store = Gtk.TreeStore(str, bool, bool, str, bool)
             self.eqe_store.set_name('EQE Device Store')
-            self.fill_device_select_store(self.iv_store,  [[True]*npix[0]]*ns,  self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
-            self.fill_device_select_store(self.eqe_store, [[False]*npix[0]]*ns, self.substrate_designators, ['']*ns, [layouts[0]]*ns, [areas[0]]*ns, [True]*ns)
+            self.fill_device_select_store(self.iv_store,  [[True]*npix[lnd]]*ns,  self.substrate_designators, ['']*ns, [layouts[lnd]]*ns, [areas[lnd]]*ns, [pads[lnd]]*ns)
+            self.fill_device_select_store(self.eqe_store, [[False]*npix[lnd]]*ns, self.substrate_designators, ['']*ns, [layouts[lnd]]*ns, [areas[lnd]]*ns, [pads[lnd]]*ns)
 
             abs_max_devices = max(npix) * ns
             max_address_string_length = math.ceil(abs_max_devices / 4)
@@ -751,7 +754,7 @@ class App(Gtk.Application):
     # checkmarks is a list of lists of booleans
     # len(checkmarks) is the number of substrates
     # and the lengths of the inner lists are the number of pixels on each substrate
-    def fill_device_select_store(self, store, checkmarks, substrate_designators, labels, layouts, areas, check_vis):
+    def fill_device_select_store(self, store, checkmarks, substrate_designators, labels, layouts, areas, pads):
         store.clear()
         # compute the checkbox state for the top level
         any_check = False
@@ -786,6 +789,7 @@ class App(Gtk.Application):
         for i, subs_checks in enumerate(checkmarks):  # iterate through substrates
             this_label = substrate_designators[i]
             subs_areas = areas[i]
+            subs_pads = pads[i]
             if labels[i] != "":
                 this_label += f": {labels[i]}"
             if all(subs_checks):
@@ -799,11 +803,9 @@ class App(Gtk.Application):
                     inconsistent = False
             # append a substrate header row
             piter = store.append(top, [this_label, checked, inconsistent, layouts[i], len(subs_areas) != 0])
-            j = 1
-            for checked, area in zip(subs_checks, subs_areas):
-                # append a substrate header row
-                store.append(piter, [f"Device {j}", checked, False, str(area), True])
-                j += 1
+            for checked, area, pad in zip(subs_checks, subs_areas, subs_pads):
+                # append a device row
+                store.append(piter, [f"Device {pad}", checked, False, str(area), True])
 
     # sets up the columns the slot configuration treeview will show us
     def setup_slot_config_tv(self, tree_view, layouts):
@@ -1300,9 +1302,11 @@ class App(Gtk.Application):
         layout = store[iter][2]
 
         try:
-            n_pix = len(self.config['substrates']['layouts'][layout]['pads'])
+            pads  = self.config['substrates']['layouts'][layout]['pads']
+            n_pix = len(pads)
             areas = self.config['substrates']['layouts'][layout]['areas']
         except:
+            pads = []
             n_pix = float('nan')
             areas = None
 
@@ -1320,30 +1324,31 @@ class App(Gtk.Application):
             store.set_value(slot_iter, 3, layout)
             store.set_value(slot_iter, 4, subs_check_visible)
 
-            # update the number of devices the substrates have for picking
-            n_children = store.iter_n_children(slot_iter)
-            if (n_pix > n_children):
-                for j in range(n_children, n_pix):
-                    if store[slot_iter][1] == True:
-                        checked = True
-                    else:
-                        checked = False
-                    store.append(slot_iter, [f"Device {j+1}", checked, False, '', True])
-            elif(n_pix < n_children):
-                for j in list(range(n_pix, n_children))[::-1]:
-                    goodbye = store.iter_nth_child(slot_iter, j)
-                    store.remove(goodbye)
+            # is the parent checked?
+            if store[slot_iter][1] == True:
+                checked = True
+            else:
+                checked = False
 
-            # update the areas
-            try:
-                diter = store.iter_children(slot_iter)
-                i = 0
-                while diter is not None:
-                    store[diter][3] = str(areas[i])
-                    i += 1
-                    diter = store.iter_next(diter)
-            except:
-                pass
+            # re-fill the children with the updated info
+            diter = store.iter_children(slot_iter)
+            for pad, area in zip(pads, areas):
+                name_col_val = f"Device {pad}"  # what do we call this?
+                checked_col_val = checked  # is it selected?
+                expanded_col_val = False  # is the row expanded?
+                area_col_val = str(area)  # what's its area?
+                check_vis_col_val = True  # is the selection box visible?
+
+                if diter is None:  # we need to add a new row
+                    diter = store.append(slot_iter, [name_col_val, checked_col_val, expanded_col_val, area_col_val, check_vis_col_val])
+                else:  # the row already exists let's just make sure it's right
+                    store.set(diter, 0, name_col_val, 1, checked_col_val, 2, expanded_col_val, 3, area_col_val, 4, check_vis_col_val)
+                diter = store.iter_next(diter)
+
+            # delete any extra children
+            while store.iter_is_valid(diter):
+                store.remove(diter)
+
             GLib.idle_add(self.do_dev_store_update_tasks, store)
             #self.do_dev_store_update_tasks(store)
 
@@ -1686,7 +1691,7 @@ class App(Gtk.Application):
             lg.info(f"Loading gui state from: {this_file}")
             with open(this_file, "rb") as f:
                 load_data = pickle.load(f)
-            
+
             stores = {}  # a place to hold the stores we read. they need to be filled last
             for id_str, obj_info in load_data.items():
                 this_type = obj_info['type']
@@ -1705,12 +1710,14 @@ class App(Gtk.Application):
                         self.add_variable(var, add_store_col=False)
                 else:  # all the other gui params can be handled simply
                     try:
+                        lg.info(f"Loading {id_str}...")
                         this_obj = self.b.get_object(id_str)
                         call_to_set = getattr(this_obj, obj_info['call_to_set'])
                         call_to_set(obj_info['value'])
                     except:
+                        lg.info(f"Load issue with: {id_str}")
                         pass  # give up if we can't load this one element
-            
+
             # now we can update the stores since we know we have shape for the slot config store set properly
             # but the slot config one has to go first
             id = "slot_config_store"
@@ -1815,49 +1822,6 @@ class App(Gtk.Application):
             msg = {'cmd':'for_pcb', 'pcb_cmd':'s', 'pcb':self.config['controller']['address']}
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
             self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
-
-    # # generates per-selection lists of relevant info for each device the user has selected
-    # # these are what i expect the measurement backend to use
-    # def generate_per_select(self, slot_store, dev_store):
-    #     """
-    #     input: the slot config store and a device selection store
-    #     outputs a dict of lists with one element for each selected device:
-    #     system_labels: 
-    #     user_labels: 
-    #     labels: 
-    #     pixel_numbers:
-    #     areas: 
-    #     mux_selection_strings
-    #     """
-
-    #     selection_bitmask = int(bitmask, 16)
-    #     bin_mask = bin(selection_bitmask)[2::]
-    #     bin_mask = bin_mask[:tpix]  # prune to total pixel number
-    #     bin_mask_rev = bin_mask[::-1]
-    #     dev_nums = []
-    #     subs_nums = []
-    #     sub_dev_nums = []
-    #     subs_names = []
-    #     user_labels = []
-    #     selections = []
-    #     #for subs in
-    #     for i,c in enumerate(bin_mask_rev):
-    #         if c == '1':
-    #             dev_num = i
-    #             dev_nums += [dev_num]
-    #             subs_num = math.floor(i/self.num_pix)  #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
-    #             subs_nums += [subs_num]
-    #             sub_dev_num = dev_num%self.num_pix + 1  # we'll count these from 1 here #TODO this is wrong. needs to be thought now that we don't have equal numbers of pixels per substrate
-    #             sub_dev_nums += [sub_dev_num]
-    #             subs_name = self.substrate_designators[subs_num]
-    #             subs_names += [subs_name]
-    #             user_label = self.label_shadow[subs_num]
-    #             user_labels += [user_label]
-    #             selection = f"s{subs_name}{sub_dev_num}".lower()
-    #             selections += [selection]
-    #             if len(dev_nums) >= maximum:
-    #                 break
-    #     return({'dev_nums':dev_nums, 'subs_nums':subs_nums, 'sub_dev_nums':sub_dev_nums, 'subs_names':subs_names, 'user_labels':user_labels, 'selections':selections})
 
     def on_mode_toggle_button(self, button):
         """

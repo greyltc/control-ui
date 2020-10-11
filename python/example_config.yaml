@@ -100,7 +100,7 @@ smu:
     current_limit: 0.150
 
 solarsim:
-    enabled: false
+    enabled: true
     #address: "wavelabs://0.0.0.0:3334"
     address: "wavelabs-relay://127.0.0.1:3335"
     recipes:
@@ -250,7 +250,7 @@ substrates:
             enabled: true
             pcb_name: 30x30mm
             size: [30, 30]
-            pads:       [5,           4,          3,         6]
+            pads:       [5,           4,          3,         1]
             locations:  [[-7.1, 6.2], [0, -6.35], [0, 6.2],  [7.1, 6.2]]
             shapes:     [5.03,        18.99,      5.03,      5.03]
             areas:      [0.2,         1,          0.2,       0.2]
