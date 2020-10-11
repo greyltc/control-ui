@@ -454,7 +454,7 @@ Author: Greyson Christoforo
                             <property name="label-xalign">0</property>
                             <property name="shadow-type">etched-out</property>
                             <child>
-                              <object class="GtkEntry" id="user_box">
+                              <object class="GtkEntry" id="user_name">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="margin-start">2</property>
@@ -462,7 +462,9 @@ Author: Greyson Christoforo
                                 <property name="margin-top">2</property>
                                 <property name="margin-bottom">2</property>
                                 <property name="placeholder-text" translatable="yes">Missing user name</property>
-                                <property name="input-purpose">alpha</property>
+                                <property name="input-purpose">email</property>
+                                <signal name="changed" handler="update_run_name" swapped="no"/>
+                                <signal name="insert-text" handler="only_alnum" swapped="no"/>
                               </object>
                             </child>
                             <child type="label">
@@ -504,6 +506,7 @@ Author: Greyson Christoforo
                                     <property name="placeholder-text" translatable="yes">Missing run name prefix</property>
                                     <property name="input-purpose">alpha</property>
                                     <signal name="changed" handler="update_run_name" swapped="no"/>
+                                    <signal name="insert-text" handler="only_alnum" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -533,6 +536,7 @@ Author: Greyson Christoforo
                                     <property name="width-chars">10</property>
                                     <property name="caps-lock-warning">False</property>
                                     <property name="input-purpose">digits</property>
+                                    <signal name="changed" handler="update_run_name" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -617,13 +621,12 @@ Author: Greyson Christoforo
                                 <property name="margin-top">5</property>
                                 <property name="margin-bottom">5</property>
                                 <property name="enable-search">False</property>
+                                <property name="hover-selection">True</property>
                                 <property name="show-expanders">False</property>
                                 <property name="enable-grid-lines">both</property>
                                 <property name="activate-on-single-click">True</property>
                                 <child internal-child="selection">
-                                  <object class="GtkTreeSelection">
-                                    <property name="mode">browse</property>
-                                  </object>
+                                  <object class="GtkTreeSelection"/>
                                 </child>
                               </object>
                             </child>

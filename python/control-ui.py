@@ -1082,19 +1082,33 @@ class App(Gtk.Application):
         rns = self.b.get_object("run_name_suffix")
         now = int(time.time())
         rns.set_text(str(now))
-        self.update_run_name()
         return True
 
-    def update_run_name(self, user_data=None):
-        un = self.b.get_object("user_box")
+    # a function that blocks non-alphanumeric text entry
+    def only_alnum(self, widget, text, text_len, text_pos):
+        if text_len > 0:
+            allowed = '_-'
+            if not text.isalnum() and (text not in allowed):
+                widget.stop_emission_by_name('insert-text')
+
+    # gets called on changes to text boxes that impact the run name
+    def update_run_name(self, *args, **kwargs):
+        un = self.b.get_object("user_name")
         unt = un.get_text()
-        if unt != "":
-            unt += '/'
         rnp = self.b.get_object("run_name_prefix")
-        rn = self.b.get_object("run_name")
+        rnpt = rnp.get_text()
         rns = self.b.get_object("run_name_suffix")
-        rn.set_text(unt + rnp.get_text() + rns.get_text())
-    
+        rnst = rns.get_text()
+
+        if unt != "":
+            run_name = f"{unt}{os.sep}"
+        else:
+            run_name=""
+        run_name +=rnpt
+        run_name +=rnst
+        rn = self.b.get_object("run_name")
+        rn.set_text(run_name)
+
     # draws the whole slot array
     def draw_array(self):
         max_render_pix = 600  # the picture's largest dim will be this many pixels
@@ -1152,7 +1166,7 @@ class App(Gtk.Application):
             for e in lod.allElements():
                 g.append(e)
             big_font_size = max_render_pix/25
-            lab = draw.Text(label, big_font_size, 0, -big_font_size/3, fill='gray', fill_opacity=0.9, **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
+            lab = draw.Text(label, big_font_size, 0, -big_font_size/3, fill='lime', fill_opacity=0.9, **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
             g.append(lab)
             #if not '1A' in label:
             #    d.append(g)
@@ -1943,6 +1957,7 @@ class App(Gtk.Application):
         if (self.move_warning() == Gtk.ResponseType.OK):
             run_name = self.b.get_object("run_name").get_text()
             gui_data = self.harvest_gui_data()
+            run_name = pathlib.Path(run_name)  #run name can now be a path
 
             try:
                 autosave_config = self.config['meta']['autosave_enabled'] == True
@@ -1950,15 +1965,17 @@ class App(Gtk.Application):
                 autosave_config = True
             
             if autosave_config == True:
-                autosave_file_name = run_name + '_autosave.dat'
+                autosave_file_name = run_name.name + '_autosave.dat'
                 try:
                     user_autosave_path = self.config['meta']['autosave_path']
                 except:
                     user_autosave_path = 'runconfigs'
                 if pathlib.Path(user_autosave_path).is_absolute():
-                    autosave_pathname = pathlib.Path(user_autosave_path)
+                    autosave_root = pathlib.Path(user_autosave_path)
                 else:
-                    autosave_pathname = pathlib.Path.home() / user_autosave_path
+                    autosave_root = pathlib.Path.home() / user_autosave_path
+                autosave_pathname = autosave_root / run_name.parent
+
                 autosave_pathname.mkdir(parents=True, exist_ok=True)
                 autosave_destination = (autosave_pathname / autosave_file_name)
                 lg.info(f"Autosaving gui state to: {autosave_destination}")
@@ -1972,13 +1989,18 @@ class App(Gtk.Application):
             self.b.get_object("run_but").set_sensitive(False)  # prevent multipress
             self.mqttc.publish("measurement/run", pic_msg, qos=2).wait_for_publish()
 
-
     # makes the gui dict more consumable for a backend
     def gui_to_args(self, gui_dict):
         args = {}
-        #return(args)
+        
+        # send almost every gui item up
         for key, val in gui_dict.items():
-            args[key] = val['value']
+            # don't send up the stores, those are only for the gui
+            # and their data is in the dataframes handled below
+            if not key.endswith('store'):
+                args[key] = val['value']
+        
+        # do some scaling and selection logic for the backend
         if args['v_dwell_check'] == False:
             args['v_dwell'] = 0
         if args['mppt_check'] == False:
@@ -1992,14 +2014,35 @@ class App(Gtk.Application):
         args['chan3'] = args['chan3_ma']/1000
         args['i_dwell_value'] = args['i_dwell_value_ma']/1000
 
+        # so that the data consumer knows what to look out for
+        args['pixel_data_object_names'] = []
+
+        # the potential pixel data objects we'll send (empty ones are not sent)
         dfs = [self.eqe_store.df, self.iv_store.df]
 
+        # whitelist some pixel data frame cols for the saver.
+        # only these cols should get saved to file
+        saver_whitelist_cols = []
+        saver_whitelist_cols.append('system_label')
+        saver_whitelist_cols.append('user_label')
+        saver_whitelist_cols.append('substrate_index')
+        saver_whitelist_cols.append('layout')
+        saver_whitelist_cols.append('area')
+        saver_whitelist_cols.append('dark_area')
+        saver_whitelist_cols.append('mux_index')
+        saver_whitelist_cols += self.slot_config_store.variables
+        args['pix_cols_to_save'] = saver_whitelist_cols
+
+        # package up the data for each pixel
         for df in dfs:
-            dict_list = df.to_dict(orient='records')
-            if len(dict_list) > 0:
+            # only send ones with selected pixels
+            if len(df) > 0:                
                 key = f"{df.index.name}_stuff"
-                args[key] = dict_list
-                print(df.to_markdown())
+                args[key] = df
+                args['pixel_data_object_names'].append(key)
+
+                # for debugging
+                #print(df.to_markdown())
 
         return(args)
 
