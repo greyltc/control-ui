@@ -457,12 +457,12 @@ Author: Greyson Christoforo
                               <object class="GtkEntry" id="user_name">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
+                                <property name="tooltip-text" translatable="yes">The user's name. Outputs will be saved in a folder named this.</property>
                                 <property name="margin-start">2</property>
                                 <property name="margin-end">2</property>
-                                <property name="margin-top">2</property>
                                 <property name="margin-bottom">2</property>
-                                <property name="placeholder-text" translatable="yes">Missing user name</property>
-                                <property name="input-purpose">email</property>
+                                <property name="caps-lock-warning">False</property>
+                                <property name="placeholder-text" translatable="yes">Enter a user name</property>
                                 <signal name="changed" handler="update_run_name" swapped="no"/>
                                 <signal name="insert-text" handler="only_alnum" swapped="no"/>
                               </object>
@@ -503,8 +503,7 @@ Author: Greyson Christoforo
                                     <property name="tooltip-text" translatable="yes">Prefix for the run name</property>
                                     <property name="width-chars">20</property>
                                     <property name="caps-lock-warning">False</property>
-                                    <property name="placeholder-text" translatable="yes">Missing run name prefix</property>
-                                    <property name="input-purpose">alpha</property>
+                                    <property name="placeholder-text" translatable="yes">Enter a run name prefix</property>
                                     <signal name="changed" handler="update_run_name" swapped="no"/>
                                     <signal name="insert-text" handler="only_alnum" swapped="no"/>
                                   </object>
@@ -535,7 +534,6 @@ Author: Greyson Christoforo
                                     <property name="editable">False</property>
                                     <property name="width-chars">10</property>
                                     <property name="caps-lock-warning">False</property>
-                                    <property name="input-purpose">digits</property>
                                     <signal name="changed" handler="update_run_name" swapped="no"/>
                                   </object>
                                   <packing>
@@ -688,9 +686,6 @@ Author: Greyson Christoforo
                                                 <property name="margin-bottom">2</property>
                                                 <property name="editable">False</property>
                                                 <property name="caps-lock-warning">False</property>
-                                                <style>
-                                                  <class name=".monospace"/>
-                                                </style>
                                               </object>
                                               <packing>
                                                 <property name="expand">False</property>
@@ -1790,9 +1785,6 @@ Author: Greyson Christoforo
                                             <property name="margin-bottom">2</property>
                                             <property name="editable">False</property>
                                             <property name="caps-lock-warning">False</property>
-                                            <style>
-                                              <class name=".monospace"/>
-                                            </style>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>

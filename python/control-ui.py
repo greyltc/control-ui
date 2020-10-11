@@ -5,7 +5,6 @@ import pathlib
 # import time
 # import signal # to handle key kill
 import logging
-import drawSvg
 import systemd.journal
 import pprint
 
@@ -41,6 +40,12 @@ from gi.repository import GLib, Gio, Gtk, Gdk, Pango, GdkPixbuf, Rsvg
 
 # Gdk.set_allowed_backends('broadway')  # for gui over web
 from gi.repository.WebKit2 import WebView, Settings
+
+# needed to filter out a stupid bug-warning in gio
+# https://bugzilla.gnome.org/show_bug.cgi?id=708676
+# that shows up on input validation
+import warnings
+warnings.filterwarnings('ignore', '.*g_value_get_int.*G_VALUE_HOLDS_INT.*', Warning)
 
 # setup logging
 lg = logging.getLogger("control-ui")
@@ -461,16 +466,15 @@ class App(Gtk.Application):
             max_address_string_length = math.ceil(abs_max_devices / 4)
             selection_box_length = max_address_string_length + 2
 
-            # TODO: do this in a non-obsolete way (i guess with css somehow?)
-            fontdesc = Pango.FontDescription("monospace")
-
             self.iv_dev_box = self.b.get_object("iv_devs")
-            self.iv_dev_box.modify_font(fontdesc)
+            sc = self.iv_dev_box.get_style_context()
+            sc.add_class(Gtk.STYLE_CLASS_MONOSPACE)
             self.iv_dev_box.set_width_chars(selection_box_length)
             self.iv_dev_box.connect('changed', self.update_measure_count)
 
             self.eqe_dev_box = self.b.get_object("eqe_devs")
-            self.eqe_dev_box.modify_font(fontdesc)
+            sc = self.eqe_dev_box.get_style_context()
+            sc.add_class(Gtk.STYLE_CLASS_MONOSPACE)
             self.eqe_dev_box.set_width_chars(selection_box_length)
             self.eqe_dev_box.connect('changed', self.update_measure_count)
 
@@ -1090,11 +1094,15 @@ class App(Gtk.Application):
     def only_alnum(self, widget, text, text_len, text_pos):
         if text_len > 0:
             allowed = '_-'
-            if not text.isalnum() and (text not in allowed):
+            if text.isalnum():
+                return True
+            elif(text in allowed):
+                return True
+            else:
                 widget.stop_emission_by_name('insert-text')
 
     # gets called on changes to text boxes that impact the run name
-    def update_run_name(self, *args, **kwargs):
+    def update_run_name(self, widget):
         un = self.b.get_object("user_name")
         unt = un.get_text()
         rnp = self.b.get_object("run_name_prefix")
@@ -1346,7 +1354,7 @@ class App(Gtk.Application):
                 diter = store.iter_next(diter)
 
             # delete any extra children
-            while store.iter_is_valid(diter):
+            while (diter is not None) and store.iter_is_valid(diter):
                 store.remove(diter)
 
             GLib.idle_add(self.do_dev_store_update_tasks, store)
@@ -1624,7 +1632,7 @@ class App(Gtk.Application):
                 elif isinstance(this_obj, gi.repository.Gtk.SpinButton):
                     gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_value(), "call_to_set": "set_value"}
                 elif isinstance(this_obj, gi.repository.Gtk.Entry):
-                    gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_text"}
+                    gui_data[id_str] = {"type": str(type(this_obj)), "value": this_obj.get_text(), "call_to_set": "set_buffer_text"}
 
         # handle the treestores and liststores manually because they can't be pickled, plus they're not registered in glade
         for store in ['iv_store', 'eqe_store', 'slot_config_store']:
@@ -1692,6 +1700,12 @@ class App(Gtk.Application):
             with open(this_file, "rb") as f:
                 load_data = pickle.load(f)
 
+            # ids that we don't want to load into the gui
+            dont_load = ['run_name_suffix', 'run_name']
+
+            # pop away the things we don't want
+            [load_data.pop(key) for key in dont_load]
+
             stores = {}  # a place to hold the stores we read. they need to be filled last
             for id_str, obj_info in load_data.items():
                 this_type = obj_info['type']
@@ -1710,13 +1724,16 @@ class App(Gtk.Application):
                         self.add_variable(var, add_store_col=False)
                 else:  # all the other gui params can be handled simply
                     try:
-                        lg.info(f"Loading {id_str}...")
                         this_obj = self.b.get_object(id_str)
-                        call_to_set = getattr(this_obj, obj_info['call_to_set'])
-                        call_to_set(obj_info['value'])
+                        if obj_info['call_to_set'] == 'set_buffer_text':
+                            b = this_obj.get_buffer()
+                            b.set_text(obj_info['value'], -1)
+                        else:
+                            call_to_set = getattr(this_obj, obj_info['call_to_set'])
+                            call_to_set(obj_info['value'])
                     except:
                         lg.info(f"Load issue with: {id_str}")
-                        pass  # give up if we can't load this one element
+                        #pass  # give up if we can't load this one element
 
             # now we can update the stores since we know we have shape for the slot config store set properly
             # but the slot config one has to go first
