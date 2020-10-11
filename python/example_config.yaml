@@ -95,6 +95,9 @@ smu:
     front_terminals: false
     # if 2 wire is false, then use 4 wire
     two_wire: false
+    # a hard upper limit on the absolute value of the current the SMU allows, in Amps
+    # used to protect the hardware from damage from overcurrent
+    current_limit: 0.150
 
 solarsim:
     enabled: false
