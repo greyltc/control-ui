@@ -86,7 +86,7 @@ controller:
 # source-measure unit(s)
 smu:
     enabled: true
-    address: "ASRL/dev/ttyS0::INSTR"
+    address: "ASRL/dev/ttyUSB0::INSTR"
     #address: "GPIB::24::INSTR"
     baud: 57600  # only relevant for serial comms
     # HINT: "\r" = <CR>, "\r\n" = <CR+LF>, "\n" = <LF>, "\n\r" = <LF+CR>
