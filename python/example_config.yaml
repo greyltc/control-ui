@@ -51,7 +51,8 @@ mppt:
     presets:
         - "gd://"  # gradient descent algorithm with default parameters
         - "basic://" # basic tracking algorithm (alternating periods of exploration and dwell at vmpp) with default parameters
-        - "gd://10:0.0001:10" # gd://alpha:min_step:NPLC --> alpha is the learning rate, min_step is the smallest possible voltage step, larger NPLC means slower, more accurate measurements
+        - "snaith://" # legacy snaith mppt method
+        - "gd://5:0.001:10" # gd://alpha:min_step:NPLC --> alpha is the learning rate, min_step is the smallest possible voltage step, larger NPLC means slower, more accurate measurements
         - "basic://7:10" # basic://degrees:dwell_time --> larger degrees means wider exploration, larger dwell_time means longer dwell periods
 
 # controls for how "smart mode" works

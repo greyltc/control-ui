@@ -2014,6 +2014,16 @@ class App(Gtk.Application):
         saver_whitelist_cols += self.slot_config_store.variables
         args['pix_cols_to_save'] = saver_whitelist_cols
 
+        # include the enable/disables
+        args['enable_stage'] = self.enable_stage
+        args['enable_eqe'] = self.enable_eqe
+        args['enable_iv'] = self.enable_iv
+        args['enable_lia'] = self.enable_lia
+        args['enable_mono'] = self.enable_mono
+        args['enable_psu'] = self.enable_psu
+        args['enable_solarsim'] = self.enable_solarsim
+        args['enable_smu'] = self.enable_smu
+
         # package up the data for each pixel
         for df in dfs:
             # only send ones with selected pixels
