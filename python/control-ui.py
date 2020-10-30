@@ -1893,18 +1893,21 @@ class App(Gtk.Application):
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
     def move_warning(self):
-        message_dialog = Gtk.MessageDialog(
-            modal=True,
-            destroy_with_parent=True,
-            transient_for=self.b.get_object("mainWindow"),
-            message_type=Gtk.MessageType.WARNING,
-            buttons=Gtk.ButtonsType.OK_CANCEL,
-            text="This action may cause the stage to move."
-        )
-        message_dialog.format_secondary_text("Before clicking OK, check that all foreign objects are clear from the stage area and that it is safe to move.")
+        if self.enable_stage == True:
+            message_dialog = Gtk.MessageDialog(
+                modal=True,
+                destroy_with_parent=True,
+                transient_for=self.b.get_object("mainWindow"),
+                message_type=Gtk.MessageType.WARNING,
+                buttons=Gtk.ButtonsType.OK_CANCEL,
+                text="This action may cause the stage to move."
+            )
+            message_dialog.format_secondary_text("Before clicking OK, check that all foreign objects are clear from the stage area and that it is safe to move.")
 
-        result = message_dialog.run()
-        message_dialog.destroy()
+            result = message_dialog.run()
+            message_dialog.destroy()
+        else:
+            result = Gtk.ResponseType.OK
         return(result)
 
     def on_home_button(self, button):
