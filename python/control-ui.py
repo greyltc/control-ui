@@ -1186,9 +1186,7 @@ class App(Gtk.Application):
             else:
                 t2 = f"translate({pos[0]},{pos[1]})"
             g = draw.Group(**{"transform":t2})
-            ae = lod.allElements()
-            print(len(ae))
-            for e in ae:
+            for e in lod.allElements():
                 g.append(e)
             big_font_size = max_render_pix/25
             lab = draw.Text(label, big_font_size, 0, -big_font_size/3, fill='lime', fill_opacity=0.9, **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
