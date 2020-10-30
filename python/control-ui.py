@@ -993,7 +993,7 @@ class App(Gtk.Application):
     # the user has made a text edit in the slot config table
     def on_slot_cell_edit(self, widget, path, text, col):
         if col == 1:  # only sanitize col #1 (label)
-            valid = re.compile('[\W]+', re.UNICODE)
+            valid = re.compile('[^a-zA-Z0-9_\-]+', re.UNICODE)
             fill = valid.sub('', text)
         else:
             fill = text
