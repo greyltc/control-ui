@@ -31,6 +31,8 @@ import numpy as np
 
 import yaml
 
+import re
+
 # os.environ["DEBUSSY"] = "1"
 
 gi.require_version("WebKit2", "4.0")
@@ -565,6 +567,12 @@ class App(Gtk.Application):
             # setup debug key combo
             ag.connect(Gdk.keyval_from_name('D'), Gdk.ModifierType.CONTROL_MASK, 0, self.do_debug_tasks)
 
+            # disallow bad input for some boxes
+            rnp = self.b.get_object("run_name_prefix")
+            rnp.connect('insert-text', self.only_alnum)
+            un = self.b.get_object("user_name")
+            un.connect('insert-text', self.only_alnum)
+
             # do one tick now and then start the backround tick launcher
             self.tick()
             self.ticker_id = GLib.timeout_add_seconds(1, self.tick, None)
@@ -984,7 +992,12 @@ class App(Gtk.Application):
 
     # the user has made a text edit in the slot config table
     def on_slot_cell_edit(self, widget, path, text, col):
-        self.slot_config_store[path][col] = text
+        if col == 1:  # only sanitize col #1 (label)
+            valid = re.compile('[\W]+', re.UNICODE)
+            fill = valid.sub('', text)
+        else:
+            fill = text
+        self.slot_config_store[path][col] = fill
         GLib.idle_add(self.on_slot_store_change, self.slot_config_store, path, self.slot_config_store.get_iter(path), col)
 
     # called when a user pushes a device selection toggle button
@@ -1173,7 +1186,9 @@ class App(Gtk.Application):
             else:
                 t2 = f"translate({pos[0]},{pos[1]})"
             g = draw.Group(**{"transform":t2})
-            for e in lod.allElements():
+            ae = lod.allElements()
+            print(len(ae))
+            for e in ae:
                 g.append(e)
             big_font_size = max_render_pix/25
             lab = draw.Text(label, big_font_size, 0, -big_font_size/3, fill='lime', fill_opacity=0.9, **{'text-anchor':'middle','dominant-baseline':'central', 'font-weight':"bold"})  # , "transform":urot
@@ -1229,14 +1244,16 @@ class App(Gtk.Application):
         dr = draw.Drawing(canvas[0], canvas[1], origin='center', displayInline=False, **{'text-align':'center', 'font-family': 'monospace'})
         angle = self.config['UI']['gui_drawing_rotation_angle']
 
-        if len(size) == 0:  # handles the empty case
-            c = draw.Circle(0, 0, maxd/4, **{'stroke-width':f"{maxd/16}", "stroke":"red", 'fill':'none'})
-            d.append(c)
-        else:
+        n_pads = len(pads)
+
+        wbg = draw.Rectangle(-canvas[0]/2, -canvas[1]/2, canvas[0], canvas[1], fill='white')
+        d.append(wbg)
+
+        if n_pads > 0:  # handles the empty case
             bg = draw.Rectangle(-size[0]/2, -size[1]/2, size[0], size[1], fill='black')
             d.append(bg)
 
-        for i in range(len(pads)):
+        for i in range(n_pads):
             pad = pads[i]
             a = areas[i] * 100  # cm^2 to mm^2
             xy = locations[i]
@@ -1259,9 +1276,9 @@ class App(Gtk.Application):
             d.append(lab)
         if ('OLD' in name) or ('legacy' in name):
             ll = maxd/4
-            x1 = draw.Line(ll, ll, -ll, -ll, **{'stroke-width':f"{ll/8}","stroke":"red", "opacity":"0.5"})
+            x1 = draw.Line(ll, ll, -ll, -ll, **{'stroke-width':f"{ll/8}","stroke":"red"})
             d.append(x1)
-            x2 = draw.Line(ll, -ll, -ll, ll, **{'stroke-width':f"{ll/8}","stroke":"red", "opacity":"0.5"})
+            x2 = draw.Line(ll, -ll, -ll, ll, **{'stroke-width':f"{ll/8}","stroke":"red"})
             d.append(x2)
 
         d.setPixelScale(scale)
@@ -1380,7 +1397,7 @@ class App(Gtk.Application):
         df_cols=[]
         df_cols.append('system_label')  # label for the substrate slot that the system uses
         df_cols.append('user_label')  # label the user may have entered for this substrate
-        df_cols.append('label')  # combo of the above two, formated as "{system}: {user}"
+        df_cols.append('label')  # combo of the above two, formated as "{system}_{user}"
         df_cols.append('substrate_index')  # a number used to represent the substrate
         df_cols.append('layout_pixel_index')  # pixel index is for which pixel this is on its layout
         df_cols.append('pixel_offset_raw')  # offset of this pixel relative to the center of its substrate (as read from the config file)
@@ -1429,7 +1446,7 @@ class App(Gtk.Application):
                     if user_label == "":
                         df.at[dfr, 'label'] = system_label
                     else:
-                        df.at[dfr, 'label'] = f"{system_label}: {user_label}"
+                        df.at[dfr, 'label'] = f"{system_label}_{user_label}"
                     df.at[dfr, 'layout'] = layout
                     df.at[dfr, 'area'] = self.config['substrates']['layouts'][layout]['areas'][pixi]
                     df.at[dfr, 'dark_area'] = self.config['substrates']['layouts'][layout]['dark_areas'][pixi]

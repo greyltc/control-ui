@@ -464,7 +464,6 @@ Author: Greyson Christoforo
                                 <property name="caps-lock-warning">False</property>
                                 <property name="placeholder-text" translatable="yes">Enter a user name</property>
                                 <signal name="changed" handler="update_run_name" swapped="no"/>
-                                <signal name="insert-text" handler="only_alnum" swapped="no"/>
                               </object>
                             </child>
                             <child type="label">
@@ -505,7 +504,6 @@ Author: Greyson Christoforo
                                     <property name="caps-lock-warning">False</property>
                                     <property name="placeholder-text" translatable="yes">Enter a run name prefix</property>
                                     <signal name="changed" handler="update_run_name" swapped="no"/>
-                                    <signal name="insert-text" handler="only_alnum" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
