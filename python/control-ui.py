@@ -1838,21 +1838,27 @@ class App(Gtk.Application):
         """
         if self.all_mux_switches_open == True:
             self.all_mux_switches_open = False
-            some_lists = self.bitmask_to_some_lists(self.b.get_object("iv_devs").get_text(),maximum=1)
-            if len(some_lists['dev_nums']) == 0:
+            active = self.iv_store.df
+            if len(active) == 0:
                 lg.info("No devices selected for connection")
             else:
-                user_label = some_lists['user_labels'][0]
-                if user_label == '':
-                    user_label = some_lists['subs_names'][0]
-                lg.info(f"Connecting device: {user_label}-{some_lists['sub_dev_nums'][0]}")
-                msg = {'cmd':'for_pcb', 'pcb_cmd':some_lists['selections'][0], 'pcb':self.config['controller']['address']}
+                first_dev = active.iloc[0]
+                lg.info(f"Connecting device: {first_dev['label']}-{first_dev['mux_index']}")
+                msg = {}
+                msg['cmd'] = 'for_pcb'
+                msg['pcb'] = self.config['controller']['address']
+                msg['pcb_virt'] = self.config['controller']['virtual']
+                msg['pcb_cmd'] = first_dev['mux_string']
                 pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
                 self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
         else:
             self.all_mux_switches_open = True
             lg.info("Disconnecting all devices")
-            msg = {'cmd':'for_pcb', 'pcb_cmd':'s', 'pcb':self.config['controller']['address']}
+            msg = {}
+            msg['cmd'] = 'for_pcb'
+            msg['pcb'] = self.config['controller']['address']
+            msg['pcb_virt'] = self.config['controller']['virtual']
+            msg['pcb_cmd'] = "s"
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
             self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
@@ -1869,7 +1875,11 @@ class App(Gtk.Application):
             pcb_cmd = 'eqe'
             notice = "Entering EQE mode"
         lg.info(notice)
-        msg = {'cmd':'for_pcb', 'pcb_cmd':pcb_cmd, 'pcb':self.config['controller']['address']}
+        msg = {}
+        msg['cmd'] = 'for_pcb'
+        msg['pcb'] = self.config['controller']['address']
+        msg['pcb_virt'] = self.config['controller']['virtual']
+        msg['pcb_cmd'] = pcb_cmd
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
@@ -1915,27 +1925,43 @@ class App(Gtk.Application):
         """Home the stage."""
         if (self.move_warning() == Gtk.ResponseType.OK):
             lg.info("Requesting stage home...")
-            msg = {'cmd':'home', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
+            msg = {}
+            msg['cmd'] = 'home'
+            msg['pcb'] = self.config['controller']['address']
+            msg['pcb_virt'] = self.config['controller']['virtual']
+            msg['stage_uri'] = self.config['stage']['uri']
+            msg['stage_virt'] = self.config['stage']['virtual']
             pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
             self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
     def on_halt_button(self, button):
         """Emergency stop"""
         lg.warning("Powering down the stage motor drivers")
-        msg = {'cmd':'estop', 'pcb':self.config['controller']['address']}
+        msg = {}
+        msg['cmd'] = 'estop'
+        msg['pcb'] = self.config['controller']['address']
+        msg['pcb_virt'] = self.config['controller']['virtual']
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
         self.mqttc.publish("measurement/stop", "stop", qos=2).wait_for_publish()
 
     def on_mono_zero_button(self, button):
         """Sends Monochromator to 0nm"""
-        msg = {'cmd':'mono_zero', 'mono_address': self.config['monochromator']['address']}
+        msg = {}
+        msg['cmd'] = 'mono_zero'
+        msg['mono_address'] = self.config['monochromator']['address']
+        msg['mono_virt'] = self.config['monochromator']['virtual']
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
     def on_stage_read_button(self, button):
         """Read the current stage position."""
-        msg = {'cmd':'read_stage', 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
+        msg = {}
+        msg['cmd'] = 'read_stage'
+        msg['pcb'] = self.config['controller']['address']
+        msg['pcb_virt'] = self.config['controller']['virtual']
+        msg['stage_uri'] = self.config['stage']['uri']
+        msg['stage_virt'] = self.config['stage']['virtual']
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
@@ -1948,7 +1974,13 @@ class App(Gtk.Application):
                 pos += [self.gotos[1].get_value()]
             if self.num_axes >= 3:
                 pos += [self.gotos[2].get_value()]
-            msg = {'cmd':'goto', 'pos':pos, 'pcb':self.config['controller']['address'], 'stage_uri':self.config['stage']['uri']}
+            msg = {}
+            msg['cmd'] = 'goto'
+            msg['pcb'] = self.config['controller']['address']
+            msg['pcb_virt'] = self.config['controller']['virtual']
+            msg['stage_uri'] = self.config['stage']['uri']
+            msg['stage_virt'] = self.config['stage']['virtual']
+            msg['pos'] = pos
             pic_msg = pickle.dumps(msg)
             self.mqttc.publish("cmd/util", pic_msg, qos=2).wait_for_publish()
 
