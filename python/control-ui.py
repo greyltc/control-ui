@@ -992,7 +992,7 @@ class App(Gtk.Application):
     # the user has made a text edit in the slot config table
     def on_slot_cell_edit(self, widget, path, text, col):
         if col == 1:  # only sanitize col #1 (label)
-            valid = re.compile('[^a-zA-Z0-9_\-]+', re.UNICODE)
+            valid = re.compile('[^a-zA-Z0-9_\-\.]+', re.UNICODE)
             fill = valid.sub('', text)
         else:
             fill = text
@@ -1105,7 +1105,7 @@ class App(Gtk.Application):
     # a function that blocks non-alphanumeric text entry
     def only_alnum(self, widget, text, text_len, text_pos):
         if text_len > 0:
-            allowed = '_-'
+            allowed = '_-.'
             if text.isalnum():
                 return True
             elif(text in allowed):
@@ -1335,41 +1335,43 @@ class App(Gtk.Application):
         for store in [self.iv_store, self.eqe_store]:
             all_row = store.get_iter_first()
             slot_iter = store.iter_nth_child(all_row, int(str(path)))
-            subs_check_visible = n_pix > 0
 
-            # update the label in the device selection stores
-            if user_label != "":
-                display_label = f"{system_label}: {user_label}"
-            else:
-                display_label = system_label
-            store.set_value(slot_iter, 0, display_label)
-            store.set_value(slot_iter, 3, layout)
-            store.set_value(slot_iter, 4, subs_check_visible)
+            if col == 1:  # user label change
+                # update the label in the device selection stores
+                if user_label != "":
+                    display_label = f"{system_label}: {user_label}"
+                else:
+                    display_label = system_label
+                store.set_value(slot_iter, 0, display_label)
+            elif col == 2:  # this was a layout change
+                subs_check_visible = n_pix > 0
+                store.set_value(slot_iter, 3, layout)
+                store.set_value(slot_iter, 4, subs_check_visible)
 
-            # is the parent checked?
-            if store[slot_iter][1] == True:
-                checked = True
-            else:
-                checked = False
+                # is the parent checked?
+                if store[slot_iter][1] == True:
+                    checked = True
+                else:
+                    checked = False
 
-            # re-fill the children with the updated info
-            diter = store.iter_children(slot_iter)
-            for pad, area in zip(pads, areas):
-                name_col_val = f"Device {pad}"  # what do we call this?
-                checked_col_val = checked  # is it selected?
-                expanded_col_val = False  # is the row expanded?
-                area_col_val = str(area)  # what's its area?
-                check_vis_col_val = True  # is the selection box visible?
+                # re-fill the children with the updated info
+                diter = store.iter_children(slot_iter)
+                for pad, area in zip(pads, areas):
+                    name_col_val = f"Device {pad}"  # what do we call this?
+                    checked_col_val = checked  # is it selected?
+                    expanded_col_val = False  # is the row expanded?
+                    area_col_val = str(area)  # what's its area?
+                    check_vis_col_val = True  # is the selection box visible?
 
-                if diter is None:  # we need to add a new row
-                    diter = store.append(slot_iter, [name_col_val, checked_col_val, expanded_col_val, area_col_val, check_vis_col_val])
-                else:  # the row already exists let's just make sure it's right
-                    store.set(diter, 0, name_col_val, 1, checked_col_val, 2, expanded_col_val, 3, area_col_val, 4, check_vis_col_val)
-                diter = store.iter_next(diter)
+                    if diter is None:  # we need to add a new row
+                        diter = store.append(slot_iter, [name_col_val, checked_col_val, expanded_col_val, area_col_val, check_vis_col_val])
+                    else:  # the row already exists let's just make sure it's right
+                        store.set(diter, 0, name_col_val, 1, checked_col_val, 2, expanded_col_val, 3, area_col_val, 4, check_vis_col_val)
+                    diter = store.iter_next(diter)
 
-            # delete any extra children
-            while (diter is not None) and store.iter_is_valid(diter):
-                store.remove(diter)
+                # delete any extra children
+                while (diter is not None) and store.iter_is_valid(diter):
+                    store.remove(diter)
 
             GLib.idle_add(self.do_dev_store_update_tasks, store)
             #self.do_dev_store_update_tasks(store)
