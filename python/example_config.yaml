@@ -80,12 +80,14 @@ network:
 visa:
     visa_lib: '@py'
 
-# stage and mux controller network address
+# stage and mux controller configuration
 controller:
+    virtual: false  # use a software virtualization instead of the hardware thing
     address: "10.42.0.239"
 
 # source-measure unit(s)
 smu:
+    virtual: false  # use a software virtualization instead of the hardware thing
     enabled: true
     address: "ASRL/dev/ttyUSB0::INSTR"
     #address: "GPIB::24::INSTR"
@@ -101,6 +103,7 @@ smu:
     current_limit: 0.150
 
 solarsim:
+    virtual: false  # use a software virtualization instead of the hardware thing
     enabled: true
     #address: "wavelabs://0.0.0.0:3334"
     address: "wavelabs-relay://127.0.0.1:3335"
@@ -111,6 +114,7 @@ solarsim:
 
 # lock-in amplifier
 lia:
+    virtual: false  # use a software virtualization instead of the hardware thing
     enabled: false
     address: "ASRL/dev/ttyUSB0::INSTR"
     terminator: "\r"
@@ -120,6 +124,7 @@ lia:
     ratio: true  # true to use AUX1 input signal to account for lamp output drift
 
 monochromator:
+    virtual: false  # use a software virtualization instead of the hardware thing
     enabled: false
     address: "ASRL/dev/ttyUSB2::INSTR"
     terminator: "\r"
@@ -129,6 +134,7 @@ monochromator:
 
 # LED power supply unit
 psu:
+    virtual: false  # use a software virtualization instead of the hardware thing
     enabled: false
     address: "TCPIP0::192.168.1.235::INSTR"
     terminator: "\r"  # only relevant for serial comms
@@ -141,6 +147,7 @@ psu:
     ch3_ocp : 0.0
 
 stage:
+    virtual: false  # use a software virtualization instead of the hardware thing
     enabled: true
     # stage connection URI
     # tells the system how to talk to the stage.
@@ -205,7 +212,7 @@ substrates:
             pads:       [6,              5,              4,          3,         2,             1]
             # list of position vectors of each pixel describing where they are on the substrate
             # positions are given in mm, [x, y], relative to the substrate center
-            locations:  [[-3.43, -8.16], [-8.05, 4.33],  [0, -4.33], [0, 4.33], [3.43, -8.16], [8.05, 4.33]]
+            locations:  [[-3.43, 8.16], [-8.05, -4.33],  [0, 4.33], [0, -4.33], [3.43, 8.16], [8.05, -4.33]]
             # list describing the shapes of the illuminated areas. s for square, c for circle
             # a number indicates the device shape is rectangular, with the number being the length in x
             shapes:     [s,              5.41,           21.5,       5.41,      s,             5.41]

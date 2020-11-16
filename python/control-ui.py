@@ -38,7 +38,7 @@ import re
 gi.require_version("WebKit2", "4.0")
 gi.require_version("Gtk", "3.0")
 gi.require_version('Rsvg', '2.0')
-from gi.repository import GLib, Gio, Gtk, Gdk, Pango, GdkPixbuf, Rsvg
+from gi.repository import GLib, Gio, Gtk, Gdk, Rsvg
 
 # Gdk.set_allowed_backends('broadway')  # for gui over web
 from gi.repository.WebKit2 import WebView, Settings
@@ -64,7 +64,6 @@ lg.addHandler(sysL)
 
 
 class App(Gtk.Application):
-
     def __init__(self, *args, **kwargs):
         """Constructor."""
         super().__init__(
@@ -248,7 +247,7 @@ class App(Gtk.Application):
                         pass
 
             self.config = merge_dicts([base_config] + aux_configs)
-            
+
             pp = pprint.PrettyPrinter(compact=True, width=140, sort_dicts=False)
             lg.debug(pp.pformat(self.config))
 
