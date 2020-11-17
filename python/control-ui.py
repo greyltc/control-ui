@@ -7,6 +7,7 @@ import pathlib
 import logging
 import systemd.journal
 import pprint
+import matplotlib
 
 # for merging dictionaries
 from boltons.iterutils import default_enter
@@ -656,6 +657,7 @@ class App(Gtk.Application):
                 elif (msg.topic) == "calibration/eqe":
                     self.eqe_cal_time = m['timestamp']
                 elif (msg.topic) == "calibration/spectrum":
+                    print(m)
                     self.iv_cal_time = m['timestamp']
                 elif "calibration/psu" in msg.topic:
                     self.psu_cal_time = m['timestamp']
@@ -1634,6 +1636,17 @@ class App(Gtk.Application):
             "measurement/stop", pickle.dumps("stop"), qos=2
         ).wait_for_publish()
 
+    def on_spectrum_button(self, button):
+        """The user clicked the spectrum button"""
+        lg.info("Getting spectrum")
+        msg = {}
+        msg['cmd'] = 'spec'
+        msg['le_address'] = self.config['solarsim']['address']
+        msg['le_virt'] = self.config['solarsim']['virtual']
+        msg['le_recipe'] = self.b.get_object("light_recipe").get_text()
+        pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
+
     def harvest_gui_data(self):
         """
         Packages up all the (relevant) info the user has entered into the gui
@@ -1818,15 +1831,14 @@ class App(Gtk.Application):
         eqe_dev_txt = self.b.get_object("eqe_devs").get_text()
         eqe_dev_num = int(eqe_dev_txt, 16)
         any_dev_num = iv_dev_num|eqe_dev_num # combine the selections for the connectivity check
-        some_lists = self.bitmask_to_some_lists(hex(any_dev_num))
-        msg = {
-            'cmd':'round_robin',
-            'type': this_type,
-            'slots': some_lists['subs_names'],
-            'pads': some_lists['sub_dev_nums'],
-            'pcb': self.config['controller']['address'],
-            'smu': self.config['smu']
-            }
+        some_lists = self.bitmask_to_some_lists(hex(any_dev_num)) # TODO: update this
+        msg = {}
+        msg['cmd'] = 'round_robin'
+        msg['type'] = this_type
+        msg['slots'] = some_lists['subs_names']
+        msg['pads'] = some_lists['sub_dev_nums']
+        msg['pcb'] = self.config['controller']['address']
+        msg['smu'] = self.config['smu']
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 

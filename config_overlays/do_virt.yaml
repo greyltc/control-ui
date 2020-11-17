@@ -1,0 +1,20 @@
+controller:
+    virtual: true
+
+smu:
+    virtual: true
+
+lia:
+    virtual: true
+
+monochromator:
+    virtual: true
+
+psu:
+    virtual: true
+
+stage:
+    virtual: true
+
+solarsim:
+    virtual: true

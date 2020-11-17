@@ -2995,6 +2995,23 @@ B -- All devices are disconnected</property>
                         </child>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkFlowBoxChild">
+                        <property name="width-request">100</property>
+                        <property name="height-request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <child>
+                          <object class="GtkButton">
+                            <property name="label" translatable="yes">Measure Solar Sim Spectrum</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <signal name="clicked" handler="on_spectrum_button" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="title" translatable="yes">Maintenance</property>
