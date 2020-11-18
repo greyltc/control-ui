@@ -8,6 +8,8 @@ import logging
 import systemd.journal
 import pprint
 import matplotlib
+matplotlib.use('svg')  # or 'GTK3Cairo'
+import matplotlib.pyplot as plt
 
 # for merging dictionaries
 from boltons.iterutils import default_enter
@@ -18,7 +20,7 @@ from boltons.iterutils import remap
 # for drawing layouts
 import drawSvg as draw
 
-import gi
+
 import sys
 import os
 import time
@@ -29,13 +31,14 @@ import paho.mqtt.client as mqtt
 import pickle
 import pandas as pd
 import numpy as np
+from io import BytesIO
 
 import yaml
 
 import re
 
 # os.environ["DEBUSSY"] = "1"
-
+import gi
 gi.require_version("WebKit2", "4.0")
 gi.require_version("Gtk", "3.0")
 gi.require_version('Rsvg', '2.0')
@@ -85,6 +88,8 @@ class App(Gtk.Application):
         self.iv_cal_time = None
         self.array_drawing_handle = None
         self.layout_drawing_handle = None
+        self.spectrum_plot_handle = None
+        self.want_spectrum = False
 
         # allow configuration file location to be specified by command line argument
         self.add_main_option(
@@ -140,11 +145,11 @@ class App(Gtk.Application):
             self.logTB = self.b.get_object("tbLog")  # log text buffer
             self.ltv = self.b.get_object("ltv")  # log text view
             self.log_win_adj = self.b.get_object("vert_log_win_scroll_adj")
+            # drawings/plots
             self.array_pic = self.b.get_object("array_overview")
             self.array_pic.connect("draw", self.on_array_pic_draw)
             self.subs_pic = self.b.get_object("substrate_pic")
             self.subs_pic.connect("draw", self.on_subs_pic_draw)
-
 
             def myWrite(buf):
                 # the log update should not be done on the main gui thread
@@ -632,6 +637,72 @@ class App(Gtk.Application):
                 label_meshgrid = np.flip(label_meshgrid, i)
 
         return label_meshgrid, pos_meshgrid
+    
+    # cleans up spectrum dialog window
+    def on_spec_dialog_finish(self, dialog, *args, **kwargs):
+        dialog.destroy()
+        self.spectrum_plot_handle = None
+
+    # handles rendering of spectrum plot
+    def on_spec_plot_draw(self, drawing_area, cairo_context):
+        if self.spectrum_plot_handle is None:
+            drawing_area.queue_draw()
+        else:
+            self.spectrum_plot_handle.render_cairo(cairo_context)
+    
+    # takes the spectrum data we got from MQTT and sets it up for plotting
+    def make_spec_svgh(self, spec):
+        x = spec[0]
+        y = spec[1]
+        fig, ax = plt.subplots()  # Create a figure and an axes.
+        fig.subplots_adjust(bottom = 0)
+        fig.subplots_adjust(top = 1)
+        fig.subplots_adjust(right = 1)
+        fig.subplots_adjust(left = 0)
+        ax.plot(x, y, label='Raw Data')  # Plot some data on the axes.
+        ax.set_xlabel('Wavelength [nm]')  # Add an x-label to the axes.
+        ax.set_ylabel('Counts')  # Add a y-label to the axes.
+        ax.grid(True, which="both")
+        #ax.set_title("Solar Sim Spectrum")  # Add a title to the axes.
+
+        #size = fig.get_size_inches()*fig.dpi
+
+        b = BytesIO()
+        #fig.savefig('out.png', bbox_inches='tight',transparent=True, pad_inches=0
+        #fig.tight_layout()
+        size = fig.get_size_inches()*fig.dpi
+        fig.savefig(b, format="svg", transparent=False, bbox_inches='tight', dpi='figure',frameon=True, pad_inches=0)
+        svg_bytes = b.getvalue()
+
+        # make a dialog box to hold the plot
+        dialog_setup = {}
+        dialog_setup['title'] = "Solar Sim Spectrum"
+        dialog_setup['parent'] = self.main_win
+        dialog_setup['destroy_with_parent'] = True
+        dialog_setup['modal'] = True
+        d = Gtk.Dialog(**dialog_setup)
+        d.add_buttons(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        d.connect("close", self.on_spec_dialog_finish)
+
+        box = d.get_content_area()
+        box.set_border_width(15)
+
+        aa = d.get_action_area()
+        aa.set_border_width(0)
+        spec_plot_drawing = Gtk.DrawingArea()
+        spec_plot_drawing.connect("draw", self.on_spec_plot_draw)
+        
+        svgh = Rsvg.Handle.new_from_data(svg_bytes)
+        self.spectrum_plot_handle = svgh
+        
+        vb = svgh.get_intrinsic_dimensions()
+
+        spec_plot_drawing.props.width_request = size[0]
+        spec_plot_drawing.props.height_request = size[1]
+
+        box.add(spec_plot_drawing)
+        d.connect("response", self.on_spec_dialog_finish)
+        d.show_all()
 
     def _start_mqtt(self):
         """Start the MQTT client and subscribe to the CLI topic."""
@@ -657,8 +728,14 @@ class App(Gtk.Application):
                 elif (msg.topic) == "calibration/eqe":
                     self.eqe_cal_time = m['timestamp']
                 elif (msg.topic) == "calibration/spectrum":
-                    print(m)
                     self.iv_cal_time = m['timestamp']
+                    if self.want_spectrum == True:
+                        lg.info("Got a spectrum!")
+                        self.want_spectrum = False
+                        spec = m['data']
+                        # better to do the rest in GLib loop idle, not in the MQTT thread
+                        GLib.idle_add(self.make_spec_svgh, spec)  # this can't be done in the MQTT thread. do it in idle later
+
                 elif "calibration/psu" in msg.topic:
                     self.psu_cal_time = m['timestamp']
 
@@ -1345,7 +1422,7 @@ class App(Gtk.Application):
                 else:
                     display_label = system_label
                 store.set_value(slot_iter, 0, display_label)
-            elif col == 2:  # this was a layout change
+            elif col == 0:  # this was a layout change
                 subs_check_visible = n_pix > 0
                 store.set_value(slot_iter, 3, layout)
                 store.set_value(slot_iter, 4, subs_check_visible)
@@ -1645,6 +1722,7 @@ class App(Gtk.Application):
         msg['le_virt'] = self.config['solarsim']['virtual']
         msg['le_recipe'] = self.b.get_object("light_recipe").get_text()
         pic_msg = pickle.dumps(msg, protocol=pickle.HIGHEST_PROTOCOL)
+        self.want_spectrum = True
         self.mqttc.publish("cmd/uitl", pic_msg, qos=2).wait_for_publish()
 
     def harvest_gui_data(self):
